@@ -49,6 +49,7 @@ ALSO FORTH
 : CHAR    CHAR ;
 : FCONST  CONSTANT ;
 : .S      .S ;
+: H.      H. ;
 : WORDS   WORDS ;
 : ORDER   ORDER ;
 \ ~ : ''   ' ;

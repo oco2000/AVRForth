@@ -16,7 +16,6 @@ VARIABLE FLIST                  \ файл с листингом
 ;
 
 : LIST-SAVE ( 2FILENAME )        \ создать листинг
-  2DUP TYPE
   R/W CREATE-FILE THROW
   FLIST !
   LIST

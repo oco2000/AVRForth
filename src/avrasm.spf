@@ -2,15 +2,19 @@
 
 HEX
 
+: RELATIVE-ONLY? ( -- f )
+  ROM-SIZE 0x2000 > INVERT
+;
+
 : ODD   ( u1 -- u2 )
     1 AND ;
 : ?EVEN ( u1 -- u2 )
     DUP ODD ABORT" Even address required" ;
 : ?FAR  ( addr -- ?far )
-    ROM-SIZE 0x1000 > INVERT IF \ если память до 8кБ - только относительные адреса
+    RELATIVE-ONLY? IF \ если память до 8кБ - только относительные адреса
         DROP FALSE
     ELSE
-        THERE - ABS 0xFFE >
+        THERE - ABS 0x1FFE >
     THEN
 ;
 : >JMP  ( addr -- addr/2 )
@@ -134,7 +138,9 @@ HEX
 ;
 
 : &S ( ADDR OPCODE )                  \ XXX ADDR (RELATIVE 12BIT)
-  SWAP >REL ?SHORT FFF AND OR T,
+  SWAP >REL
+  \ ?SHORT  No need to check for this because PC is circular
+  FFF AND OR T,
 ;
 
 : &XR ( XR R OPCODE )                 \ XXX R,X

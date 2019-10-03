@@ -1,0 +1,93 @@
+REQUIRE LCD_CHAR lib/lcd/definechar.spf
+
+[F] BASE @ 0x2 BASE ! [P]
+
+00010000
+00010000
+00010000
+00011111
+00010000
+00010000
+00010000
+00010000
+LCD_CHAR PRG1
+
+00011000
+00011000
+00011000
+00011111
+00011000
+00011000
+00011000
+00011000
+LCD_CHAR PRG2
+
+00011100
+00011100
+00011100
+00011111
+00011100
+00011100
+00011100
+00011100
+LCD_CHAR PRG3
+
+00011110
+00011110
+00011110
+00011111
+00011110
+00011110
+00011110
+00011110
+LCD_CHAR PRG4
+
+[F] BASE ! [P]
+
+: CHARS ( n char -- )
+  SWAP 0 ?DO
+    DUP EMIT
+  LOOP DROP
+;
+
+: H.   DUP 0 <# # # # # #> TYPE SPACE ;
+
+: SCALE ( min max position -- newmax newposition )
+  >R OVER -
+  SWAP R> SWAP -
+;
+
+: PROGRESSBAR ( min max length position x y -- )
+  AT SWAP >R ( min max position ) .S
+  SCALE ( newmax newposition )
+  R@ 5 * ROT */MOD DUP >R ( rest full )
+  DROP \ 0xFF CHARS
+  ?DUP IF 1- EMIT R> 1+ >R THEN
+  R> R> SWAP - H. \ [CHAR] - CHARS
+;
+
+\ ~uint16_t new_pos;
+\ ~uint8_t full;
+\ ~uint8_t rest;
+\ ~uint8_t i;
+    \ ~max=max-min;
+    \ ~position=position-min;
+    \ ~new_pos=position*length*5/max;      // масштабируем
+    \ ~full=new_pos/5;                     // к-во заполненных символов
+    \ ~rest=new_pos%5;                     // к-во полосок в последнем символе индикатора
+    \ ~lcd_gotoxy(x,y);
+    \ ~for (i=0;i<length;i++) {            // поехали
+        \ ~if (i<full)                     // выводим полные квадраты
+            \ ~lcd_data(0xff);
+        \ ~else if ((i==full)&&(rest!=0))  // выводим один символ, который заполнен не до конца
+            \ ~lcd_data(rest-1);
+        \ ~else                            // остаток индикатора
+            \ ~lcd_data('-');
+    \ ~}
+
+: PROGRESS-INIT
+  0 PRG1
+  1 PRG2
+  2 PRG3
+  3 PRG4
+;
