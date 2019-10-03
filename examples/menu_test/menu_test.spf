@@ -1,0 +1,115 @@
+\ ATmega8
+\ +DEBUG3
+
+[F] DECIMAL [P]
+
+TREQUIRE (.)
+TREQUIRE C!E
+
+1000000 == F_CPU
+
+REQUIRE {SET}     lib/ports.spf
+
+PD7 WIRE LED
+
+PB0 WIRE BTN_SELECT
+PB1 WIRE BTN_UP
+PB2 WIRE BTN_DOWN
+PB3 WIRE BTN_EXIT
+
+GROUP{ BTN_SELECT BTN_UP BTN_DOWN BTN_EXIT }GROUP BUTTONS
+
+REQUIRE D3              lib/lcd/lcd_conf_std.spf
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
+REQUIRE RTOS_RUN        lib/eertos.spf
+REQUIRE MENU            lib/lcd_menu/menu.spf
+REQUIRE DEBOUNCE        lib/buttons.spf
+
+: LED_OFF
+  LED {SET}
+;
+
+: BLIP
+    LED {CLEAR}
+    ['] LED_OFF 100 RTOS_SET_TIMER_TASK
+;
+
+: UP   UP-MENU BLIP ;
+: DOWN   DOWN-MENU BLIP ;
+: ENTER   ENTER-MENU BLIP ;
+: CANCEL   EXIT-MENU BLIP ;
+
+TCREATE BTN_TASKS
+' DOWN T,   ' UP T,   ' ENTER T,   ' CANCEL T,
+
+: INIT
+  HEX
+  LED {OUTPUT}
+  LCD_DISP_ON  LCD_INIT
+  MENU-INIT
+  BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!
+  0x3 BUTTONS_REPEATABLE C!
+  BTN_TASKS BUTTONS_TASKS !
+  BUTTONS_INIT
+  RTOS_INIT
+  ['] BUTTONS_TASK RTOS_SET_TASK
+;
+
+: (H) ( n -- addr u )  0 <# # # # # #> ;
+: H.  ( n -- ) (H) TYPE SPACE ;
+
+CEVARIABLE VOLUME  0x0 VOLUME C!E
+ 63 == MAX-VOLUME
+0x0 == MIN-VOLUME
+: GET-VOLUME   ( -- value )   VOLUME C@E ;
+: SET-VOLUME   ( value -- )   MAX-VOLUME MIN   MIN-VOLUME MAX   VOLUME C!E ;
+
+C" Volume" MENU-ITEM I_Volume
+' GET-VOLUME    I_Volume SET-GET-VALUE
+' (.)           I_Volume SET-FORMAT
+
+CEVARIABLE MUTED
+: GET-MUTED   ( -- value )   MUTED C@E ;
+: SET-MUTED   MUTED C!E ;
+: MUTE ( -- )
+  GET-MUTED 0= SET-MUTED ;
+
+C" Mute" MENU-ITEM I_Mute
+' GET-MUTED    I_Mute SET-GET-VALUE
+' FORMAT-BOOL  I_Mute SET-FORMAT
+' MUTE         I_Mute SET-EDIT
+
+C" Bass" MENU-ITEM I_Bass
+C" Treble" MENU-ITEM I_Treble
+
+0x0 I_Bass I_Treble I_Volume I_Mute C" Sound" MENU M_Sound
+
+C" Hours" MENU-ITEM I_Hours
+C" Minutes" MENU-ITEM I_Minutes
+
+0x0 I_Hours I_Minutes C" Time" MENU M_Time
+
+C" Day" MENU-ITEM I_Day
+C" Month" MENU-ITEM I_Month
+C" Year" MENU-ITEM I_Year
+
+0x0 I_Day I_Month I_Year C" Date" MENU M_Date
+
+0x0 M_Time M_Date C" Setup" MENU M_Setup
+
+0x0 M_Sound M_Setup C" _" MENU M_Main
+M_Main SET-MAIN
+
+: MAIN
+  INIT
+
+  M_Main SET-MENU ENTER-MENU
+
+  RTOS_RUN
+
+  BEGIN
+      RTOS_TASK_MANAGER
+  AGAIN
+;
+
+' MAIN [->] {MAIN}

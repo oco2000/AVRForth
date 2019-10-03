@@ -1,0 +1,103 @@
+\ тест для библиотеки lcd.spf
+\ ATmega168
+\ +DEBUG3
+
+[F] DECIMAL [P]
+
+8000000 == F_CPU
+
+REQUIRE D3              lib/lcd/lcd_conf_std.spf \ стандартная конфигурация библиотеки LCD
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+REQUIRE RTOS_RUN        lib/eertos.spf           \ ОС
+REQUIRE DS1307          lib/ds1307.spf           \ часы
+
+\ 8000 TALLOT   \ проверим дальние адреса
+
+\ строки для вывода на индикатор
+C" LCD test" == "Test"
+C" DS1307 found" == "found"
+C" DS1307 not found!" == "not_found"
+
+PD7 WIRE LED    \ светодиод
+
+: Task2     \ мигаем светодиодом каждые 200 мс
+    LED {TOGGLE}
+    ['] Task2 100 RTOS_SET_TIMER_TASK
+;
+
+: H.   0 <# # # #> TYPE ;   \ вывести число двумя цифрами
+: .TRIPLE ( 3 2 1 char -- ) \ вывести три числа, разделитель char
+    SWAP H. DUP EMIT SWAP H. EMIT H.
+;
+
+\ дни недели
+C" SunMonTueWedThuFriSat" == "Weekdays"
+
+TCREATE chars
+CHAR | TC,
+CHAR / TC,
+CHAR - TC,
+0x1    TC, \ backslash
+TALIGN
+
+CVARIABLE pos
+\ вывод даты и времени
+: Task_Print
+    DS1307_GET_TIME             \ получим время
+    4 1 LCD_GOTOXY
+    [ CHAR : ] LITERAL .TRIPLE        \ печать времени
+    DS1307_GET_DATE SWAP ROT    \ получим дату
+    2 0 LCD_GOTOXY
+    [ CHAR . ] LITERAL .TRIPLE        \ печать даты
+
+    12 0 LCD_GOTOXY
+    DS1307_Weekday DS1307_GET 1-
+    DUP 2* + ( 3 * ) \ получим день недели
+    "Weekdays" + 1+ 3 TYPEP     \ печать
+
+    15 1 LCD_GOTOXY
+    pos C@ chars + C@P EMIT
+    pos C@ 1+ 0x3 AND pos C!
+
+    ['] Task_Print 250 RTOS_SET_TIMER_TASK     \ повторяем 4 раза в секунду
+;
+
+: 1S_DELAY
+    1000 00 DO
+      1000 US
+    LOOP
+;
+
+0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH
+
+: MAIN
+    HEX
+    LED {OUTPUT}            \ светодиод - на выход
+    LED {SET}               \ погасить
+    LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
+    LCD_CLRSCR              \ очистка
+
+    RTOS_INIT
+    RTOS_RUN
+    ['] Task2 RTOS_SET_TASK
+    DS1307_INIT IF          \ есть часы?
+        "not_found"
+    ELSE
+        "found"
+\        0x23 0x59 0x55 DS1307_SET_TIME     \ для теста задаем начальные время и дату
+\        0x13 0x05 0x30 DS1307_SET_DATE
+\        DS1307_Weekday 5 DS1307_SET
+        00 pos C!
+        ['] Task_Print 250 RTOS_SET_TIMER_TASK
+    THEN
+    COUNTP TYPEP
+    1S_DELAY
+    LCD_CLRSCR
+    1 BACKSLASH \ определить символ с кодом 1
+    BEGIN
+        RTOS_TASK_MANAGER
+    AGAIN
+;
+
+' MAIN [->] {MAIN}

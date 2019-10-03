@@ -1,0 +1,9 @@
+: >DIGIT     ( n -- char )                   ( convert to ASCII digit)
+  [
+    0xA tosl cpi
+    if_>=
+      -7 tosl subi
+    then
+    [F] 0x30 NEGATE [P] tosl subi
+  ]
+;

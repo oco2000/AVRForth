@@ -1,0 +1,13 @@
+\ инициализация форт-системы
+
+[VECT] {MAIN} \ главная процедура
+
+THERE ->INT RESET \ прыжок сюда при сбросе
+
+RAM-TOP tosl  ldiw      \ указатель стека возврата установить на конец RAM
+tosl SPL _out
+tosh SPH _out
+SPTR0 yl    ldiw    \ уст. указатель стека данных
+[T] ' {MAIN} [P]    (CALL)    \ вызов главной процедуры
+T<MARK          \ зацикливаем
+' (JMP) T<RESOLVE

@@ -1,0 +1,16 @@
+: FILL       ( addr len c -- )               ( fill data memory with chars)
+  [
+    tosl tmpl mov
+    popt
+    zl popd
+    tosl tmph mov
+    tosh tmph or
+    if_<>0 
+        begin
+            tmpl [z]+ st
+            0x1 tosl sbiw
+        until_<>0
+    then
+    popt
+  ]
+;

@@ -1,0 +1,17 @@
+MACRO: (C@)         ( addr -- c )                \   ( char fetch )
+  [x] tosl ld
+  tosh clr
+;MACRO
+
+MACRO: C@    ( -- )
+[F]
+  QLIT2? IF
+    DEBUG3" C@"
+    pusht
+    tosl _in
+    tosh clr
+  ELSE
+    (C@)
+  THEN
+[P]
+;MACRO

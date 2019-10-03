@@ -1,0 +1,10 @@
+TREQUIRE DNEGATE
+
+: DABS       ( x -- |x| )                    ( absolute value double)
+ [
+  tosh tst
+  if_<0
+    ' DNEGATE (JMP)
+  then
+ ]
+;

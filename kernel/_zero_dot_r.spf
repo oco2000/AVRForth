@@ -1,0 +1,2 @@
+: (0.R)         ( n width -- a len )  ( unsigned to string rt justify with zeros)
+    >R (U.) R@ (0.RJ) R> ;

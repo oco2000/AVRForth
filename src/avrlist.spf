@@ -1,0 +1,24 @@
+VARIABLE FLIST                  \ файл с листингом
+
+: (type)                        \ печать в файл
+  FLIST @ WRITE-FILE THROW
+;
+
+: LIST                          \ печатать листинг
+    ['] TYPE BEHAVIOR  \ запомнить куда указывает вектор TYPE
+    ['] (type) TO TYPE
+      0
+      BEGIN
+        TINST CR
+      DUP THERE = UNTIL
+      DROP
+    TO TYPE \ восстановить вектор TYPE
+;
+
+: LIST-SAVE ( 2FILENAME )        \ создать листинг
+  2DUP TYPE
+  R/W CREATE-FILE THROW
+  FLIST !
+  LIST
+  FLIST @ CLOSE-FILE THROW
+;

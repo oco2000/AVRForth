@@ -1,0 +1,100 @@
+( Flash-code Generation Words )
+
+0 VALUE ROM-SIZE          \ FLASH
+0 VALUE RAM-BOTTOM        \ начало RAM
+0 VALUE RAM-SIZE          \ размер RAM
+0 VALUE EEPROM-SIZE
+0 VALUE RAM-TOP                     \ конец  RAM, дно стека возвратов
+0 VALUE RSTACK-SIZE           \ размер стека возвратов
+0 VALUE SPTR0                     \ дно стека данных
+0 VALUE VECTOR-SIZE                 \ размер вектора прерываний в байтах
+
+0x20000 CONSTANT T-MEM-SIZE     \ 128k
+CREATE T-MEM T-MEM-SIZE ALLOT \ целевая память (ROM)
+T-MEM T-MEM-SIZE ERASE
+
+0 VALUE OPTIM?                  \ переменная для оптимизации
+0 VALUE #LITS                   \ переменная для оптимизации литералов
+VARIABLE (SLOWLIT)  (SLOWLIT) 0! \ slow literal
+8 VALUE LITSIZE
+
+: NEW
+    0 TO OPTIM?
+    0 TO #LITS
+;
+
+2 CONSTANT TCELL
+VARIABLE T-HERE     \ текущий адрес в целевой памяти
+: ORG T-HERE ! ;    ( addr -- ) \ указать компиляцию по конкретному адресу
+
+: THERE  T-HERE @ ;     ( -- addr ) \ текущий адрес
+: T-ADDR T-MEM + ;    ( addr -- 'addr ) \ адрес в таблице T-MEM
+: T!    T-ADDR W! ;   ( w addr -- )   \ записать в целевую память слово
+: TC!   T-ADDR C! ;   ( c addr -- )   \ записать в целевую память байт
+: T@    T-ADDR W@ ;   ( addr -- w )     \ взять слово из целевой памяти
+: TC@    T-ADDR C@ ;  ( addr -- c )     \ взять слово из целевой памяти
+: TALLOT                ( n -- )          \ зарезервировать в целевой памяти n байт
+    T-HERE +! ;
+: T,  THERE T!  TCELL TALLOT NEW ;  ( w -- )  \ скомпилировать слово в целевую память по тек.адресу
+: TC, THERE TC! 1 TALLOT NEW ;  ( c -- )  \ скомпилировать байт в целевую память по тек.адресу
+: TALIGNED              ( addr -- addr' ) \ выровнять addr по четному адресу
+    1+ 1 INVERT AND ;
+: TALIGN                ( -- )            \ выровнять
+    THERE TALIGNED T-HERE ! ;
+
+: T.   THERE 4 H.N ;
+' T. TO (T.)
+
+: >COMPILE-TO ( addr token -- )
+  THERE >R        \ сохр. тек. адрес
+  SWAP ORG        \ установить addr как новый адрес в целевой памяти
+  EXECUTE     \ выполнить компилирующее слово token
+  R> T-HERE !   \ восст. тек. адрес
+;
+DECIMAL
+: COMPILE-TO ( addr -- ) \ Компилирует следующее слово по заданному адресу
+  '
+  STATE @ IF  \ компиляция
+    [COMPILE] LITERAL POSTPONE >COMPILE-TO
+  ELSE      \ исполнение
+    >COMPILE-TO
+  THEN
+; IMMEDIATE
+
+VARIABLE D-HERE         \ тек. адрес в области данных, RAM
+
+VARIABLE E-HERE         \ тек. адрес в области EEPROM
+0x2000 CONSTANT E-MEM-SIZE     \ 128k
+CREATE E-MEM E-MEM-SIZE ALLOT \ целевая память (ROM)
+E-MEM E-MEM-SIZE ERASE
+
+: EHERE  E-HERE @ ;     ( -- addr )
+: E-ADDR E-MEM + ;    ( addr -- 'addr )
+: E!    E-ADDR W! ;   ( w addr -- )
+: EC!   E-ADDR C! ;   ( c addr -- )
+: E@    E-ADDR W@ ;   ( addr -- w )
+: EC@    E-ADDR C@ ;  ( addr -- c )
+: EALLOT              ( n -- )
+    E-HERE +! ;
+: E,  EHERE E!  TCELL EALLOT ;
+: EC, EHERE EC! 1 EALLOT ;
+
+: T-SAVE ( 2FILENAME ) \ в формате intel.hex
+  T-MEM T-HERE @ 2SWAP
+  SAVE
+;
+
+: E-SAVE ( 2FILENAME )
+  E-MEM E-HERE @ 2SWAP
+  SAVE
+;
+
+: T-SAVE-BIN ( 2FILENAME ) \ в формате bin
+  T-MEM T-HERE @ 2SWAP
+  BSAVE
+;
+
+: E-SAVE-BIN ( 2FILENAME ) \ в формате bin
+  E-MEM E-HERE @ 2SWAP
+  BSAVE
+;

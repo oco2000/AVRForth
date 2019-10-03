@@ -1,0 +1,51 @@
+
+1000000 == F_CPU
+REQUIRE MS      lib/delay.spf
+
+REQUIRE {WRITE} lib/ports.spf
+
+PB2 WIRE BUTTON_DOWN
+PB3 WIRE BUTTON_UP
+GROUP{ BUTTON_DOWN BUTTON_UP }GROUP BUTTONS
+
+PD5 WIRE LED
+
+: INIT
+    LED {OUTPUT}
+    BUTTONS {INPUT}
+    BUTTONS {PULL_UP}
+
+    \ use timer2 for pwm
+    BITS{ WGM21 WGM20 }BITS TCCR2 SET \ Fast PWM 0..0xFF
+    BITS{ CS21 }BITS TCCR2 SET  \ prescaler ClkIO/8
+    BITS{ OCIE2 TOIE2 }BITS TIMSK SET \ interrupts by mathch compare and overflow
+
+    0x00 OCR2 C! \ initial timer counter
+    sei
+;
+
+INT: OVERFLOW
+    LED {CLEAR}
+;INT
+
+INT: COMPARE
+    LED {SET}
+;INT
+
+: MAIN
+    INIT
+    BEGIN
+      BUTTON_UP {READ&MASK} IF
+        OCR2 C@ 1- 0 MAX OCR2 C!
+        1 MS
+      THEN
+      BUTTON_DOWN {READ&MASK} IF
+        OCR2 C@ 1+ 0xFF MIN OCR2 C!
+        1 MS
+      THEN
+    AGAIN
+;
+
+' MAIN [->] {MAIN}
+' OVERFLOW ->INT TIMER2_OVF
+' COMPARE ->INT TIMER2_COMP

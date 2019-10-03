@@ -1,0 +1,327 @@
+\ --- AVR CROSS-FORTHASM ---
+
+HEX
+
+: ODD   ( u1 -- u2 )
+    1 AND ;
+: ?EVEN ( u1 -- u2 )
+    DUP ODD ABORT" Even address required" ;
+: ?FAR  ( addr -- ?far )
+    ROM-SIZE 0x1000 > INVERT IF \ если память до 8кБ - только относительные адреса
+        DROP FALSE
+    ELSE
+        THERE - ABS 0xFFE >
+    THEN
+;
+: >JMP  ( addr -- addr/2 )
+    ?EVEN 2/ ;
+: >REL  ( addr -- relative )
+    THERE 2+ - >JMP ;
+: >reg                                  \ из адреса в памяти получить регистр ввода\вывода
+        0x20 - ;
+
+\ --- REGISTERS ---
+
+: ,, DUP CONSTANT 1+ ;
+
+0  ,, r0  ,, r1  ,, r2  ,, r3  ,, r4  ,, r5  ,, r6  ,, r7
+   ,, r8  ,, r9  ,, r10 ,, r11 ,, r12 ,, r13 ,, r14 ,, r15
+   ,, r16 ,, r17 ,, r18 ,, r19 ,, r20 ,, r21 ,, r22 ,, r23
+   ,, r24 ,, r25 ,, r26 ,, r27 ,, r28 ,, r29 ,, r30 ,, r31 DROP
+
+18 ,, wl ,, wh ,, xl ,, xh ,, yl ,, yh ,, zl ,, zh DROP
+
+100C CONSTANT [x]
+100D CONSTANT [x]+
+100E CONSTANT -[x]
+0008 CONSTANT [y]
+1009 CONSTANT [y]+
+100A CONSTANT -[y]
+0000 CONSTANT [z]
+1001 CONSTANT [z]+
+1002 CONSTANT -[z]
+
+\ --- TESTINGS ---
+
+: <..> ( X L U )
+  ROT ROT OVER ( U X L X )
+  > ROT ROT < OR
+;
+: BETWEEN
+  <..> INVERT ;
+
+: ?REGP  DUP 18  1F <..> ABORT" Illegal Register" ;
+: ?REG   DUP 0   1F <..> ABORT" Illegal Register" ;
+: ?REGW  ?REG DUP ODD ABORT" Illegal Register Pair" ;
+: ?REG1  DUP 10  1F <..> ABORT" Illegal Register" ;
+: ?EOFFS DUP -40 3F <..> ABORT" Offset out of range" ;
+: ?BIT#  DUP 0   7  <..> ABORT" Bit number out of range" ;
+: ?PORT  DUP 0   3F <..> ABORT" Port number out of range" ;
+: ?PORT0 DUP 0   1F <..> ABORT" Port number out of range" ;
+: ?BYTE  DUP -FF FF <..> ABORT" Operand out of range" ;
+: ?IWA   DUP 0   3F <..> ABORT" Operand out of range" ;
+: ?INDR  DUP FFF7 AND    ABORT" Illegal Register" ;
+: ?SHORT DUP -800 7FF <..> ABORT" Branch too long" ;
+
+\ --- OPERATION CLASSES ---
+
+: &B ( BIT OPCODE )                   \ XXX B
+  SWAP ?BIT# 4 LSHIFT OR T,
+;
+
+: &BP ( BIT PORT OPCODE )             \ XXX P,B
+  ROT ?BIT#
+  ROT >reg ?PORT0 3 LSHIFT
+  OR OR T,
+;
+
+: &BR ( BIT RG OPCODE )               \ XXX RP,B
+  ROT ?BIT#
+  ROT ?REG 4 LSHIFT OR OR T,
+;
+
+: &EB ( JUMP BIT OPCODE )             \ XXX B,JE
+  ROT >REL ?EOFFS 3 LSHIFT 03F8 AND
+  ROT ?BIT#
+  OR OR T,
+;
+
+: &IR ( CONST RG OPCODE )             \ XXX R,N
+  ROT ?BYTE DUP 4 LSHIFT 0F00 AND
+  SWAP 000F AND OR
+  ROT ?REG1 10 - 4 LSHIFT
+  OR OR T,
+;
+
+: &IW ( CONST RP OPCODE )             \ XXX RP,N
+  ROT ?IWA DUP F AND
+  SWAP 2 LSHIFT C0 AND OR
+  ROT ?REGP 18 - 2/ 4 LSHIFT
+  OR OR T,
+;
+
+: &L ( ADDR OPCODE )                  \ XXX ADDR8M
+  SWAP >JMP SWAP OVER 10 RSHIFT DUP
+  2 LSHIFT 01F0 AND SWAP 1 AND OR
+  OR T,
+  FFFF AND T,
+;
+
+: &R ( REG OPCODE )                   \ XXX R
+  SWAP ?REG 4 LSHIFT OR T,
+;
+
+: &MR ( ADDR R OPCODE )               \ XXX R,ADDR
+  &R T,
+;
+
+: &RM ( R ADDR OPCODE )               \ XXX ADDR,R
+  ROT SWAP &MR
+;
+
+: &RR ( RSRC RDEST OPCODE )           \ XXX R,R
+  ROT ?REG DUP 0F > IF
+    0210 XOR
+  THEN ( RD OPC RS )
+  ROT ?REG 4 LSHIFT
+  OR OR T,
+;
+
+: &RRW ( RSRCW RDESTW OPCODE )           \ XXX R,R
+  ROT ?REGW 2/
+  ROT ?REGW 2/ 4 LSHIFT
+  OR OR T,
+;
+
+: &S ( ADDR OPCODE )                  \ XXX ADDR (RELATIVE 12BIT)
+  SWAP >REL ?SHORT FFF AND OR T,
+;
+
+: &XR ( XR R OPCODE )                 \ XXX R,X
+  ROT OR &R
+;
+
+: &IXR ( IND XR R OPCODE )            \ XXD R,N,X
+  2SWAP ?INDR ( R OPCODE IND XR )
+  ROT ROT
+  DUP 8 LSHIFT 2000 AND
+  OVER 7 LSHIFT 0C00 AND OR
+  SWAP 0007 AND OR
+  OR ( R XR OPCODE )
+  ROT SWAP ( XR R OPCODE )
+  &XR
+;
+
+: &RX ( R XR OPCODE )                 \ XXX X,R
+  ROT SWAP &XR
+;
+
+: &RIX ( R IND XR OPCODE )            \ XXX N,X,R
+  SWAP 2SWAP ( OPCODE XR R IND )
+  ROT ( OPCODE R IND XR )
+  2SWAP SWAP ( IND XR R OPCODE )
+  &IXR
+;
+
+: &RP ( R PORT OPCODE )               \ XXX P,R
+  ROT ?REG 4 LSHIFT
+  ROT >reg ?PORT DUP 000F AND
+  SWAP 5 LSHIFT 0600 AND OR
+  OR OR T,
+;
+
+: &PR ( PORT R OPCODE )
+  ROT SWAP &RP
+;
+
+: &. T, ;
+
+: =OP ' SWAP CREATE , , DOES> DUP @ SWAP CELL+ @ EXECUTE ;
+
+0000 =OP &.   nop
+0400 =OP &RR  cpc
+0800 =OP &RR  sbc
+0C00 =OP &RR  add
+1000 =OP &RR  cpse
+1400 =OP &RR  cp
+1800 =OP &RR  sub
+1C00 =OP &RR  adc
+2000 =OP &RR  and
+2400 =OP &RR  eor
+2800 =OP &RR  or
+2C00 =OP &RR  mov
+0100 =OP &RRW [movw]
+3000 =OP &IR  cpi
+4000 =OP &IR  sbci
+5000 =OP &IR  subi
+6000 =OP &IR  sbr
+6000 =OP &IR  ori
+7000 =OP &IR  andi
+8000 =OP &XR  ld
+8000 =OP &IXR ldd
+8200 =OP &RX  st
+8200 =OP &RIX std
+9000 =OP &MR  lds
+900F =OP &R   pop
+9200 =OP &RM  sts
+920F =OP &R   push
+9400 =OP &R   com
+9401 =OP &R   neg
+9402 =OP &R   swap
+9403 =OP &R   inc
+9405 =OP &R   asr
+9406 =OP &R   lsr
+9407 =OP &R   ror
+9408 =OP &B   bset
+\ 9409 =OP &.   ijmp
+: ijmp   9409 T,   3 TO OPTIM? ; \ чтобы не компилировать ret после ijmp
+940A =OP &R   dec
+940C =OP &L   jmp
+940E =OP &L   call
+9488 =OP &B   bclr
+9508 =OP &.   ret
+9509 =OP &.   icall
+9518 =OP &.   reti
+9588 =OP &.   sleep
+95A8 =OP &.   wdr
+95C8 =OP &.   lpm
+9600 =OP &IW  adiw
+9800 =OP &BP  cbi
+9700 =OP &IW  sbiw
+9900 =OP &BP  sbic
+9A00 =OP &BP  sbi
+9B00 =OP &BP  sbis
+9C00 =OP &RR  mul
+B000 =OP &PR  in
+B800 =OP &RP  out
+C000 =OP &S   rjmp
+D000 =OP &S   rcall
+E000 =OP &IR  ldi
+F000 =OP &EB  brbs
+F400 =OP &EB  brbc
+F800 =OP &BR  bld
+FA00 =OP &BR  bst
+FC00 =OP &BR  sbrc
+FE00 =OP &BR  sbrs
+
+: brcc 0 brbc ;
+: brcs 0 brbs ;
+: breq 1 brbs ;
+: brge 4 brbc ;
+: brhc 5 brbc ;
+: brhs 5 brbs ;
+: brid 7 brbc ;
+: brie 7 brbs ;
+: brlo 0 brbs ;
+: brlt 4 brbs ;
+: brmi 2 brbs ;
+: brne 1 brbc ;
+: brpl 2 brbc ;
+: brsh 0 brbc ;
+: brtc 6 brbc ;
+: brts 6 brbs ;
+: brvc 3 brbc ;
+: brvs 3 brbs ;
+
+: clc 0 bclr ;
+: clh 5 bclr ;
+: cli 7 bclr ;
+: cln 2 bclr ;
+: cls 4 bclr ;
+: clt 6 bclr ;
+: clv 3 bclr ;
+: clz 1 bclr ;
+
+: sec 0 bset ;
+: seh 5 bset ;
+: sei 7 bset ;
+: sen 2 bset ;
+: ses 4 bset ;
+: set 6 bset ;
+: sev 3 bset ;
+: sez 1 bset ;
+
+: cbr SWAP EXP2 INVERT FF AND SWAP andi ;
+: clr DUP eor ;
+: lsl DUP add ;
+: rol DUP adc ;
+: tst DUP and ;
+
+\ USEFUL MACROS
+
+VECT movw
+: [soft_movw] 2DUP mov 1+ SWAP 1+ SWAP mov ;   \ переслать пару регистрое двумя командами
+' [soft_movw] TO movw
+: HAS_MOVW                  \ есть команда movw - использовать ее
+    ['] [movw] TO movw ;
+
+0 VALUE HAS_MUL?        \ есть команда умножения?
+: HAS_MUL
+    TRUE TO HAS_MUL? ;
+
+: pushw DUP push 1+ push ;              \ на стек возвратов пару регистров
+: popw DUP 1+ pop pop ;                 \ со стека возвратов пару регистров
+: ldiw 2DUP SWAP 0xFF AND SWAP ldi      \ загрузить слово в пару регистров
+       1+ SWAP 8 RSHIFT 0xFF AND SWAP ldi ;
+
+: ?port ( port -- f )
+    0x0 0x3F BETWEEN ;
+
+: ?port0 ( port -- f )
+    0x0 0x1F BETWEEN ;
+
+: _in ( port reg )  \ чтение из регистра, независимо от номера регистра
+  OVER >reg ?port IF
+    in
+  ELSE
+    lds
+  THEN
+;
+
+: _out ( reg port )  \ запись в регистр, независимо от номера регистра
+  DUP >reg ?port IF
+    out
+  ELSE
+    sts
+  THEN
+;

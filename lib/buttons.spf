@@ -1,0 +1,113 @@
+\ =====================================
+\           Обработка кнопок
+\
+\         (c) OCo, 2011 - 2019
+\            http://oco.org.ua
+\            oco2000@gmail.com
+\
+\ ======================================
+
+[F] BASE @ DECIMAL [P]
+
+REQUIRE RTOS_INIT lib/eertos.spf
+REQUIRE VECTOR    lib/vector.spf
+
+  08 == BUTTONS_MAX                 \  количество кнопок
+  10 == BUTTONS_PERIOD              \  период опроса кнопок, ms
+  BUTTONS_PERIOD [F] NEGATE [P] == -BUTTONS_PERIOD
+ 500 == BUTTONS_REP_DELAY           \  задержка перед повтором, ms
+ 150 == BUTTONS_REPEAT              \  период между повторами, ms
+
+VARIABLE BUTTONS_TASKS      \  задачи для кнопок - содержит адрес массива во flash
+CVARIABLE BUTTONS_ENABLED    \  маска рабочих кнопок
+CVARIABLE BUTTONS_REPEATABLE \  маска повторяемых кнопок
+
+
+\ внутренние переменные
+CVARIABLE clock_A
+CVARIABLE clock_B
+CVARIABLE debounced_state
+\ clock_A,clock_B - счетчики
+\ debounced_state - массив битов кнопок, нажата = 1 или отжата = 0
+\ changes (debounced) показывает, что произошел переход из одного состояния в другое
+\ небольшая таблица состояний (debounced_state в таблице просто d)
+\ d changes
+\ 0 0 кнопка не нажата
+\ 1 1 кнопку только нажали
+\ 1 0 кнопку удерживают
+\ 0 1 кнопку отпустили
+
+: DEBOUNCE ( new_sample -- changes ) \  устраняем дребезг
+    debounced_state C@ XOR  ( delta ) \ changes
+\ Increment the counters
+    clock_A C@ clock_B C@ XOR OVER AND DUP clock_A C! SWAP ( clock_A delta )
+    clock_B C@ INVERT OVER AND DUP clock_B C! ( clock_A delta clock_B )
+\ Reset the counters if no changes
+\ were detected.
+    SWAP INVERT OR OR INVERT ( changes )
+    debounced_state C@ OVER XOR debounced_state C!
+;
+
+BUTTONS_MAX VECTOR cnt      \  счетчики для каждой кнопки
+BUTTONS_MAX VECTOR cnt_rep
+CVARIABLE locked             \  флаг "залипания" кнопок
+
+: set_Nth_task ( n -- )     \ поставить на выполнение задачу, которая соответствует N-й кнопке
+  CELLS BUTTONS_TASKS @ + @P RTOS_SET_TASK
+;
+
+: HOLD_BTN ( btn_mask btn -- ) \ удерживается кнопка
+    BUTTONS_PERIOD OVER cnt +!          \ увелич. счетчик
+    DUP cnt @ BUTTONS_REP_DELAY >= IF   \ удерживают дольше rep_delay
+        ( btn_mask btn )
+        OVER locked C@ AND 0= IF
+            DUP set_Nth_task           \ срабатывание первый раз
+        THEN
+        OVER locked C@ OR locked C!       \ кнопку удерживают
+        BUTTONS_PERIOD OVER cnt_rep +!  \ считаем время удерживания
+        DUP cnt_rep @ BUTTONS_REPEAT >= IF   \  время удерживания кратно repeat
+            DUP set_Nth_task            \ срабатывание
+            DUP cnt_rep OFF             \ опять сбрасываем счетчик повторов при удержании
+        THEN
+        -BUTTONS_PERIOD OVER cnt +!  \ уменьшаем главный счетчик, чтоб не переполнился
+    THEN
+    2DROP
+;
+
+: PROCESS_BTN ( changes btn -- ) \ обработать нажатие кнопки btn, changes - см таблицу к DEBOUNCE
+    DUP EXP2 >R ( changes btn )   \  запомним маску кнопки
+    OVER debounced_state C@ AND R@ AND IF    \  кнопка только что нажата
+        DUP set_Nth_task                    \  срабатывание
+        DUP cnt OFF                         \  сброс счетчика
+        DUP cnt_rep OFF                     \  сбросим счетчик повтора при удержании
+    ELSE ( changes btn )
+        OVER INVERT debounced_state C@ AND BUTTONS_REPEATABLE C@ AND R@ AND IF
+                                            \  кнопку удерживают
+            R@ OVER HOLD_BTN                \  обработаем удержание
+        ELSE                                \  кнопка отжата
+            locked C@ R@ INVERT AND locked C! \  залипания нет
+        THEN
+    THEN
+    RDROP 2DROP
+;
+
+: BUTTONS_TASK ( -- )
+    cli
+    BUTTONS {READ} INVERT DEBOUNCE   \  устраняем дребезг, подразумеваем, что кнопки замыкают вход на землю
+    BUTTONS_ENABLED C@ AND
+    BUTTONS_MAX
+    BEGIN  ( changes button_no )                  \  пройдем каждую кнопку
+        1-
+        2DUP PROCESS_BTN                        \  обработать
+    [UNTIL<>0]
+    2DROP sei
+    ['] BUTTONS_TASK BUTTONS_PERIOD RTOS_SET_TIMER_TASK
+    \  повторяем эту задачу каждые BUTTONS_PERIOD мс
+;
+
+: BUTTONS_INIT ( -- )             \  инициализация порта с кнопками
+    BUTTONS {INPUT}
+    BUTTONS {PULL_UP}
+;
+
+[F] BASE ! [P]

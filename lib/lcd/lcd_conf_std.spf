@@ -1,0 +1,12 @@
+\ К каким портам подключаем дисплей
+\ Стандартная конфигурация
+
+REQUIRE BUS.WRITE lib/bus.spf
+
+PD3 WIRE D3
+PD2 WIRE D2
+PD1 WIRE D1
+PD0 WIRE D0
+PD4 WIRE RS           \ RS WIRE
+PD5 WIRE RW           \ RW WIRE
+PD6 WIRE E            \ E WIRE

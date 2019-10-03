@@ -1,0 +1,32 @@
+\ слова для работы со сторожевым таймером
+\ пока для mega8
+
+MACRO: WDR ( -- ) \ сброс сторожевого таймера
+  wdr
+;MACRO
+
+[F] DEVICE mega8 = [P] [IF] \ mega8
+
+MACRO: WDT_PREPARE  \ приготовиться к изменению параметров таймера, см.даташит
+  WDR
+  BITS{ WDCE WDE }BITS WDTCR C!
+;MACRO
+
+: WDT_OFF ( -- )    \ выключить таймер
+  WDT_PREPARE
+  WDE BIT WDTCR CLEAR
+;
+
+: WDT_ON ( -- )     \ включить таймер
+  WDT_PREPARE
+  WDE BIT WDTCR SET
+;
+
+MACRO: WDT_PRESCALER ( [ bitmask ] -- ) \ установить предделитель таймера и включить таймер
+  WDT_PREPARE
+  T[ [F] WDE BIT OR  [P] ]T LITERAL WDTCR C!
+;MACRO
+
+[ELSE]
+
+[THEN]

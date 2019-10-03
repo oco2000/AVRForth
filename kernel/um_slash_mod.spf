@@ -1,0 +1,31 @@
+: UM/MOD     ( ud u -- ur uq )       ( unsigned 32/16 --> r16 q16)
+\ Unsigned 32 by 16 division --> 16-bit remainder, 16-bit quotient
+  [
+    tosl tmpl movw
+    zl popd
+    [y] tosh ld
+    01 [y] tosl ldd
+    0x10 tmp1l ldi
+    for
+        tosl lsl
+        tosh rol
+        zl rol
+        zh rol
+        if_u>=
+            tmpl zl cp
+            tmph zh cpc
+            if_u>=
+                tmpl zl sub
+                tmph zh sbc
+                tosl inc
+            then
+        else
+            tmpl zl sub
+            tmph zh sbc
+            tosl inc
+        then
+    tmp1l next
+    zh [y] st
+    zl 01 [y] std
+  ]
+;

@@ -1,0 +1,17 @@
+\ ATMega88 INITIALIZATION
+
+mega88 CONSTANT DEVICE
+
+0x1000 TO ROM-SIZE          \ FLASH
+0x0100 TO RAM-BOTTOM        \ начало RAM
+0x0400 TO RAM-SIZE          \ размер RAM
+RAM-BOTTOM RAM-SIZE + 1- TO RAM-TOP \ конец  RAM, дно стека возвратов
+
+0x0080 TO RSTACK-SIZE       \ размер стека возвратов
+RAM-TOP RSTACK-SIZE - 1+ TO SPTR0 \ дно стека данных
+0x2    TO VECTOR-SIZE               \ размер вектора прерываний в байтах
+
+S" devices/atmegax8.spf" INCLUDED
+
+S" src/init.spf" INCLUDED
+

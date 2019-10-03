@@ -1,0 +1,102 @@
+\ полуавтоматическая сборка нужных слов
+
+: IN_T? ( waddr wu -- ? ) \ есть ли слово в словаре TARGET ?
+  ALSO TARGET CONTEXT @ SEARCH-WORDLIST PREVIOUS
+  IF DROP TRUE
+  ELSE FALSE THEN
+;
+
+: DEFINED_T? ( "word" -- ? ) \ есть ли слово в словаре TARGET ?
+    PARSE-NAME IN_T?
+;
+
+: REQUIRED_T ( waddr wu laddr lu -- )   \ подключить файл ladd:lu, если слова waddr:wu
+                    \ нет в словаре TARGET
+  2SWAP IN_T?
+  IF
+    2DROP
+  ELSE
+    INCLUDED
+  THEN
+;
+
+: REQUIRE_T ( "word" "libpath" -- )   \ подключить файл libpath, если слова word
+                    \ нет в словаре TARGET
+  PARSE-NAME PARSE-NAME 2DUP + 0 SWAP C!
+  REQUIRED_T
+;
+
+: IS_DELIMETER? ( c -- f )    \ c - символ-разделитель?
+  DUP BL =
+  OVER 0x9 = OR
+  OVER 0 = OR
+  NIP
+;
+
+0 VALUE POS           \ текущая позиция в строке
+CREATE BUF 128 CHARS ALLOT    \ буфер для строки из файла
+
+: SKIP_BEGIN   ( -- )     \ пропустить начальные разделители
+  BEGIN
+    POS C@ IS_DELIMETER?
+  WHILE
+    POS 1+ TO POS
+  REPEAT
+;
+
+: SKIP_END   ( -- )       \ пропустить до первого разделителя
+  BEGIN
+    POS C@ IS_DELIMETER? INVERT
+  WHILE
+    POS 1+ TO POS
+  REPEAT
+;
+
+: WRD  ( -- waddr wu )      \ получить токен waddr:wu
+  SKIP_BEGIN POS SKIP_END POS OVER -
+;
+
+0 VALUE FOUND
+: SEARCH_FILENAME ( waddr wu -- faddr fu | 0 )
+\ получить имя файла faddr fu, содержащего определение слова waddr wu
+\ 0 - не найдено
+  S" src/require.cfg" FIND-FULLNAME R/O OPEN-FILE THROW
+  >R
+  0 TO FOUND
+  BEGIN                 ( WADDR WU )
+    BUF 64 R@ READ-LINE  THROW ( WADDR WU длина not-eof-flag )
+    0= >R
+    ?DUP IF       ( WADDR WU LEN )  \ получена непустая строка
+      BUF TO POS
+      BUF + 0!              \ ограничим с конца
+      WRD       ( WADDR WU NADDR NU ) \ имя слова
+      2OVER COMPARE 0= IF       \ совпадает?
+      2DROP WRD TRUE TO FOUND ( FADDR FU ) \ имя файла
+      THEN
+    THEN
+  R> FOUND OR UNTIL
+  R> CLOSE-FILE THROW
+  FOUND INVERT IF 2DROP 0 THEN
+;
+
+: (TREQUIRED) ( a u -- f )
+  SEARCH_FILENAME ?DUP IF
+    INCLUDED TRUE
+  ELSE
+    FALSE
+  THEN
+;
+
+: TREQUIRED      ( waddr wu -- ) \ если не определено слово, подключить файл с его определением
+  2DUP IN_T? IF
+      2DROP
+  ELSE
+    (TREQUIRED) INVERT IF
+      ABORT" not found ..."
+    THEN
+  THEN
+;
+
+: TREQUIRE   ( "word" -- ) \ если не определено word, подключить файл с его определением
+  PARSE-NAME TREQUIRED
+;

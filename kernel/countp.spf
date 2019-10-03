@@ -1,0 +1,10 @@
+: COUNTP     ( a -- a' c )                   ( get length of a counted string in flash)
+  [
+	tosl zl movw
+	0x1 tosl adiw
+	lpm
+	pusht
+	r0 tosl mov
+	tosh clr
+  ]
+;

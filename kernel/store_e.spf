@@ -1,0 +1,16 @@
+: (!E)    ( word addr -- )    \ EEPROM write word
+    DUP ROT BYTE-SPLIT  ( a a lo hi )
+    ROT 1+ C!E          ( a lo )
+    SWAP C!E
+;
+
+MACRO: !E    ( -- )
+[F]
+  T-STATE @ IF \ compile
+    DEBUG3" !E"
+    (!E)
+  ELSE
+    E!
+  THEN
+[P]
+;MACRO

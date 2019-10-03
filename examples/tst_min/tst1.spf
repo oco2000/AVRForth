@@ -1,0 +1,26 @@
+
+PORTB == BTN_PORT
+DDRB  == BTN_DDR
+PINB  == BTN_PIN
+0x2 == BUTTON
+
+PORTD == LED_PORT
+DDRD  == LED_DDR
+0x5 == LED
+LED BIT LED_PORT 2== {LED}
+
+: MAIN
+  LED BIT  LED_DDR SET    \ на выход
+  BUTTON BIT BTN_DDR CLEAR        \ на вход
+  BITS{ BUTTON }BITS BTN_PORT SET   \ подтяжка
+    BEGIN
+    BTN_PIN C@  BUTTON BIT AND
+      IF
+        {LED} SET
+      ELSE
+        {LED} CLEAR
+      THEN
+  AGAIN
+;
+
+' MAIN [->] {MAIN}

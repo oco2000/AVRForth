@@ -1,0 +1,17 @@
+: DNEGATE    ( xd1 -- -xd1 )                 ( double-cell negate)
+  [
+    poptmp
+    tosl com
+    tosh com
+    tmpl com
+    tmph com
+    tmpl inc
+    if_z
+      tmph inc
+      if_z
+        0x1 tosl adiw
+      then
+    then
+    pushtmp
+  ]
+;

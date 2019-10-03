@@ -1,0 +1,29 @@
+
+CALL-ONLY: (SP") ( -- a n )
+\  R@ 2* COUNTP  R> 2* OVER + 1+ ALIGNED 2/ >R ( addr cnt ) \ пропустили символы
+[
+  pusht
+  tosl popw  \ R>
+  tosl lsl   \ адрес возврата измеряется словами, поэтому умножаем на 2
+  tosh rol
+  tosl zl movw
+  lpm
+  0x1 tosl adiw
+  pusht     \ на стек адрес
+  r0 tosl mov
+  tosh clr  \ на стек длину
+  tosl zl add
+  tosh zh adc \ пропустили символы
+  0x2 zl adiw \ следующий адрес
+  zh lsr
+  zl ror
+  ijmp
+]  
+;
+
+:: SP"
+   (SP")    \ компилировать вызов (S")
+   C"      \ " \ компилировать строку со счетчиком
+  [F] DROP [P] \ удалить адрес, оставленный предыдущим словом
+;;
+

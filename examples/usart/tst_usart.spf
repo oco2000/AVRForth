@@ -1,0 +1,31 @@
+
+[F] DECIMAL [P]
+1000000 == F_CPU
+
+S" lib/usart.spf" INCLUDED
+
+: .N ( n -- )
+    >DIGIT EMIT SPACE
+;
+
+: LINE ( from -- )
+  DUP 0x10 + SWAP
+  DUP 0xF0 AND 4 RSHIFT .N SPACE
+  ?DO I EMIT SPACE LOOP CR
+;
+
+: ASCII
+  SPACE SPACE SPACE 0x10 0 DO I .N LOOP CR
+  0x100 0x20 DO
+    I LINE
+  0x10 +LOOP
+;
+
+: MAIN
+  1200 BAUD USART_INIT
+  ." Terminal ASCII table:" CR
+  ASCII
+;
+
+' MAIN [->] {MAIN}
+

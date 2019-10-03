@@ -1,0 +1,7 @@
+: EXECUTE    ( xt -- )                       ( execute byte absolute address)
+   tosl zl movw
+   zh lsr
+   zl ror
+   popt
+   ijmp
+;

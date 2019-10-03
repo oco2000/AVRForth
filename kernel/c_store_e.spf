@@ -1,0 +1,27 @@
+: (C!E)   ( c addr -- )   \ EEPROM byte write
+  [
+    poptmp
+    THERE
+        EEWE EECR sbic      \ Ждем готовности памяти к записи. Крутимся в цикле
+    (JMP)                   \ до тех пор пока не очистится флаг EEWE
+    cli                     \ Затем запрещаем прерывания.
+    tosl EEARL out      \ Загружаем адрес нужной ячейки
+    tosh EEARH out      \ Загружаем адрес нужной ячейки
+    tmpl EEDR out       \ и сами данные, которые нам нужно загрузить
+    EEMWE EECR sbi      \ взводим предохранитель
+    EEWE  EECR sbi      \ записываем байт
+    sei                     \ разрешаем прерывания
+    popt
+  ]
+;
+
+MACRO: C!E    ( -- )
+[F]
+  T-STATE @ IF \ compile
+    DEBUG3" C!E"
+    (C!E)
+  ELSE
+    EC!
+  THEN
+[P]
+;MACRO

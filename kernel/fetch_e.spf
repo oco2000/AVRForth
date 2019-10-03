@@ -1,0 +1,14 @@
+: (@E)    ( addr - x ) \ EEPROM word read
+  DUP C@E SWAP 1+ C@E BYTE-JOIN
+;
+
+MACRO: @E    ( -- )
+[F]
+  T-STATE @ IF \ compile
+    DEBUG3" @E"
+    (@E)
+  ELSE
+    E@
+  THEN
+[P]
+;MACRO

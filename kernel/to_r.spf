@@ -1,0 +1,7 @@
+CALL-ONLY: >R         ( x -- )  ( R:  -- x )          ( push cell to return stack)
+  zl popw
+  tosl pushw
+  popt
+  ijmp
+;
+\ call-only

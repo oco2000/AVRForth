@@ -1,0 +1,3 @@
+: */MOD         ( n1 n2 n3 -- r q )     ( n1*n2/n3 --> rem quot)
+    >R M* R> FM/MOD
+;

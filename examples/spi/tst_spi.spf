@@ -1,0 +1,77 @@
+\ Управление регистрами 74HC595 по интерфейсу SPI
+\ для ATMega168
+\ см. spi_test.dsn
+
+[F] DECIMAL [P]
+
+\ необходимые слова
+REQUIRE {WRITE} lib/ports.spf
+
+8000000 == F_CPU
+
+\ определения портов
+PC3 WIRE CLK   \ фронт сигнала - запись данных из внутреннего регистра НС595 в выходной
+PD1 WIRE LED   \ светодиод
+
+PB2 WIRE SS
+PB3 WIRE MOSI
+PB4 WIRE MISO
+PB5 WIRE SCK
+
+GROUP{ MOSI SCK SS }GROUP SPI_OUT
+
+REQUIRE MS     lib/delay.spf   \ задержка
+
+:: LED_TOGGLE    \ переключить светодиод
+  LED {TOGGLE}
+;;
+
+: SPI-INIT      \ инициализация в режиме master
+  \ MOSI, SCK и SS как выходы, остальные - входы !!!
+  SPI_OUT {OUTPUT}
+  \ Включить SPI, Master, set clock rate fck/4
+  BITS{ SPE MSTR }BITS  SPCR C!
+;
+
+: CLK_TICK      \ вывести сигналы на все светодиоды
+  CLK {SET}
+  CLK {CLEAR}
+;
+
+: SPI-TRANSMIT ( c -- ) \ записать один байт в регистры
+  \ начать передачу
+  SPDR C!
+  \ ожидать готовности
+  BEGIN
+     SPSR C@
+     SPIF BIT AND
+  UNTIL \ пока не установится бит SPIF
+;
+
+: LEDS ( word -- )  \ записать слово в регистры и вывести
+  BYTE-SPLIT   SPI-TRANSMIT   SPI-TRANSMIT
+  CLK_TICK
+;
+
+: INIT
+    CLK {OUTPUT}  \  выход
+    LED {OUTPUT}  \  выход
+    LED {CLEAR}   \  погасить светодиод
+    SPI-INIT
+;
+
+: MAIN
+    INIT
+    0x8000
+    BEGIN
+        2* DUP 0= IF    \ сдвигаем влево
+          DROP 1
+        THEN
+        LED_TOGGLE
+        DUP LEDS        \ выведем на светодиоды
+        150 MS          \ задержка
+    AGAIN
+;
+
+' MAIN [->] {MAIN}    \ главная процедура
+

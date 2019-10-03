@@ -1,0 +1,7 @@
+\ TODO CELL size 2 is hardcoded here!
+
+: DEPTH
+  [ SPTR0 ] LITERAL SP@
+  - 2/ 2-
+;
+

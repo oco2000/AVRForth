@@ -1,0 +1,6 @@
+TREQUIRE SP"
+TREQUIRE TYPEP
+
+:: ."
+  SP" TYPEP
+;;

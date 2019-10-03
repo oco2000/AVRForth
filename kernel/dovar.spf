@@ -1,0 +1,9 @@
+: (DOVAR)
+  pusht
+  tosl popw \ pfa
+  tosl lsl    \ адрес возврата измеряется словами, поэтому умножаем на 2
+  tosh rol
+;
+
+' (DOVAR) @DOVAR [F] ! [P]
+

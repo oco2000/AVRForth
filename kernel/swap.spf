@@ -1,0 +1,5 @@
+: SWAP
+  tosl tmpl movw
+  popt
+  pushtmp
+;

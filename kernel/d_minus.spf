@@ -1,0 +1,3 @@
+: D-            ( d1 d2 -- d3 )    ( double-cell subtract)
+  DNEGATE D+
+;

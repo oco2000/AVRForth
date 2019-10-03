@@ -1,0 +1,7 @@
+: ?DUP       ( x -- x x | 0 )                ( duplicate top item if nonzero)
+  tosl tmpl mov
+  tosh tmpl or 
+  if_<>0
+    pusht
+  then
+;

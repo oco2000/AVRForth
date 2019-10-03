@@ -1,0 +1,17 @@
+: 2SWAP      ( x1 x2 x3 x4 -- x3 x4 x1 x2 )  ( exchange top two cell pairs)
+  [
+    02 [y] tmph ldd
+    03 [y] tmpl ldd
+    tosh 02 [y] std
+    tosl 03 [y] std
+    tmpl tosl movw
+    [y] tmpl ld
+    01 [y] tmpl ldd
+    04 [y] zh ldd
+    05 [y] zl ldd
+    tmph 04 [y] std
+    tmpl 05 [y] std
+    zh [y] st
+    zl 01 [y] std
+  ]
+;

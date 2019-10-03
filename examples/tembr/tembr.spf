@@ -1,0 +1,143 @@
+\ темброблок
+\ ATmega8
+\ +DEBUG3
+
+[F] DECIMAL [P]
+
+8000000 == F_CPU
+
+\ Конфигурация проводников LCD
+REQUIRE BUS.WRITE lib/bus.spf
+
+PC3 WIRE D3
+PC2 WIRE D2
+PC1 WIRE D1
+PC0 WIRE D0
+PD4 WIRE RS           \ RS WIRE
+PD5 WIRE RW           \ RW WIRE
+PD6 WIRE E            \ E WIRE
+
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+REQUIRE RTOS_RUN        lib/eertos.spf           \ ОС
+REQUIRE DS1307          lib/ds1307.spf           \ часы
+REQUIRE {SET}           lib/ports.spf
+REQUIRE USART_INIT      lib/usart.spf            \ USART
+
+
+\ обязательно надо определить порт с кнопками для buttons.spf
+
+PB0 WIRE BTN_POWER            \  сами кнопки
+PB1 WIRE BTN_UP
+PB2 WIRE BTN_DOWN
+PB3 WIRE BTN_OK
+PB4 WIRE BTN_CANCEL
+
+GROUP{ BTN_POWER BTN_UP BTN_DOWN BTN_OK BTN_CANCEL }GROUP BUTTONS
+
+REQUIRE DEBOUNCE        lib/buttons.spf          \ кнопки
+
+\ :: !BIG_LETTERS ;;
+REQUIRE BIG_SETUP       lib/lcd/big.spf
+
+
+\ строки для вывода на индикатор
+C" LCD test" == "Test"
+C" DS1307 found" == "found"
+C" DS1307 not found!" == "not_found"
+
+PD7 WIRE POWER_LED    \ светодиод
+
+: H.   0 <# # # #> TYPE ;   \ вывести число двумя цифрами
+: .TRIPLE ( 3 2 1 char -- ) \ вывести три числа, разделитель char
+    SWAP H. DUP EMIT SWAP H. EMIT H.
+;
+
+\ дни недели
+C" SunMonTueWedThuFriSat" == "Weekdays"
+
+\ вывод даты и времени
+: Task_Print
+    DS1307_GET_TIME             \ получим время
+    4 1 LCD_GOTOXY
+    [ CHAR : ] LITERAL .TRIPLE        \ печать времени
+    DS1307_GET_DATE SWAP ROT    \ получим дату
+    2 0 LCD_GOTOXY
+    [ CHAR . ] LITERAL .TRIPLE        \ печать даты
+
+    12 0 LCD_GOTOXY
+    DS1307_Weekday DS1307_GET 1-
+    DUP 2* + ( 3 * ) \ получим день недели
+    "Weekdays" + 1+ 3 TYPEP     \ печать
+
+    ['] Task_Print 250 RTOS_SET_TIMER_TASK     \ повторяем 4 раза в секунду
+;
+
+: BH. ( byte -- )
+    BIG_LETTERS H. NORMAL_LETTERS
+;
+
+: Task_Big_Time
+    LCD_CLRSCR
+    DS1307_GET_TIME             \ получим время
+    BH.
+    SWAP 01 AND IF
+        GET_X 1- 1 LCD_GOTOXY 4 LCD_DATA 4 LCD_DATA GET_X 0 LCD_GOTOXY
+    ELSE SPACE THEN
+    BH.
+
+    ['] Task_Big_Time 1000 RTOS_SET_TIMER_TASK
+;
+
+: off
+    POWER_LED {SET}
+;
+
+: blink
+    POWER_LED {CLEAR}
+    ['] off 100 RTOS_SET_TIMER_TASK
+;
+
+TCREATE BTN_TASKS           \ задачи для кнопок
+' blink T,   ' blink T,   ' blink T,   ' blink T,   ' blink T,
+
+: 1S
+    1000 MS
+;
+
+: INIT
+    HEX
+
+    POWER_LED {OUTPUT}            \ светодиод - на выход
+    POWER_LED {SET}
+    LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
+    LCD_CLRSCR              \ очистка
+
+    1200 BAUD USART_INIT
+       ." Serial output" CR
+       NORMAL_LETTERS
+
+    BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!                      \ все кнопки вкл
+    [ BUTTONS BTN_POWER -GROUP {GROUP.MASK} ] LITERAL  \ эта кнопка не повторяет нажатия
+      BUTTONS_REPEATABLE C!
+    BTN_TASKS BUTTONS_TASKS !                       \ задачи для кнопок
+    BUTTONS_INIT                                    \ инициализация порта
+
+    RTOS_INIT
+    DS1307_INIT INVERT IF          \ есть часы?
+        ['] Task_Big_Time RTOS_SET_TASK
+    THEN
+    ['] BUTTONS_TASK RTOS_SET_TASK                  \ обработчик кнопок
+    LCD_CLRSCR
+    BIG_SETUP
+;
+
+: MAIN
+    INIT
+    RTOS_RUN
+    BEGIN
+        RTOS_TASK_MANAGER
+    AGAIN
+;
+
+' MAIN [->] {MAIN}

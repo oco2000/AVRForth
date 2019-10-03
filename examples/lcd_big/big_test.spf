@@ -1,0 +1,56 @@
+\ темброблок
+\ ATmega8
+\ +DEBUG3
+
+[F] DECIMAL [P]
+
+1000000 == F_CPU
+
+REQUIRE D3              lib/lcd/lcd_conf_std.spf \ стандартная конфигурация библиотеки LCD
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+:: !BIG_LETTERS ;;
+REQUIRE BIG_SETUP       lib/lcd/big.spf
+
+C" 0123" == "0123"
+C" 4567" == "4567"
+C" 89"   == "89"
+C" ABCD" == "l1"
+C" EFGH" == "l2"
+C" IJKL" == "l3"
+C" MNO"  == "l4"
+C" PQRS" == "l5"
+C" TUV"  == "l6"
+C" WX"   == "l7"
+C" Y Z"  == "l8"
+
+: PRINT ( cstr -- )
+    LCD_CLRSCR \ 0 0 LCD_GOTOXY
+    COUNTP TYPEP
+    1000 MS
+;
+
+: Print_Big
+    "0123" PRINT
+    "4567" PRINT
+    "89"   PRINT
+    "l1"   PRINT
+    "l2"   PRINT
+    "l3"   PRINT
+    "l4"   PRINT
+    "l5"   PRINT
+    "l6"   PRINT
+    "l7"   PRINT
+    "l8"   PRINT
+;
+
+: MAIN
+    LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
+    LCD_CLRSCR              \ очистка
+    BIG_SETUP BIG_LETTERS
+    BEGIN
+        Print_Big
+    AGAIN
+;
+
+' MAIN [->] {MAIN}

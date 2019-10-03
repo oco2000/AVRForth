@@ -1,0 +1,8 @@
+: MIN        ( n1 n2 -- n3 )                 ( MIN of two cells)
+  poptmp
+  tosl tmpl cp
+  tosh tmph cpc
+  if_<
+    tmpl tosl movw
+  then
+;

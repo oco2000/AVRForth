@@ -1,0 +1,343 @@
+\ из http://www.tinyboot.com/ff300.zip
+
+VARIABLE 'marker        \ переменная для организации листинга
+
+C" H." FIND NIP 0=
+[IF]
+ : H.  BASE @ HEX SWAP U. BASE ! ;
+\ OP1
+[THEN]
+
+C" /STRING" FIND NIP 0=
+[IF] : /STRING DUP >R - SWAP R> + SWAP ;
+[THEN]
+
+BASE @
+HEX
+MODULE: AVRDIS
+
+
+0 VALUE OPCODE
+0 VALUE DPC
+0 VALUE OFFSET              \ ADD THIS TO DPC TO GET PHYSICAL ADDRESS
+
+\ массив с адресами строк комментариев
+\ ALLOT не получится из-за ограничения размера словаря 512к
+
+EXPORT
+
+  T-MEM-SIZE CELLS ALLOCATE THROW  CONSTANT COMMENTS
+
+DEFINITIONS
+
+COMMENTS T-MEM-SIZE CELLS ERASE
+
+: .COMMENT  ( caddr -- )
+    CELLS COMMENTS + @ ?DUP IF
+        ." \ "
+        COUNT TYPE CR
+    THEN
+;
+
+: .NAME ( caddr -- )
+  TAB ." ( " ID. ."  )"
+;
+
+: .NAME.CR ( caddr -- )
+  ."  : " ID. CR
+;
+
+VECT {.NAME}
+
+: IN_TARGET? ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+  >R CONTEXT @ @ ( link )
+  BEGIN
+    DUP     ( link link )
+  WHILE
+    DUP NAME> >BODY @ R@ = IF
+      DUP {.NAME} CDR
+      DROP 0 \ exit
+    ELSE
+      DUP NAME> 'marker @ < IF
+         DROP 0
+    ELSE
+       CDR
+    THEN
+  THEN
+  REPEAT
+  R> 2DROP
+;
+
+: IN_TARGET ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+  ['] .NAME TO {.NAME}
+  IN_TARGET?
+;
+
+
+: IN_TARGET_CR ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+  ['] .NAME.CR TO {.NAME}
+  IN_TARGET?
+;
+
+: NIBBLES       ( -- N0 N1 ) OPCODE 0FF AND 10 /MOD ;
+: .NUM      ." 0x" H. ;
+: .ADDR     5 H.N SPACE ;
+: .DNUM         ( N -- )  BASE @ SWAP DECIMAL . BASE ! ;
+: .RN       ." r" .DNUM ;
+: RD,K8         ( -- )   NIBBLES SWAP OPCODE 4 RSHIFT 0F0 AND  +  .NUM 10 + .RN  ;
+: RD,K6         ( STR - )  NIBBLES 4 /MOD SWAP 2* 18 +
+               >R 4 LSHIFT + .NUM
+                R>  .RN ;
+: >A            ( -- )
+    OPCODE 100 /MOD
+    3 LSHIFT 30 AND SWAP 0F AND
+    OR .NUM
+;
+
+: RD=           ( -- N )  OPCODE 4 RSHIFT 1F AND  ;     \ RDDDDDRRRR
+: RD            ( -- )    RD= .RN ;
+: RR=           ( -- N )  OPCODE 20 /MOD 10 AND SWAP 0F AND OR ;
+: RR            ( -- )    RR= .RN ;
+: RD,RR         ( -- )    RR RD ;
+: RD,RRW        ( -- )    OPCODE 0F AND 2*          .RN    \ RRW
+                          OPCODE 4 RSHIFT 0F AND 2* .RN    \ RDW
+                                                    ;
+: D=D?          ( -- F )  RD= RR= = ;
+
+: BRS           ( A N -- )      \ 10-BIT BRANCH
+                OPCODE 3FF AND 8 /MOD >R
+
+                R@ 40 AND 0<> -80 AND R> OR 2* DPC + DUP >R .ADDR
+                  2* /STRING DROP ." br" 2 TYPE R> IN_TARGET
+                    \ SIGN EXTEND 0..127 TO -64..+63
+;
+
+: RELJUMP       ( -- A )      \ 12-BIT BRANCH
+                OPCODE 0FFF AND
+                DUP 800 AND 0<> -1000 AND OR \ SIGN EXTEND 0..4095 TO -2K..+2K
+                2* DPC + DUP .ADDR ;
+
+: LONGJUMP      ( addr x1 x2 -- addr+2 x1 x2 addr' )
+    >R >R 2+ ( addr+2 )
+    DUP T@ DUP .ADDR SPACE 2* DUP .ADDR  ( addr+2 addr' )
+    R> R> ROT ;
+
+: SRBIT ( -- )
+  S" cznvshti" DROP
+  OPCODE 4 RSHIFT 7 AND
+  + C@ EMIT
+;
+
+: RD,RR3 ." RD,RR3 " ;
+
+: A,B ( -- ) \ sbi, cbi
+    OPCODE 0x07 AND .
+    OPCODE 3 RSHIFT 0x1F AND .NUM
+;
+
+: K16 ( addr x y -- addr+2 x y )
+  ROT 2+ DUP T@ 4 H.N SPACE -ROT
+;
+
+: Y/Z
+  OPCODE 0x0008 AND IF
+    ." [Y]+" ELSE ." [Z]+" THEN
+;
+
+: .Q
+  OPCODE 7 AND
+  OPCODE 0x0C00 AND 7 RSHIFT +
+  OPCODE 0x2000 AND 8 RSHIFT + .NUM ( Q )
+;
+
+: Z+Q.LDD ( -- )
+  Y/Z .Q RD
+  ." ldd"
+;
+
+: Z+Q.STD ( -- )
+  RD Y/Z .Q
+  ." std"
+;
+
+: RD,B# ( -- )
+  OPCODE 7 AND . RD
+;
+
+: ??> CREATE LAST @ , DOES> @ COUNT TYPE SPACE ;
+
+
+??> ???
+??> RD,RR16
+??> >+
+??> >-
+
+: IF[           ( EXEC: N1 N2 -- N1 )
+                POSTPONE OVER POSTPONE = POSTPONE IF ; IMMEDIATE
+: ]THEN         ( EXEC: N1 -- )
+                POSTPONE DROP POSTPONE EXIT POSTPONE THEN ; IMMEDIATE
+: ]]THEN        ( EXEC: N1 -- )
+                POSTPONE 2DROP POSTPONE EXIT POSTPONE THEN ; IMMEDIATE
+
+: DIS  ( TADDR OPCODE -- TADDR )
+                0000 IF[ ." nop"      ]THEN
+                9508 IF[ ." ret"      ]THEN
+                9518 IF[ ." reti"     ]THEN
+                9419 IF[ ." eijmp"    ]THEN
+                9519 IF[ ." eicall"   ]THEN
+                9588 IF[ ." sleep"    ]THEN
+                95A8 IF[ ." wdr"      ]THEN
+                95C8 IF[ ." lpm"      ]THEN
+                95D8 IF[ ." elpm"     ]THEN
+                95E8 IF[ ." spm"      ]THEN
+                95F8 IF[ ." espm"     ]THEN
+                9509 IF[ ." icall"    ]THEN
+                9409 IF[ ." ijmp"     ]THEN
+                7 RSHIFT                                        \ XXXXXXXXX
+                006  IF[ OPCODE 08 AND
+                         00 IF[ ." mulsu" RD,RR3       ]]THEN
+                         08 IF[ ." fmul" RD,RR3        ]]THEN
+                         DROP THEN
+                007  IF[ OPCODE 08 AND
+                         00 IF[ ." fmuls" RD,RR3       ]]THEN
+                         08 IF[ ." fmulsu" RD,RR3      ]]THEN
+                         DROP THEN
+                128  IF[ OPCODE 0F AND
+                         08 IF[ ." se" SRBIT           ]]THEN
+                         DROP THEN
+                129  IF[ OPCODE 0F AND
+                         08 IF[ ." cl" SRBIT           ]]THEN
+                         DROP THEN
+                1 RSHIFT                                        \ XXXXXXXX
+                01 IF[ RD,RRW ." movw"                ]THEN
+                02 IF[ ." muls" RD,RR16               ]THEN
+                96 IF[ RD,K6 ." adiw"                 ]THEN
+                97 IF[ RD,K6 ." sbiw"                 ]THEN
+                98 IF[ A,B ." cbi"                    ]THEN
+                99 IF[ A,B ." sbic"                   ]THEN
+                9A IF[ A,B ." sbi"                    ]THEN
+                9B IF[ A,B ." sbis"                   ]THEN
+              0EF  IF[ OPCODE 0F AND
+                        0F IF[ RD   ." ser"      ]]THEN
+                         DROP THEN
+                1 RSHIFT                                        \ XXXXXXX
+                40 IF[ OPCODE 0F AND
+                        00 IF[ RD ." [Z] ld"       ]]THEN
+                        06 IF[ RD ." [Z] elpm"     ]]THEN
+                        07 IF[ RD ." [Z]+ elpm"     ]]THEN
+                        08 IF[ ." [Y] " RD ." ld"  ]]THEN
+                         DROP THEN
+                41 IF[ OPCODE 0F AND
+                        00 IF[ RD ." [Z] st"  ]]THEN
+                        08 IF[ RD ." [Y] st"  ]]THEN
+                         DROP THEN
+                48 IF[ OPCODE 0F AND
+                        00 IF[ K16 RD ." lds "     ]]THEN
+                        01 IF[ RD ." [Z]+ ld"    ]]THEN
+                        02 IF[ RD ." -[Z] ld"    ]]THEN
+                        04 IF[ RD ." [Z] lpm"   ]]THEN
+                        05 IF[ RD ." [Z]+ lpm"   ]]THEN
+                        06 IF[ RD ." [Z] elpm"  ]]THEN
+                        07 IF[ RD ." [Z]+ elpm"  ]THEN
+                        09 IF[ ." [Y]+ " RD ." ld"    ]]THEN
+                        0A IF[ ." -[Y]  " RD ." ld"    ]]THEN
+                        0C IF[ RD ." [X] ld"    ]]THEN
+                        0D IF[ RD ." [X]+ ld"    ]]THEN
+                        0E IF[ RD ." -[X]+ ld"   ]]THEN
+                        0F IF[ RD ." pop"     ]]THEN
+                         DROP THEN
+                49 IF[ OPCODE 0F AND
+                        00 IF[ RD K16 ." sts" ]]THEN
+                        01 IF[ RD ." [Z]+ st" ]]THEN
+                        02 IF[ RD ." -[Z] st" ]]THEN
+                        09 IF[ RD ." [Y] st" ]]THEN
+                        0A IF[ RD ." -[Y] st" ]]THEN
+                        0C IF[ RD ." [X] st" ]]THEN
+                        0D IF[ RD ." [X]+ st" ]]THEN
+                        0E IF[ RD ." -[X] st" ]]THEN
+                        0F IF[ RD ." push"   ]]THEN
+                         DROP THEN
+                4A IF[ OPCODE 0F AND
+                        00 IF[ RD ." com"            ]]THEN
+                        01 IF[ RD ." neg"            ]]THEN
+                        02 IF[ RD ." swap"            ]]THEN
+                        03 IF[ RD ." inc"            ]]THEN
+                        05 IF[ RD ." asr"            ]]THEN
+                        06 IF[ RD ." lsr"            ]]THEN
+                        07 IF[ RD ." ror"            ]]THEN
+                        0A IF[ RD ." dec"            ]]THEN
+                        0C IF[ LONGJUMP ." jmp " IN_TARGET    ]]THEN
+                        0D IF[ LONGJUMP ." jmp " IN_TARGET    ]]THEN
+                        0E IF[ LONGJUMP ." call " IN_TARGET   ]]THEN
+                        0F IF[ LONGJUMP ." call " IN_TARGET   ]]THEN
+                         DROP THEN
+                7C IF[ OPCODE 08 AND
+                        00 IF[ RD,B# ." bld"         ]]THEN
+                         DROP THEN
+                7D IF[ OPCODE 08 AND
+                        00 IF[ RD,B# ." bst"         ]]THEN
+                         DROP THEN
+                7E IF[ OPCODE 08 AND
+                        00 IF[ RD,B# ." sbrc"          ]]THEN
+                         DROP THEN
+                7F IF[ OPCODE 08 AND
+                        00 IF[ RD,B# ." sbrs"          ]]THEN
+                         DROP THEN
+                1 RSHIFT                                        \ XXXXXX
+                01 IF[ RD,RR ." cpc"                  ]THEN
+                02 IF[ RD,RR ." sbc"                  ]THEN
+                03 IF[ D=D?
+                   IF RD ." lsl"  ELSE RD,RR ." add"  THEN ]THEN
+                04 IF[ RD,RR ." cpse"                  ]THEN
+                05 IF[ RD,RR ." cp"                  ]THEN
+                06 IF[ RD,RR ." sub"                  ]THEN
+                07 IF[  D=D?
+                   IF RD ." rol"  ELSE RD,RR ." adc"  THEN ]THEN
+                08 IF[ D=D?
+                   IF RD ." tst"  ELSE RD,RR ." and"  THEN ]THEN
+                09 IF[ D=D?
+                   IF RD ." clr"  ELSE RD,RR ." eor"  THEN ]THEN
+                0A IF[ RD,RR ." or"                 ]THEN
+                0B IF[ RD,RR ." mov"                 ]THEN
+                27 IF[ RD,RR ." mul"                 ]THEN
+                3C IF[ S" cseqmivslthstsie" BRS         ]THEN
+                3D IF[ S" ccneplvcgehctcid" BRS         ]THEN
+                1 RSHIFT                                        \ XXXXX
+                16 IF[ RD >A ." in"             ]THEN
+                17 IF[ RD >A ." out"            ]THEN
+                1 RSHIFT                                        \ XXXX
+                03 IF[ RD,K8 ." cpi"               ]THEN
+                04 IF[ RD,K8 ." sbci"              ]THEN
+                05 IF[ RD,K8 ." subi"                  ]THEN
+                06 IF[ RD,K8 ." ori"                  ]THEN
+                07 IF[ RD,K8 ." andi"                  ]THEN
+                0C IF[ RELJUMP ." rjmp" IN_TARGET      ]THEN
+                0D IF[ RELJUMP ." rcall" IN_TARGET     ]THEN
+                0E IF[ RD,K8 ." ldi"                ]THEN
+                OPCODE 0D200 AND
+                   8000 IF[ Z+Q.LDD    ]]THEN
+                   8200 IF[ Z+Q.STD    ]]THEN
+                  DROP DROP
+                    ??? DUP IN_TARGET
+;
+
+EXPORT
+
+: \\ ( "ccc" -- ) \ определить комментарий, который появится в листинге в текущем месте
+  HERE
+  1 WORD
+  ",
+  THERE CELLS COMMENTS + !
+; IMMEDIATE
+
+: TINST  ( ADR -- ADR' )
+  DUP .COMMENT
+  DUP IN_TARGET_CR
+  DUP .ADDR DUP T@ 4 H.N TAB
+  DUP 2+ TO DPC
+  DUP T@ DUP TO OPCODE    \ SAVE OPCODE
+  DIS 2+
+;
+
+;MODULE
+BASE !

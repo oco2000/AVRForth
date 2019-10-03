@@ -1,0 +1,41 @@
+[F] BASE @ DECIMAL [P]
+
+\ *************************************************************************
+\ delay loop for small accurate delays: 16-bit counter, 4 cycles/loop
+\ *************************************************************************/
+: _DELAY4CYCLES ( count -- )
+    tosl tmpl mov
+    tosh tmpl or
+    if_<>0
+        begin
+            [ 0x1 ] tosl sbiw
+        until_<>0                        \ 4 cycles/loop
+    then
+    popt
+;
+
+\ *************************************************************************
+\ delay for a minimum of <us> microseconds
+\ the number of loops is calculated at compile-time from MCU clock frequency
+\ *************************************************************************/
+
+MACRO: US ( n -- ) \ задержка n микросекунд, должно быть литералом
+[F]
+  QLIT1? IF
+    [[ F_CPU ]] LITERAL 4000000 */ 01 MAX
+    (LIT) _DELAY4CYCLES
+  ELSE
+    E_LITERAL
+  THEN
+[P]
+;MACRO
+
+: MS    ( n -- )    \ задержка n миллисекунд
+    BEGIN
+        1000 US
+        1-
+    [UNTIL<>0] \ не разрушает вершину стека
+    DROP
+;
+
+[F] BASE ! [P]

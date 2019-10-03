@@ -1,0 +1,9 @@
+: NIBBLE-SPLIT ( c -- lo hi )                    ( split byte into U and L nibbles)
+    tosl zl mov
+    [ 0x0F zl andi ]
+    zh clr 
+    tosh clr
+    tosl swap
+    [ 0x0F tosl andi ]
+    zl pushd
+;

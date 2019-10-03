@@ -1,0 +1,2 @@
+: NEGATE        ( x -- -x )     ( negate TOS )
+  INVERT 1+ ;

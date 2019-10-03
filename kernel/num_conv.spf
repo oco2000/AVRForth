@@ -1,0 +1,28 @@
+\ Преобразование число -> строка
+
+VARIABLE BASE       ( -- a )    ( система счисления )
+VARIABLE HLD        ( -- a )    ( текущее место в буфере для преобразования )
+0x24 == PAD-SIZE        ( размер буфера )
+RCREATE PAD   PAD-SIZE ALLOT    ( буфер для преобразования )
+D-HERE [F] @ 1- [P] == NUMPAD   ( конец буфера - с конца начинается заполнение буфера )
+
+: DECIMAL       ( -- )
+  0xA BASE !
+;
+
+: HEX       ( -- )
+  0x10 BASE !
+;
+
+: <#     ( -- )               ( начать преобразование )
+  NUMPAD HLD ! ;
+: HOLD   ( char -- )        ( занести символ в буфер )
+  HLD @ 1- DUP HLD ! C! ;
+: #      ( ud1 -- ud2 )     ( преобразовать одну цифру )
+  BASE @ MU/MOD ROT >DIGIT HOLD ;
+: #S     ( ud -- 0 0 )      ( преобразовать оставшиеся цифры )
+  BEGIN # 2DUP D0<> INVERT UNTIL ;
+: SIGN   ( x -- )         ( вставить знак "-", если число отрицательное )
+  0< IF [ CHAR - ] LITERAL HOLD THEN ;
+: #>     ( ud -- addr len )   ( закончить преобразование )
+  2DROP HLD @ NUMPAD OVER - ;

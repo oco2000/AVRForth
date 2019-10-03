@@ -1,0 +1,3 @@
+: MOD           ( n1 n2 -- r )               ( dividend divisor -- rem )
+    /MOD DROP
+;

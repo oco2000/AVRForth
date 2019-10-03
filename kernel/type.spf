@@ -1,0 +1,8 @@
+: TYPE ( a n -- )
+    00 ?DO
+        DUP C@ EMIT
+        1+
+    LOOP
+    DROP
+;
+

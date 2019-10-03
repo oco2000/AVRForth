@@ -1,0 +1,3 @@
+: 2OVER         ( abcd -- abcdab )      ( copy 2nd cell pair)
+  0x3 PICK 0x3 PICK
+;

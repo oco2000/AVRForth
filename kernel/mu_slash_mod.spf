@@ -1,0 +1,4 @@
+: MU/MOD        ( ud# un1 -- rem d#quot )       ( unsigned 32/16 --> r16 q32)
+\ Divide unsigned double by a single, leaving a remainder and quotient.
+  >R  0  R@  UM/MOD  R>  SWAP
+  >R  UM/MOD  R> ;

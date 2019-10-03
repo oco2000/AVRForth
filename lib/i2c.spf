@@ -1,0 +1,220 @@
+\ I2C master library using hardware TWI interface
+\ Based on P.Fleury routines
+
+[F] BASE @ DECIMAL [P]
+
+\ I2C clock in kHz */
+100 ( kHz ) == SCL_CLOCK
+
+\ constants
+0x01 == #I2C_READ
+0x00 == #I2C_WRITE
+
+0x08 == TW_START
+0x10 == TW_REP_START
+0x18 == TW_MT_SLA_ACK
+0x20 == TW_MT_SLA_NACK
+0x28 == TW_MT_DATA_ACK
+0x30 == TW_MT_DATA_NACK
+0x38 == TW_MT_ARB_LOST
+0x38 == TW_MR_ARB_LOST
+0x40 == TW_MR_SLA_ACK
+0x48 == TW_MR_SLA_NACK
+0x50 == TW_MR_DATA_ACK
+0x58 == TW_MR_DATA_NACK
+0xA8 == TW_ST_SLA_ACK
+0xB0 == TW_ST_ARB_LOST_SLA_ACK
+0xB8 == TW_ST_DATA_ACK
+0xC0 == TW_ST_DATA_NACK
+0xC8 == TW_ST_LAST_DATA
+0x60 == TW_SR_SLA_ACK
+0x68 == TW_SR_ARB_LOST_SLA_ACK
+0x70 == TW_SR_GCALL_ACK
+0x78 == TW_SR_ARB_LOST_GCALL_ACK
+0x80 == TW_SR_DATA_ACK
+0x88 == TW_SR_DATA_NACK
+0x90 == TW_SR_GCALL_DATA_ACK
+0x98 == TW_SR_GCALL_DATA_NACK
+0xA0 == TW_SR_STOP
+0xF8 == TW_NO_INFO
+0x00 == TW_BUS_ERROR
+BITS{ TWS7 TWS6 TWS5 TWS4 TWS3 }BITS == TW_STATUS_MASK
+0x01 == TW_READ
+0x00 == TW_WRITE
+
+: TW_STATUS   ( -- status )
+  TWSR C@   TW_STATUS_MASK AND
+;
+
+\ ************************************************************************
+\ Initialization of the I2C bus interface. Need to be called only once
+\ *************************************************************************/
+: I2C_INIT ( -- )
+  \  initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
+  00 TWSR C!                               \  no prescaler */
+  [  [F] F_CPU SCL_CLOCK / 1000 / 16 - 2/ [P] ] LITERAL TWBR C! \  must be > 10 for stable operation */
+;
+
+: _i2c_wait ( -- )
+  \  wait until transmission completed
+  BEGIN
+        TWCR C@  TWINT BIT AND
+    UNTIL
+;
+
+\ ************************************************************************
+\  Issues a start condition and sends address and transfer direction.
+\  return 0 = device accessible, -1 = failed to access device
+\ *************************************************************************/
+: I2C_START ( address -- err )
+\    uint8_t   twst;
+
+  \  send START condition
+    BITS{ TWINT TWSTA TWEN }BITS TWCR C!
+  \  wait until transmission completed
+    _i2c_wait
+
+  \  check value of TWI Status Register. Mask prescaler bits.
+  TW_STATUS 0xF8 AND
+  DUP TW_START <>   SWAP TW_REP_START <> AND
+    IF DROP -1 EXIT THEN
+
+  \  send device address
+  TWDR C!
+  BITS{ TWINT TWEN }BITS  TWCR C!
+
+  \  wail until transmission completed and ACK/NACK has been received
+  _i2c_wait
+
+  \  check value of TWI Status Register. Mask prescaler bits.
+  TW_STATUS 0xF8 AND
+    DUP TW_MT_SLA_ACK <>   SWAP TW_MR_SLA_ACK <> AND
+;
+
+
+\ ************************************************************************
+\ Issues a repeated start condition and sends address and transfer direction
+\
+\ Input:   address and transfer direction of I2C device
+\
+\ Return:  0 device accessible
+\          -1 failed to access device
+\ *************************************************************************/
+MACRO: I2C_REP_START ( address -- err )
+    I2C_START
+;MACRO
+
+\ ************************************************************************
+\ Terminates the data transfer and releases the I2C bus
+\ *************************************************************************/
+: I2C_STOP ( -- )
+
+    \  send stop condition */
+  BITS{ TWINT TWEN TWSTO }BITS TWCR C!
+
+  \  wait until stop condition is executed and bus released
+  BEGIN
+        TWCR C@ TWSTO BIT AND 0=
+    UNTIL
+;
+
+\ ************************************************************************
+\  Send one byte to I2C device
+\
+\  Input:    byte to be transfered
+\  Return:   0 write successful
+\            1 write failed
+\ *************************************************************************/
+: I2C_WRITE ( data -- err )
+\    uint8_t   twst;
+
+  \  send data to the previously addressed device
+  TWDR C!
+    BITS{ TWINT TWEN }BITS  TWCR C!
+
+  \  wait until transmission completed
+  _i2c_wait
+
+  \  check value of TWI Status Register. Mask prescaler bits
+  TW_STATUS 0xF8 AND
+  TW_MT_DATA_ACK <>
+;
+
+: I2C_WRITE_DROP ( data -- )
+    I2C_WRITE DROP
+;
+
+\ ************************************************************************
+\ Read one byte from the I2C device, request more data from device
+\
+\ Return:  byte read from I2C device
+\ *************************************************************************/
+: I2C_READ_ACK ( -- byte )
+  BITS{ TWINT TWEN TWEA }BITS  TWCR C!
+  _i2c_wait
+    TWDR C@
+;
+
+\ ************************************************************************
+\ Read one byte from the I2C device, read is followed by a stop condition
+\
+\ Return:  byte read from I2C device
+\ *************************************************************************/
+: I2C_READ_NAK ( -- byte )
+  BITS{ TWINT TWEN }BITS TWCR C!
+  _i2c_wait
+    TWDR C@
+;
+
+[F] BASE ! [P]
+
+
+\EOF
+\ ************************************************************************
+\ Issues a start condition and sends address and transfer direction.
+\ If device is busy, use ack polling to wait until device is ready
+\
+\ Input:   address and transfer direction of I2C device
+\ *************************************************************************/
+void i2c_start_wait(unsigned char address)
+{
+    uint8_t   twst;
+
+
+    while ( 1 )
+    {
+      \  send START condition
+      TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+
+      \  wait until transmission completed
+      while(!(TWCR & (1<<TWINT)));
+
+      \  check value of TWI Status Register. Mask prescaler bits.
+      twst = TW_STATUS & 0xF8;
+      if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
+
+      \  send device address
+      TWDR = address;
+      TWCR = (1<<TWINT) | (1<<TWEN);
+
+      \  wail until transmission completed
+      while(!(TWCR & (1<<TWINT)));
+
+      \  check value of TWI Status Register. Mask prescaler bits.
+      twst = TW_STATUS & 0xF8;
+      if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) )
+      {
+          \  device busy, send stop condition to terminate write operation */
+          TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
+
+          \  wait until stop condition is executed and bus released
+          while(TWCR & (1<<TWSTO));
+
+          continue;
+      }
+      \ if( twst != TW_MT_SLA_ACK) return 1;
+      break;
+     }
+
+}\  i2c_start_wait */
+

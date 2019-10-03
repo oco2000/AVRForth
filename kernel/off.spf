@@ -1,0 +1,6 @@
+: OFF         ( addr -- )                     ( store false to addr)
+  	zl clr
+	zl [x]+ st
+	zl [x]+ st
+	popt
+;

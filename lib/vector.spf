@@ -1,0 +1,11 @@
+\ одномерный массив ячеек
+
+TREQUIRE SWAP
+TREQUIRE CELLS
+TREQUIRE +
+
+:: VECTOR
+    CREATE [F] TCELL * [P] ALLOT
+    DOES> SWAP CELLS + ;
+;;
+

@@ -1,0 +1,13 @@
+: D0<>       ( d -- f )                      ( T if double is nonzero)
+ [
+  poptmp
+  tmpl tmph or
+  tosl tmph or
+  tosh tmph or
+  0x0 tosh ldi
+  if_<>0
+    tosh dec
+  then
+  tosh tosl mov
+ ]
+;

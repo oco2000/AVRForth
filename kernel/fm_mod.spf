@@ -1,0 +1,116 @@
+\ не работает
+: FM/MOD       ( d n1 -- n2 n3 )
+  [
+\        movw	r1:r0, XH:XL
+        tosl tmpl movw
+\		movw	r3:r2, XH:XL
+        tosl tmp1l movw
+\		ld	ZH, Y+
+\		ld	ZL, Y+
+        zl popd
+\		ld	XH, Y
+        [y] tosh ld
+\		ldd	XL, Y+1
+        1 [y] tosl ldd
+\		clr	r25
+        tmp2l clr
+\		tst	ZH
+        zh tst
+\        brpl	PC+9
+		if_<0
+\            ldi	r25, 5
+            5 tmp2l ldi
+\            com	XL
+            tosl com
+\            com	XH
+            tosh com
+\            com	ZL
+            zl com
+\            com	ZH
+            zh com            
+\            adiw	XH:XL, 1
+            1 tosl adiw
+\            brcc	PC+2
+            if_c
+\                adiw	ZH:ZL, 1
+                1 zl adiw
+            then
+        then
+\		tst	r1
+        tmph tst
+\		brpl	PC+5
+        if_<0
+\            inc	r25
+            tmp2l inc
+\            neg	r1
+            tmph neg
+\            neg	r0
+            tmpl neg
+\            sbc	r1, _00_
+            00 tmp2h ldi
+            tmp2h tmph sbc
+        then
+\        ldi	r24, $10
+        0x10 tmp2h ldi
+        for
+    \		lsl	XL
+            tosl lsl
+    \		rol	XH
+            tosh rol
+    \		rol	ZL
+            zl rol
+    \		rol	ZH
+            zh rol
+    \		cp	ZL, r0
+            tmpl zl cp
+    \		cpc	ZH, r1
+            tmph zh cpc
+    \		brlo	PC+4
+            if_u>=
+    \            sub	ZL, r0
+                tmpl zl sub
+    \            sbc	ZH, r1
+                tmph zh sbc
+    \            inc	XL
+                tosl inc
+            then
+    \		dec	r24
+\		brne	PC-11
+        tmp2h next
+\		sbrs	r25, 2
+        2 tmp2l sbrs
+\		rjmp	PC+4
+        [F] THERE 8 + [P] rjmp
+    \		neg	ZH
+            zh neg
+    \		neg	ZL
+            zl neg
+    \		sbci	ZH, 0
+            0 zh sbci
+\		sbrs	r25, 0
+        0 tmp2l sbrs
+\		rjmp	PC+9
+        [F] THERE 9 2* + [P] rjmp
+\            neg	XH
+            tosh neg
+\            neg	XL
+            tosl neg
+\            sbci	XH, 0
+            0 tosh sbci
+\            sbiw	ZH:ZL, 0
+            0 zl sbiw
+\            breq	PC+4
+            if_<>0
+\                sbiw	XH:XL, 1
+                1 tosl sbiw
+\                add	ZL, r2
+                tmp1l zl add
+\                adc	ZH, r3
+                tmp1h zh adc
+            then
+\		st	Y, ZH
+        zh [y] st
+\		std	Y+1, ZL
+        zh 1 [y] std
+  ]
+;

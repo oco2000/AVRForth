@@ -1,0 +1,8 @@
+: NIBBLE-JOIN ( lo hi -- c )                    ( join lo and hi nibbles into char c )
+    zl popd
+    [ 0x0F zl andi ]
+    tosh clr
+    [ 0x0F tosl andi ]
+    tosl swap
+    zl tosl or
+;

@@ -1,0 +1,5 @@
+: @          ( addr -- x )                  \ ( cell fetch, LSB first )
+    [x]+ tmpl ld
+    [x]  tosh ld
+    tmpl tosl mov
+;

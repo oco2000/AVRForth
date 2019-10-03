@@ -1,0 +1,13 @@
+: EXP2     ( u -- 1<<u )               ( 1 left shift u places )
+[
+  tosl tmpl mov
+  01 tosl ldi
+  tosh clr
+  begin
+    tmpl tst
+  while_<>0
+	tmpl dec
+	tosl lsl
+	tosh rol
+  repeat
+;

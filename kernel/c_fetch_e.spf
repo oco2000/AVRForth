@@ -1,0 +1,23 @@
+
+: (C@E)   ( addr -- c ) \ EEPROM byte read
+  [
+    EEWE EECR sbic      \ Ждем пока будет завершена прошлая запись.
+    ' (C@E) (JMP)       \ также крутимся в цикле.
+    tosl EEARL out      \ Загружаем адрес нужной ячейки
+    tosh EEARH out      \ Загружаем адрес нужной ячейки
+    EERE EECR sbi       \ Выставляем бит чтения
+    EEDR tosl in        \ Забираем из регистра данных результат
+    tosh clr
+  ]
+;
+
+MACRO: C@E    ( -- )
+[F]
+  T-STATE @ IF \ compile
+    DEBUG3" C@E"
+    (C@E)
+  ELSE
+    EC@
+  THEN
+[P]
+;MACRO

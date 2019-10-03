@@ -1,0 +1,11 @@
+: LSHIFT     ( x1 u -- x1<<u )               ( left shift u places )
+  poptmp
+  begin
+    tosl tst
+  while_<>0
+	tosl dec
+	tmpl lsl
+	tmph rol
+  repeat
+  tmpl tosl movw
+;

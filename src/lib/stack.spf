@@ -1,0 +1,169 @@
+\ неименованные стеки
+
+: FRAME ( # --> [frame] # ) >R SP@ R@ CELLS - SP! R> ;
+
+ 0 \ структура описывающая стек
+   CELL -- StackTop    \ указатель на вершину стека
+   CELL -- StackBottom \ указатель на начало стека
+ CONSTANT /NStack
+
+\ посчитать размер стека глубиной в # ячеек в байтах
+: StackSize ( # --> u ) CELLS /NStack + ;
+
+\ разметить память, начало которой определено addr под стек глубиной depth
+: StackInit ( depth stack --> )
+  TUCK >R StackSize + DUP
+  R@ StackBottom !
+  R> StackTop ! ;
+
+\ получить адрес текущей вершины стека
+: StackPointer ( stack --> addr ) StackTop @ ;
+
+\ получить глубину указанного стека
+: StackDepth ( stack --> n ) DUP StackBottom @ SWAP StackPointer - CELL / ;
+
+\ проверить не выходит ли указатель стека за его пределы
+: ?StackBalanced ( stack --> flag )
+  DUP StackPointer OVER StackBottom @ 1+ ROT /NStack + SWAP WITHIN ;
+
+\ прочесть верхний элемент указанного стека
+: Stack@ ( stack --> n ) StackPointer @ ;
+
+\ переместить указатель вершины стека на указанное количество ячеек
+: StackMovePointer ( u stack --> ) SWAP CELLS NEGATE OVER StackTop +! ?StackBalanced INVERT THROW ;
+
+\ прочесть указанный # элемент со стека Stack
+: StackPick ( # Stack --> n ) StackPointer SWAP CELLS + @ ;
+
+: .Stack ( stack -- )
+  >R CR
+    R@ StackDepth ." Stack depth: " .
+    ."   Stack: "
+    R@ StackDepth 0= IF
+      ." empty"
+    ELSE
+      R@ 0 R@ StackDepth 1- ?DO I OVER StackPick . -1 +LOOP DROP
+    THEN
+  RDROP
+;
+
+\ удалить верхнее значение с вершины указанного стека
+: StackDrop ( stack --> ) -1 SWAP StackMovePointer ;
+
+\ извлечь число из указанного стека
+: Stack> ( stack --> n ) DUP Stack@ SWAP StackDrop ;
+
+\ сохранить число в указанный стек
+: >Stack ( n stack --> ) DUP 1 SWAP StackMovePointer StackPointer ! ;
+
+\ скопировать указанное количество # элементов a,b,c,,x на стек stack
+: StackCopyTo ( [ a b c .. x ] # stack --> )
+         2DUP StackMovePointer
+         OVER >R
+          StackPointer >R CELLS >R SP@ 2R> CMOVE
+         R> DROP ;
+
+\ переместить указанное количество элементов со стека данных на указанный стек
+: N>Stack ( [ a b c .. x ] # stack --> ) OVER >R StackCopyTo R> NDROP ;
+
+\ переместить указанное количество элементов со стека данных на указанный стек вместе с длиной #
+: Array>Stack ( [ a b c ... x ] # stack --> )
+  2DUP 2>R   N>Stack
+       2R>   >Stack
+;
+
+\ копировать n элементов стека stack на вершину стека данных
+: StackGetFrom ( n stack --> a b c .. x )
+          StackPointer SWAP 2>R
+          R@ FRAME >R SP@ R> SWAP
+          2R> CELLS >R SWAP R> CMOVE DROP ;
+
+\ переместить n элементов стека stack на вершину стека данных
+: NStack> ( n stack --> a b c .. x )
+  2DUP 2>R StackGetFrom
+       2R> SWAP NEGATE SWAP StackMovePointer
+;
+
+\ переместить элементы стека stack на вершину стека данных
+\ количество элементов находится на вершине стека stack
+: ArrayStack> ( stack --> a b c .. x # )
+  DUP Stack> DUP >R SWAP NStack> R>
+;
+
+\ удалить элементы стека stack
+\ количество элементов находится на вершине стека stack
+: ArrayStackDrop ( stack --> )
+  ArrayStack> NDROP
+;
+
+\ создать неименованный стек в хипе
+: NewStack ( depth --> stack ) DUP StackSize ALLOCATE THROW TUCK StackInit ;
+
+\ освободить место, занимаемое стеком
+: FreeStack ( stack --> ) FREE THROW ;
+
+\EOF -- тестовая секция ---------------------------------------
+
+TESTCASES Stack
+
+      (( .S CR 20 NewStack .S CR FreeStack -> ))
+      (( 20 NewStack DUP ?StackBalanced SWAP FreeStack -> TRUE ))
+
+      (( 20 NewStack VALUE stack -> ))
+
+      (( 123 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( 234 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( 345 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( 456 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( 567 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( 567 stack >Stack stack ?StackBalanced -> TRUE ))
+      (( -1 stack StackMovePointer -> ))
+      (( stack Stack@ -> 567 ))
+      (( stack Stack> -> 567 ))
+      (( stack Stack> -> 456 ))
+      (( stack StackDepth -> 3 ))
+      (( stack Stack> DROP stack Stack> DROP stack Stack> DROP stack ?StackBalanced -> TRUE ))
+      (( 1 2 3 4 5 5 stack N>Stack stack .Stack -> ))
+      (( 1 2 3 4 5 5 stack Array>Stack stack .Stack -> ))
+      (( stack ArrayStack> stack .Stack -> 1 2 3 4 5 5 ))
+      (( 5 stack NStack> stack .Stack -> 1 2 3 4 5 ))
+      (( stack StackDepth -> 0 ))
+      (( 1 2 3 4 5 5 stack Array>Stack -> ))
+      (( stack ArrayStackDrop -> ))
+      (( stack StackDepth -> 0 ))
+      (( stack ' StackDrop CATCH -> -1 -1 ))
+      (( 1 stack StackMovePointer stack .Stack -> ))
+      (( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 20 stack N>Stack stack .Stack -> ))
+      (( 1 stack ' >Stack CATCH -> 1 stack -1 ))
+      (( stack FreeStack -> ))
+
+END-TESTCASES
+
+\EOF
+     Иногда бывает необходимо складировать данные на промежуточный стек.
+При этом каждый раз такой стек приходится создавать под каждую новую задачу.
+Это не всегда удобно, тем более, что задача достаточно типовая. Для того,
+чтобы повторно не писать каждый раз определяющие стек слова и создана эта
+либа. Пользоваться следует так:
+
+Сначала создаем стек необходимой глубины:
+
+ 200 NewStack
+
+в результате получается адрес стека ( --> saddr )
+
+ дальше лучше сохранить адрес стека куда-нибудь, например
+
+ TO stack  \ Понятно, что VALUE переменная stack уже должна быть создана
+
+Ну и дальше просто работаем со стеком с помощью слов >Stack Stack> Stack@..
+
+Если не хочется каждый раз "вспоминать" адрес стека можно создать
+необходимый набор слов, не забыв о том, что стек таки перед использованием
+надобно создать.
+
+Понятно, что данный вид стеков будет более медленным, нежели базовые
+стеки (данных и возвратов). Можно кое-что выиграть от переписывания данной
+либы на ассемблере, но меня более волнует переносимость.
+
+Да, стек растет вниз! То есть как обычный стек.

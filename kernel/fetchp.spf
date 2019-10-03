@@ -1,0 +1,9 @@
+: @P         ( addr -- x )                   ( fetch from program memory)
+  [ tosl zl movw
+    lpm
+    r0 tosl mov
+    0x1 zl adiw
+    lpm
+    r0 tosh mov
+ ]
+;  

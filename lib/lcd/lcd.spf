@@ -1,0 +1,305 @@
+REQUIRE BUS.WRITE lib/bus.spf
+
+\ ======= lcd routines based on Peter Fleury library
+
+0x2  == LCD_LINES             \ number of visible lines of the display
+0x10 == LCD_DISP_LENGTH       \ visibles characters per line of the display
+0x40 == LCD_LINE_LENGTH       \ internal line length of the display
+0x00 == LCD_START_LINE1       \ DDRAM address of first char of line 1
+0x40 == LCD_START_LINE2       \ DDRAM address of first char of line 2
+0x14 == LCD_START_LINE3       \ DDRAM address of first char of line 3
+0x54 == LCD_START_LINE4       \ DDRAM address of first char of line 4
+0x0  == LCD_WRAP_LINES        \ 0: no wrap, 1: wrap at end of visibile line
+
+\ D3..D0, E, RW, RS wires should be defined
+\ See lcd_conf_std for example
+
+BUS{ D3 D2 D1 D0 }BUS DATA
+
+BUS{ E RW RS D3 D2 D1 D0 }BUS ALL \ all lines for fast set for output
+
+\ instruction register bit positions, see HD44780U data sheet
+0x0  == LCD_CLR                     \ DB0: clear display
+0x1  == LCD_HOME                    \ DB1: return to home position
+0x2  == LCD_ENTRY_MODE              \ DB2: set entry mode
+0x1  == LCD_ENTRY_INC               \   DB1: 1=increment, 0=decrement
+0x0  == LCD_ENTRY_SHIFT             \   DB2: 1=display shift on
+0x3  == LCD_ON                      \ DB3: turn lcd/cursor on
+0x2  == LCD_ON_DISPLAY              \   DB2: turn display on
+0x1  == LCD_ON_CURSOR               \   DB1: turn cursor on
+0x0  == LCD_ON_BLINK                \     DB0: blinking cursor ?
+0x4  == LCD_MOVE                    \ DB4: move cursor/display
+0x3  == LCD_MOVE_DISP               \   DB3: move display (0-> cursor) ?
+0x2  == LCD_MOVE_RIGHT              \   DB2: move right (0-> left) ?
+0x5  == LCD_FUNCTION                \ DB5: function set
+0x4  == LCD_FUNCTION_8BIT           \   DB4: set 8BIT mode (0->4BIT mode)
+0x3  == LCD_FUNCTION_2LINES         \   DB3: two lines (0->one line)
+0x2  == LCD_FUNCTION_10DOTS         \   DB2: 5x10 font (0->5x7 font)
+0x6  == LCD_CGRAM                   \ DB6: set CG RAM address
+0x7  == LCD_DDRAM                   \ DB7: set DD RAM address
+0x7  == LCD_BUSY                    \ DB7: LCD is busy
+
+\ set entry mode: display shift on/off, dec/inc cursor move direction
+0x04 == LCD_ENTRY_DEC              \ display shift off, dec cursor move dir
+0x05 == LCD_ENTRY_DEC_SHIFT        \ display shift on,  dec cursor move dir
+0x06 == LCD_ENTRY_INC_             \ display shift off, inc cursor move dir
+0x07 == LCD_ENTRY_INC_SHIFT        \ display shift on,  inc cursor move dir
+
+\ display on/off, cursor on/off, blinking char at cursor position
+0x08 == LCD_DISP_OFF               \ display off
+0x0C == LCD_DISP_ON                \ display on, cursor off
+0x0D == LCD_DISP_ON_BLINK          \ display on, cursor off, blink char
+0x0E == LCD_DISP_ON_CURSOR         \ display on, cursor on
+0x0F == LCD_DISP_ON_CURSOR_BLINK   \ display on, cursor on, blink char
+
+\ move cursor/shift display
+0x10 == LCD_MOVE_CURSOR_LEFT       \ move cursor left  (decrement)
+0x14 == LCD_MOVE_CURSOR_RIGHT      \ move cursor right (increment)
+0x18 == LCD_MOVE_DISP_LEFT         \ shift display left
+0x1C == LCD_MOVE_DISP_RIGHT        \ shift display right
+
+\ function set: set interface data length and number of display lines
+0x20 == LCD_FUNCTION_4BIT_1LINE    \ 4-bit interface, single line, 5x7 dots
+0x28 == LCD_FUNCTION_4BIT_2LINES   \ 4-bit interface, dual line,   5x7 dots
+
+[F]
+LCD_LINES 0x1 = [IF]
+    LCD_FUNCTION_4BIT_1LINE == LCD_FUNCTION_DEFAULT
+[ELSE]
+    LCD_FUNCTION_4BIT_2LINES == LCD_FUNCTION_DEFAULT
+[THEN]
+[P]
+
+BITS{ LCD_ENTRY_MODE LCD_ENTRY_INC }BITS == LCD_MODE_DEFAULT
+
+TREQUIRE EMIT
+TREQUIRE AT
+TREQUIRE PAGE
+
+REQUIRE MS lib/delay.spf
+
+MACRO: LCD_E_DELAY
+\   T-HERE [F] @ 2+ [P] (JMP)
+\   без задержки, времени на вызов подготовительных процедур достаточно для задержки
+;MACRO
+
+MACRO: LCD_E_HIGH
+   E {SET}
+;MACRO
+
+MACRO: LCD_E_LOW
+   E {CLEAR}
+;MACRO
+
+: LCD_E_TOGGLE
+    LCD_E_HIGH
+    LCD_E_DELAY
+    LCD_E_LOW
+;
+
+MACRO: LCD_RW_HIGH
+    RW {SET}
+;MACRO
+
+MACRO: LCD_RW_LOW
+    RW {CLEAR}
+;MACRO
+
+MACRO: LCD_RS_HIGH
+    RS {SET}
+;MACRO
+
+MACRO: LCD_RS_LOW
+    RS {CLEAR}
+;MACRO
+
+\ *************************************************************************
+\ Low-level function to write byte to LCD controller
+\ Input:    data   byte to write to LCD
+\           rs     1: write data
+\                  0: write instruction
+\ Returns:  none
+\ *************************************************************************/
+
+: data_write ( w -- )
+    DATA BUS.WRITE
+;
+
+: LCD_WRITE ( data rs -- )
+
+    IF      \ write data        (RS=1, RW=0) */
+       LCD_RS_HIGH
+    ELSE    \ write instruction (RS=0, RW=0) */
+       LCD_RS_LOW
+    THEN
+    LCD_RW_LOW
+
+    ( data )
+    \  configure data pins as output */
+    DATA BUS.OUTPUT
+    \  output high nibble first */
+    DUP 04 RSHIFT data_write
+    LCD_E_TOGGLE
+
+    \  output low nibble */
+    data_write
+    LCD_E_TOGGLE
+
+    \  all data pins high (inactive) */
+    0x0F DATA BUS.WRITE
+;
+
+\ ************************************************************************
+\ Low-level function to read byte from LCD controller
+\ Input:    rs     1: read data
+\                  0: read busy flag / address counter
+\ Returns:  byte read from LCD controller
+\ *************************************************************************/
+
+: data_read
+    DATA BUS.READ
+;
+
+: LCD_READ  ( rs -- byte )
+
+    IF      \ read data        (RS=1, RW=1) */
+       LCD_RS_HIGH
+    ELSE    \ read instruction (RS=0, RW=1) */
+       LCD_RS_LOW
+    THEN
+    LCD_RW_HIGH
+
+    DATA BUS.INPUT
+
+    LCD_E_HIGH
+    LCD_E_DELAY
+    data_read NIBBLE-SWAP      \  read high nibble first */
+    LCD_E_LOW
+    LCD_E_DELAY
+
+    LCD_E_HIGH
+    LCD_E_DELAY
+    data_read  0x0F AND   \  read low nibble */
+    OR
+    LCD_E_LOW
+;
+
+\ ************************************************************************
+\ loops while lcd is busy, returns address counter
+\ *************************************************************************/
+: LCD_WAITBUSY ( -- address )
+    BEGIN
+        0 LCD_READ
+        LCD_BUSY BIT AND 0=
+    UNTIL
+    \  the address counter is updated 4us after the busy flag is cleared */
+    0x4 US
+    \  now read the address counter */
+    0 LCD_READ  \ return address counter
+;
+
+\ *************************************************************************
+\ Send LCD controller instruction command
+\ Input:   instruction to send to LCD controller, see HD44780 data sheet
+\ Returns: none
+\ *************************************************************************/
+: LCD_COMMAND ( cmd -- )
+    LCD_WAITBUSY DROP
+    0 LCD_WRITE
+;
+
+\ *************************************************************************
+\ Send data byte to LCD controller
+\ Input:   data to send to LCD controller, see HD44780 data sheet
+\ Returns: none
+\ *************************************************************************/
+: LCD_DATA ( data -- )
+    LCD_WAITBUSY DROP
+    1 LCD_WRITE
+;
+
+\ *************************************************************************
+\ Clear display and set cursor to home position
+\ *************************************************************************/
+: LCD_CLRSCR ( -- )
+    LCD_CLR BIT LCD_COMMAND
+;
+
+\ ************************************************************************
+\ Set cursor to specified position
+\ Input:    x  horizontal position  (0: leftmost position)
+\           y  vertical position    (0: first line)
+\ Returns:  none
+\ *************************************************************************/
+: LCD_GOTOXY ( x y -- )
+[ [F] LCD_LINES 01 = [P] ] [IF]
+    DROP LCD_START_LINE1 + LCD_DDRAM BIT +
+[THEN]
+[ [F] LCD_LINES 02 = [P] ] [IF]
+    0= IF
+       LCD_START_LINE1
+    ELSE
+       LCD_START_LINE2
+    THEN
+     + LCD_DDRAM BIT +
+[THEN]
+[ [F] LCD_LINES 04 = [P] ] [IF]
+    DUP 0= IF
+        LCD_START_LINE1
+    ELSE DUP 01 = IF
+        LCD_START_LINE2
+    ELSE DUP 02 = IF
+        LCD_START_LINE3
+    ELSE
+        LCD_START_LINE4
+    THEN THEN THEN
+    NIP
+     + LCD_DDRAM BIT +
+[THEN]
+    LCD_COMMAND
+;
+
+MACRO: LCD_GETXY ( -- address )
+    LCD_WAITBUSY
+;MACRO
+
+\ ************************************************************************
+\ Initialize display and select type of cursor
+\ Input:    dispAttr LCD_DISP_OFF            display off
+\                    LCD_DISP_ON             display on, cursor off
+\                    LCD_DISP_ON_CURSOR      display on, cursor on
+\                    LCD_DISP_CURSOR_BLINK   display on, cursor on flashing
+\ Returns:  none
+\ *************************************************************************/
+: LCD_INIT ( dispAttr -- )
+    ['] LCD_DATA IS EMIT
+    ['] LCD_GOTOXY IS AT
+    ['] LCD_CLRSCR IS PAGE
+
+    \  Initialize LCD to 4 bit I/O mode
+    \  configure all port bits as output (all LCD lines on same port) */
+    ALL BUS.OUTPUT
+    16000 US        \  wait 16ms or more after power-on       */
+    \  initial write to lcd is 8bit */
+    D1 {SET}
+    D0 {SET}
+    LCD_E_TOGGLE
+    4992 US         \  delay, busy flag can't be checked here */
+    \  repeat last command */
+    LCD_E_TOGGLE
+    64 US           \  delay, busy flag can't be checked here */
+    \  repeat last command a third time */
+    LCD_E_TOGGLE
+    64 US           \  delay, busy flag can't be checked here */
+    \  now configure for 4bit mode */
+    D0 {CLEAR}
+    LCD_E_TOGGLE
+    64 US           \  some displays need this additional delay */
+    \  from now the LCD only accepts 4 bit I/O, we can use lcd_command() */
+
+    LCD_FUNCTION_DEFAULT LCD_COMMAND        \  function set: display lines  */
+    LCD_DISP_OFF  LCD_COMMAND               \  display off                  */
+    LCD_CLRSCR                              \  display clear                */
+    LCD_MODE_DEFAULT LCD_COMMAND            \  set entry mode               */
+    LCD_COMMAND                             \  display/cursor control       */
+;

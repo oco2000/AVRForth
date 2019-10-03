@@ -1,0 +1,6 @@
+CALL-ONLY: RDROP     ( x -- x ) ( R: x -- )          ( drop cell from return stack)
+  zl popw
+  tmpl popw
+  ijmp
+;
+\ call-only

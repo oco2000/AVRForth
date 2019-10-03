@@ -1,0 +1,8 @@
+: ABS        ( x -- |x| )                    ( absolute value )
+  [
+    tosh tst
+    if_<0
+      ' NEGATE (JMP)
+    then
+  ]
+;

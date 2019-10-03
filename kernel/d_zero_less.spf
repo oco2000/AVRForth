@@ -1,0 +1,11 @@
+: D0<       ( d -- f )
+  [
+    0x2 yl adiw
+    tosl clr
+    tosh tst
+    if_<0
+      tosl dec
+    then
+    tosl tosh mov
+  ]
+;

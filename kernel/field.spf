@@ -1,0 +1,11 @@
+[F]
+: -- ( offset width -- offset+width | addr -- addr+offset ) \ STRUCT FIELD
+  CREATE OVER , + DOES> @
+  T-STATE @ IF
+    (LIT) [T] + [P]
+  ELSE
+    +
+  THEN
+;
+
+[P]

@@ -1,0 +1,699 @@
+\ =================== шины =====================
+REQUIRE {SET} lib/ports.spf
+
+[F]
+
+BASE @ DECIMAL
+
+MODULE: BUS
+
+: ARRAY
+  CREATE CELLS ALLOT
+  DOES> SWAP CELLS +
+;
+\ максимальное количество портов в контроллере
+08 CONSTANT #MAX_PORTS
+\ максимальное количество выводов в шине
+16 CONSTANT #MAX_BITS
+
+\ количество используемых в шине портов
+00 VALUE #PORTS
+\ массив используемых в шине портов
+#MAX_PORTS ARRAY BUS_PORTS
+
+\ вернуть индекс порта в массиве, если его нет - добавить и вернуть индекс
+: ?#PORT ( port -- index )
+  >R 00 BEGIN ( index )
+      DUP BUS_PORTS @ ( index arr_port )
+      R@ OVER <> SWAP 0<> AND
+  WHILE
+      1+
+  REPEAT
+  ( index )
+  DUP BUS_PORTS @ 0= IF
+    DUP TO #PORTS
+    R@ OVER BUS_PORTS !
+  THEN
+  R> DROP
+;
+
+\ таблица перестановок битов в шине
+\ для каждого порта:
+\ 1 байт - удвоенное количество используемых бит в порту
+\ 8+8 байт - номера битов источника и приемника
+\ 1 байт - 0xFF - ограничитель
+#MAX_PORTS 10 * 2* CONSTANT /PERMUTATION
+HERE /PERMUTATION ALLOT
+CONSTANT PERMUTATION ( byte table )
+\ получить адрес счетчика битов для порта
+: CNT ( #port -- addr )
+    10 * 2* PERMUTATION +
+;
+
+\ получить количество используемых битов в порту
+: CNT@ ( #port -- cnt )
+    CNT C@ 2/
+;
+
+\ получить адрес i-го бита источника
+: SRC ( i #port -- addr )
+    CNT SWAP 2* + 1+
+;
+
+\ получить номер i-го бита источника
+: SRC@ ( i #port -- bit )
+    SRC C@
+;
+
+\ получить последний неиспользуемый адрес источника
+: SRCC ( #port -- addr )
+    CNT DUP C@ + 1+
+;
+
+\ получить последний неиспользуемый адрес приемника
+: DSTC ( #port -- addr )
+    SRCC 1+
+;
+
+\ получить адрес i-го бита приемника
+: DST ( i #port -- addr )
+    SRC 1+
+;
+
+\ получить номер i-го бита приемника
+: DST@ ( i #port -- addr )
+    DST C@ ;
+
+\ очистить таблицу перестановок
+: ERASE_PERMUTATION ( -- )
+    \ очистить таблицу портов
+    00 BUS_PORTS #MAX_PORTS CELLS ERASE
+    00 TO #PORTS
+    \ очистить таблицу перестановок
+    PERMUTATION /PERMUTATION 0xFF FILL
+    \ обнулить счетчики битов
+    #MAX_PORTS 00 DO
+        00 I CNT C!
+    LOOP
+;
+
+\ заполнить таблицу перестановок
+: FILL_PERMUTATION ( data -- )
+    ERASE_PERMUTATION
+    DUP @ SWAP CELL+ SWAP 00 ?DO ( addr ) \ по всем линиям
+        DUP 2@ ( addr bit# port )
+        ?#PORT ( addr bit# index )   \ индекс используемого порта
+        SWAP OVER DSTC C! ( addr index )    \ добавить бит приемника
+        DUP SRCC I SWAP C! ( addr index )   \ добавить бит источника
+        CNT DUP C@ 2+ SWAP C!   \ увеличить счетчик на 2
+        02 CELLS +
+    LOOP DROP
+;
+
+EXPORT
+
+\ определить шину
+: BUS{      ( -- -1 )
+  ?TEXEC -01 \ только для целевой интерпретации
+;
+
+: }BUS      ( -1 n0 n1 .. nx -- )
+    CREATE
+        HERE >R CELL ALLOT \ 1 ячейка на количество линий
+        00 BEGIN ( counter )
+            OVER -01 <>      \ пока не встретим -1
+        WHILE
+            1+ >R
+            , LSB ,     \ запомним порт и номер бита
+            R>
+        REPEAT
+        R> ! DROP
+        \ n portn bitn  ...  port0 bit0
+    DOES>
+        FILL_PERMUTATION \ заполнить таблицу перестановок
+;
+
+DEFINITIONS
+
+\ по индексу порта получить итоговую маску используемых битов
+: PORT.BITMASK ( #port -- mask )
+    00 SWAP DUP CNT@ 00 ?DO ( curmask #port )
+      I OVER DST@ EXP2 ROT OR SWAP
+    LOOP DROP
+;
+
+\ непрерывно возрастающая последовательность номеров линий приемника
+\ i - начальный бит
+\ j - конечный бит + 1
+\ port - индекс порта
+: SEQUENCE ( i port -- j )
+    2DUP DST@ BEGIN ( I PORT DST )
+        >R SWAP 1+ SWAP 2DUP DST@ DUP 1- ( I+1 PORT DST.NEW DST.NEW-1 )
+        R> <>
+    UNTIL 2DROP
+;
+
+\ --------------- запись известного значения ------------------------
+
+: WRITE.SBI/CBI   ( byte port mask -- )   \ скомпилировать sbi или cbi для каждого бита маски
+    SWAP >R BEGIN ( byte mask )
+        2DUP EXTRACT_LSB AND
+        IF \ установить
+            DUP LSB R@ [T] sbi [P]
+        ELSE \ очистить
+            DUP LSB R@ [T] cbi [P]
+        THEN
+        RESET_LSB
+    DUP 0= UNTIL
+    RDROP 2DROP
+;
+
+: WRITE.USUAL   ( byte port mask -- )   \ записать байт в порт (с маской)
+    ROT DUP >R ( port mask byte ) ( R: byte )
+    0xFF <>                 \ если надо установить все биты в "1"
+    OVER 0xFF <> R@ 0<> OR  \ или очистить все биты в байте
+    AND IF                  \ то можно не читать текущее значение
+        OVER [T] zl _in [P] \ прочитать текущее значение
+    THEN ( port mask )
+    DUP R@ <> IF            \ если надо установить все в "1", то маскировать не нужно
+        INVERT 0xFF AND [T] zl andi [P]
+    ELSE DROP THEN ( port )
+    R> ?DUP IF               \ если надо очистить все биты, то "или" не нужно
+        [T] zl ori [P]
+    THEN
+    [T] zl [P] SWAP [T] _out [P] \ записать обратно в порт
+;
+
+00 VALUE TEMP_BYTE   \ текущий байт для записи
+VECT 'PORT          \ PORT или DDR
+
+: #PORT>PORT ( #port -- port ) \ найти порт по его индексу
+    BUS_PORTS @ 'PORT
+;
+
+\ записать байт в порт по его индексу
+: BUS.PORT.WRITE ( w #port -- )
+  00 TO TEMP_BYTE \ asm
+  >R 00 BEGIN ( w i )
+    DUP R@ SEQUENCE ( w i j )
+    2DUP OVER R@ DST@ ( w i j i j dst[i] )
+    -ROT SWAP - SEQ_MASK ( w i j mask )     \ определить маску
+    ROT DUP R@ DST@ SWAP R@ SRC@ - ( w j mask delta )  \ определить сдвиг
+    DUP 0< IF \ asm
+        03 PICK SWAP NEGATE RSHIFT \ asm
+    ELSE
+        03 PICK SWAP LSHIFT        \ asm
+    THEN
+    AND TEMP_BYTE OR TO TEMP_BYTE ( w j ) \ asm \ собираем все во временную переменную
+  DUP R@ DST@ 0xFF = UNTIL  \ до конца
+  2DROP
+  \ asm \ собственно запись
+  TEMP_BYTE
+  R@ #PORT>PORT ( byte port )
+  R> PORT.BITMASK ( byte port mask )
+  2DUP 1s 0x4 < SWAP >reg  ?port0 AND  ( sbi/cbi? ) \ маска порта - 1 бит, можно использовать sbi/cbi
+  IF ( byte port mask )
+    WRITE.SBI/CBI
+  ELSE ( port mask )
+    WRITE.USUAL
+  THEN
+;
+
+\ --------------- запись неизвестного значения ------------------------
+
+tmp1l FCONST temp_byte  \ регистр для хранения собираемого байта
+tmp1h FCONST counter    \ счетчик сдвигов
+tmp2l FCONST copyl      \ копия записываемого слова
+tmp2h FCONST copyh
+
+[T]
+: shift_copy_left ( -- ) \ сдвинуть копию влево на counter разрядов
+  for
+    copyl lsl
+    copyh rol
+  counter next
+;
+: shift_copy_right ( -- ) \ сдвинуть копию вправо на counter разрядов
+  for
+    copyh asr
+    copyl ror
+  counter next
+;
+[P]
+
+: SHIFT_COPY_LEFT ( n -- ) \ компилировать сдвиг копии влево на n разрядов
+  DUP 01 = IF DROP
+    copyl lsl
+    copyh rol
+  ELSE
+    counter ldi
+    shift_copy_left
+  THEN
+;
+
+: SHIFT_COPY_RIGHT ( n -- ) \ компилировать сдвиг копии вправо на n разрядов
+  DUP 01 = IF DROP
+    copyh asr
+    copyl ror
+  ELSE
+    counter ldi
+    shift_copy_right
+  THEN
+;
+
+: WRITE.SBI/CBI.UNKNOWN   ( port mask -- )   \ скомпилировать sbi или cbi, маска - 1 бит!
+    LSB ( port bit# )
+    DUP temp_byte sbrs
+    2DUP SWAP cbi
+    DUP temp_byte sbrc
+    SWAP sbi
+;
+
+: WRITE.USUAL.UNKNOWN     ( port mask -- )  \ вывести значение из temp_byte в порт с маскированием
+    DUP 0xFF <> IF
+        OVER zl _in             \ прочитать текущее значение
+        INVERT 0xFF AND zl andi \ маска
+        temp_byte zl or         \ установить биты
+        zl SWAP _out            \ записать обратно в порт
+    ELSE \ маска = 0xFF - просто запись
+        DROP
+        temp_byte SWAP _out
+    THEN
+;
+
+: SHIFT_COPY ( delta -- )   \ сдвинуть копию вправо при delta<0, влево при delta>0, при delta=0 ничего не делать
+    DUP 0< IF
+        NEGATE SHIFT_COPY_RIGHT
+    ELSE ?DUP IF
+            SHIFT_COPY_LEFT
+        THEN
+    THEN
+;
+
+\ структура группы
+00
+CELL -- delta   \ сдвиг
+CELL -- mask    \ маска
+CELL -- i       \ номер бита в массиве PERMUTATION
+CONSTANT /GROUP
+
+08 /GROUP * CONSTANT /GROUPS \ длина массива групп
+/GROUPS CELL / ARRAY GROUPS  \ массив групп
+: GROUP[] ( n -- )      \ адрес группы n
+    /GROUP CELL / * GROUPS
+;
+
+: FILL_GROUPS ( #port -- #groups ) \ заполнить массив групп, вернуть количество групп
+  00 GROUPS /GROUPS 0xFF FILL
+  >R 00 00 BEGIN ( cnt - счетчик групп, i - номер бита в массиве DST )
+    2DUP SWAP GROUP[] i !
+    DUP R@ SEQUENCE ( cnt i j )
+    2DUP OVER R@ DST@ ( cnt i j i j dst[i] )
+    -ROT SWAP - SEQ_MASK ( cnt i j mask )     \ определить маску
+    ROT DUP R@ DST@ SWAP R@ SRC@ - ( cnt j mask delta )  \ определить сдвиг
+    03 PICK GROUP[] delta !
+    02 PICK GROUP[] mask !
+    SWAP 1+ SWAP
+  DUP R@ DST@ 0xFF = UNTIL  \ до конца
+  R> 2DROP
+;
+
+: MSB/LSB ( n1 -- n2 reg ) \ по номеру бита \0..15\ вернуть регистр и новый номер в этом регистре
+    DUP 07 > IF
+        08 - tosh
+    ELSE
+        tosl
+    THEN
+;
+
+: WRITE.SBI/CBI.UNKNOWN.1GROUP   ( #port -- )   \ скомпилировать sbi или cbi, маска - 1 бит!, одна группа
+    DUP >R #PORT>PORT ( port )
+    00 GROUP[] i @ DUP R@ SRC@ ( port i src[i] - номер бита в источнике )
+    SWAP R> DST@ ( port src[i] dst[i] - номер бита в приемнике )
+    SWAP MSB/LSB ( port dst[i] src_bit src_reg ) \ если бит источника в старшем байте - используем его
+    2DUP sbrs
+    2OVER SWAP cbi
+    sbrc
+    SWAP sbi
+;
+
+: SHIFT_COPY_OPT ( #group delta -- reg ) \ оптимизированный сдвиг влево/вправо, вернуть используемый регистр
+    NIP \ TODO можно использовать сдвиг только одного младшего/старшего байта
+    DUP 0< IF \ сдвиг вправо можно оптимизировать
+        DUP ABS DUP 8 - DUP ABS ( delta |delta| d |d| ) \ .S CR
+        ROT < IF NIP ( d )
+            NEGATE SHIFT_COPY copyh
+        ELSE
+            DROP SHIFT_COPY copyl
+        THEN
+    ELSE
+        SHIFT_COPY copyl
+    THEN
+;
+
+00 VALUE WAS_WRITE? \ была запись в порт?
+: WAS_WRITE
+    TRUE TO WAS_WRITE?
+;
+
+: WRITE.1GROUP ( #port -- ) \ запись в порт при одной группе битов
+    00 GROUP[] mask @ DUP 1s 01 = IF ( #port mask ) \ маска - 1 бит
+        DROP WRITE.SBI/CBI.UNKNOWN.1GROUP
+        WAS_WRITE
+    ELSE ( #port mask )
+        0xFF = IF ( #port ) \ маска - 8 бит
+            00 GROUP[] delta @ ?DUP IF ( #port delta ) \ есть сдвиг
+                DUP -08 = IF ( #port delta ) \ на 8 вправо - можно использовать старший байт
+                    DROP tosh
+                ELSE ( #port delta ) \ сдвигаем копию
+                    tosl copyl movw
+                    00 SWAP SHIFT_COPY_OPT
+                THEN ( #port reg )
+            ELSE tosl THEN ( #port reg ) \ нет сдвига
+            SWAP #PORT>PORT _out \ вывод, читать не надо, так как маска 0xFF
+            WAS_WRITE
+        ELSE DROP THEN \ упрощения не вышло, продолжим позднее
+    THEN
+;
+
+00 VALUE WAS_CLR? \ временный байт очищался или перезаписывался?
+: ?CLR ( reg -- )   \ если временный байт уже очищался, добавляем к нему регистр операцией "или", иначе перезаписываем
+    WAS_CLR? IF \ очищался?
+        temp_byte or    \ "или"
+    ELSE
+        temp_byte mov   \ перезаписываем из регистра
+        TRUE TO WAS_CLR?
+    THEN
+;
+
+: BLD/BST ( #group #port -- ) \ переносим группу битов во временный байт с помощью BLD/BST
+    WAS_CLR? INVERT IF \ очистить временный байт, если еще не очищался
+        temp_byte clr
+        TRUE TO WAS_CLR?
+    THEN
+    SWAP
+    DUP GROUP[] i @ ( #port #group i )
+    SWAP GROUP[] mask @ 1s ( #port i num )
+    OVER + SWAP ( #port j i ) DO ( #port ) \ по всем битам группы
+        I OVER DST@ ( #port dst[i] )
+        OVER I SWAP SRC@ ( #port dst[i] src[i] )
+        MSB/LSB bst     \ читаем бит источника
+        temp_byte bld   \ записываем в приемник
+    LOOP DROP
+;
+
+: andi? ( mask reg -- ) \ компилировать andi, если маска не 0xff
+    OVER 0xFF = IF
+        2DROP
+    ELSE
+        andi
+    THEN
+;
+
+: BUS.PORT.WRITE.UNKNOWN ( #port -- ) \ запись в порт, заданный индексом, неизвестного байта
+                         ( T: c -- c )
+    DUP >R FILL_GROUPS ( #groups )
+    FALSE TO WAS_WRITE? \ очистить флаги
+    FALSE TO WAS_CLR?
+    DUP 01 = IF \ только одна группа
+        R@ WRITE.1GROUP
+        WAS_WRITE? IF \ если была запись, больше ничего не делать
+            R> 2DROP EXIT
+        THEN
+    THEN
+
+    1- BEGIN ( #group ) \ по всем группам битов
+        DUP GROUP[] mask @
+        OVER GROUP[] delta @ ?DUP IF ( #group mask delta ) \ есть сдвиг?
+            SWAP 1s 4 < IF ( #group delta ) \ в маске 1, 2 или 3 единицы
+                DROP DUP R@ BLD/BST
+            ELSE \ использовать сдвиги
+                tosl copyl movw
+                2DUP SHIFT_COPY_OPT NIP ( #group reg )
+                OVER GROUP[] mask @ ( #group reg mask )
+                OVER andi?
+                ?CLR
+            THEN
+        ELSE ( #group mask ) \ нет сдвига
+            DUP 1s 01 = IF \ маска 1 бит
+                DROP DUP R@ BLD/BST
+            ELSE ( #group mask )
+                tosl copyl movw
+                copyl andi?
+                copyl ?CLR
+            THEN
+        THEN
+    1- DUP 0< UNTIL DROP
+    R@ #PORT>PORT ( port )
+    R> PORT.BITMASK ( port mask )
+    WRITE.USUAL.UNKNOWN \ записать
+;
+
+: SET.BUS.PORT  ( -- )   \ установить для записи PORT
+    ['] {PORT} TO 'PORT
+;
+
+: SET.BUS.DDR   ( -- )   \ установить для записи DDR
+    ['] {DDR} TO 'PORT
+;
+
+: SET.BUS.PIN  ( -- )   \ установить для чтения PIN
+    ['] {PIN} TO 'PORT
+;
+
+\ записать слово в шину
+: (BUS.WRITE) ( bus -- )
+              ( T: w -- )
+  ?TCOMP QLIT1? IF ( byte ) \ записать известное значение
+    #PORTS 1+ 00 ?DO \ по всем используемым портам
+        DUP I BUS.PORT.WRITE
+    LOOP DROP
+  ELSE \ неизвестное
+    #PORTS 1+ 00 ?DO \ по всем используемым портам
+        I BUS.PORT.WRITE.UNKNOWN
+    LOOP
+    popt
+  THEN
+;
+
+EXPORT
+
+\ записать слово в PORT шины
+: BUS.WRITE ( -- )
+            ( T: w -- )
+    SET.BUS.PORT
+    (BUS.WRITE)
+;
+
+\ записать слово в DDR шиины
+: BUS.DDR.WRITE ( w -- )
+    SET.BUS.DDR
+    (BUS.WRITE)
+;
+
+\ настроить шину на вход
+: BUS.INPUT ( -- )
+            ( T: -- )
+    ?TCOMP 00 [T] LITERAL [P] BUS.DDR.WRITE
+;
+
+\ настроить шину на выход
+: BUS.OUTPUT ( -- )
+             ( T: -- )
+    ?TCOMP 0xFFFF [T] LITERAL [P] BUS.DDR.WRITE
+;
+
+\ подтяжка
+: BUS.PULL_UP ( -- )
+              ( T: -- )
+    ?TCOMP 0xFFFF [T] LITERAL [P] BUS.WRITE
+;
+
+\ установить все в 1
+: BUS.SET ( -- )
+          ( T: -- )
+    BUS.PULL_UP
+;
+
+\ установить все в 0
+: BUS.CLEAR ( -- )
+            ( T: -- )
+    ?TCOMP 00 [T] LITERAL [P] BUS.WRITE
+;
+
+DEFINITIONS
+
+\ ========================== чтение шины ==========================
+
+00 VALUE TOSH_WRITE?     \ была запись в tosh?
+00 VALUE TOSL_WRITE?     \ была запись в tosl?
+00 VALUE 1GROUP?         \ в текущем порту только 1 группа битов?
+00 VALUE CUR_PORT        \ текущий порт
+
+: tosh_clr? ( -- )      \ очистить tosh, если в него еще не было записи
+    TOSH_WRITE? INVERT IF
+        tosh clr
+        TRUE TO TOSH_WRITE?
+    THEN
+;
+
+: tosl_clr? ( -- )      \ очистить tosl, если в него еще не было записи
+    TOSL_WRITE? INVERT IF
+        tosl clr
+        TRUE TO TOSL_WRITE?
+    THEN
+;
+
+: temp_byte_move_or_in? ( reg -- ) \ если только 1 группа битов, читаем порт в регистр, если нет - в регистр из временного байта
+    1GROUP? IF
+        CUR_PORT SWAP _in
+    ELSE
+        temp_byte SWAP mov
+    THEN
+;
+
+: SHIFT_COPY_OPT_READ ( mask delta -- ) \ оптимизированный сдвиг влево/вправо
+    DUP 0< IF \ сдвиг вправо можно оптимизировать
+        DUP ABS DUP 8 - DUP ABS ( mask delta |delta| d |d| ) \ .S CR
+        ROT < IF NIP ( mask d ) \ сдвиг на d
+            copyl clr
+            copyh temp_byte_move_or_in?
+            SWAP copyh andi?
+            SHIFT_COPY
+        ELSE ( mask delta d ) \ сдвиг на delta
+            copyh clr
+            copyl temp_byte_move_or_in?
+            ROT copyl andi?
+            DROP NEGATE SHIFT_COPY
+        THEN
+    ELSE \ сдвиг влево
+        copyh clr
+        copyl temp_byte_move_or_in?
+        SWAP copyl andi?
+        NEGATE SHIFT_COPY
+    THEN
+    copyl tosl or
+    copyh tosh or
+    TRUE TO TOSH_WRITE?
+    TRUE TO TOSL_WRITE?
+;
+
+: READ.1GROUP ( #port -- ) \ чтение при одной группе битов
+    00 GROUP[] mask @ 0xFF = IF ( #port ) \ маска - 8 бит
+        00 GROUP[] delta @ ?DUP IF ( #port delta ) \ есть сдвиг
+            DUP -08 = IF ( #port delta ) \ на 8 вправо - можно использовать старший байт
+                DROP
+                DUP #PORT>PORT tosh _in     \ читаем сразу в tosh
+                TRUE TO TOSH_WRITE?
+            ELSE ( #port delta ) \ сдвигаем копию
+                0xFF SWAP SHIFT_COPY_OPT_READ
+            THEN ( #port )
+        ELSE ( #port ) \ нет сдвига
+            DUP #PORT>PORT tosl _in     \ читаем сразу в tosl
+            TRUE TO TOSL_WRITE?
+        THEN
+        WAS_WRITE \ выйти и больше ничего не делать
+    THEN \ упрощения не вышло, продолжим позднее
+    DROP
+;
+
+: BLD/BST_READ ( #group #port -- ) \ переносим группу битов из временного байта с помощью BLD/BST
+    SWAP
+    DUP GROUP[] i @ ( #port #group i )
+    SWAP GROUP[] mask @ 1s ( #port i num )
+    OVER + SWAP ( #port j i ) DO ( #port ) \ по всем битам группы
+        I OVER DST@ ( #port dst[i] )
+        OVER I SWAP SRC@ ( #port dst[i] src[i] )
+        SWAP temp_byte bst   \ читаем приемник
+        MSB/LSB bld     \ записываем бит источника
+    LOOP DROP
+    TRUE TO TOSH_WRITE?
+    TRUE TO TOSL_WRITE?
+;
+
+: temp_byte_in? ( -- ) \ читаем порт во временный байт, если только 1 группа битов
+    1GROUP? IF
+        CUR_PORT temp_byte _in
+    THEN
+;
+
+: BUS.PORT.READ ( #port -- ) \ чтение байта из порта, заданного индексом
+                         ( T: c -- c' )
+
+    DUP >R FILL_GROUPS ( #groups )
+    FALSE TO WAS_WRITE? \ очистить флаги
+    FALSE TO 1GROUP?
+    R@ #PORT>PORT TO CUR_PORT \ запомнить текущий порт
+
+    DUP 01 = IF \ только одна группа
+        TRUE TO 1GROUP?
+        R@ READ.1GROUP
+        WAS_WRITE? IF \ если было чтение, больше ничего не делать
+            R> 2DROP EXIT
+        THEN
+    THEN
+
+    1GROUP? INVERT IF   \ если 1 группа - не читать во временный байт
+        CUR_PORT temp_byte _in
+    THEN
+
+    tosh_clr?
+    tosl_clr?
+
+    1- BEGIN ( #group ) \ по всем группам битов
+        DUP GROUP[] mask @
+        OVER GROUP[] delta @ ?DUP IF ( #group mask delta ) \ есть сдвиг?
+            OVER 1s 4 < IF ( #group mask delta ) \ в маске 1, 2 или 3 единицы
+                temp_byte_in?   \ возможно, временный байт уже прочитан
+                2DROP DUP R@ BLD/BST_READ
+            ELSE \ использовать сдвиги
+                SHIFT_COPY_OPT_READ
+            THEN
+        ELSE ( #group mask ) \ нет сдвига
+            DUP 1s 01 = IF \ маска 1 бит
+                temp_byte_in?   \ возможно, временный байт уже прочитан
+                DROP DUP R@ BLD/BST_READ
+            ELSE ( #group mask )
+                1GROUP? IF  \ 1 группа - читаем прямо в копию
+                    CUR_PORT copyl _in
+                ELSE \ берем из временного байта
+                    temp_byte copyl mov
+                THEN
+                copyl andi?
+                copyl tosl or
+                TRUE TO TOSL_WRITE?
+            THEN
+        THEN
+    1- DUP 0< UNTIL DROP
+    R> DROP
+;
+
+\ читать слово из шины
+: (BUS.READ) ( -- )
+             ( T: -- w )
+    pusht
+    FALSE TO TOSH_WRITE?
+    FALSE TO TOSL_WRITE?
+
+    #PORTS 1+ 00 ?DO \ по всем используемым портам
+        I BUS.PORT.READ
+    LOOP
+
+    tosh_clr?
+    tosl_clr?
+;
+
+EXPORT
+\ читать слово из шиины
+: BUS.READ ( -- )
+           ( T: -- w )
+    SET.BUS.PIN
+    (BUS.READ)
+;
+
+;MODULE
+
+BASE !
+
+[P]
+

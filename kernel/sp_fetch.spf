@@ -1,0 +1,6 @@
+: SP@   ( -- SP )
+  pusht
+  yl tosl mov
+  yh tosh mov
+;
+

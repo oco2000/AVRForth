@@ -1,0 +1,24 @@
+: (XOR)        ( x1 x2 -- x3 )                 \ ( bitwise XOR TOS with NOS )
+    poptmp
+    tmpl tosl eor
+    tmph tosh eor
+;
+
+MACRO: XOR    ( -- )  
+[F]
+  QLIT1? IF 
+    DEBUG3" XOR"
+    BYTE-SPLIT ( LO HI )
+    ?DUP IF
+      zh ldi
+      zh tosh eor 
+    THEN
+    ?DUP IF 
+      zl ldi
+      zl tosl eor 
+    THEN  
+  ELSE
+    (XOR)
+  THEN 
+[P]
+;MACRO

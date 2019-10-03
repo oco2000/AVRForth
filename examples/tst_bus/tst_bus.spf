@@ -1,0 +1,196 @@
+\ тест-файл для групп линий и шин
+\ +DEBUG3 \ отладочные сообщения
+
+REQUIRE {SET} lib/ports.spf
+REQUIRE BUS.WRITE lib/bus.spf
+
+\ пример обращения к линиям и группам линий
+\ линии
+PB1 WIRE LED
+PB4 WIRE BTN
+\ группы
+GROUP{ PD0 PD1 PD2 PD3 }GROUP DATA
+
+: testport
+    DATA {OUTPUT}   \\ на выход
+
+    LED {OUTPUT}    \\ на выход
+    LED {TOGGLE}    \\ переключть
+    PB1 {TOGGLE}    \\ или так
+    BTN {INPUT}     \\ на вход
+    BTN {PULL_UP}   \\ включить подтяжку
+    BEGIN
+        {PORTB} PORT.READ  \\ прочитать порт
+        BTN {GROUP.MASK} AND IF
+            LED {SET}
+        ELSE
+            LED {CLEAR}
+        THEN
+    AGAIN
+;
+
+\ пример обращения к шинам
+\     15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0
+BUS{                         PC3 PD7 PD6 PD5 PD4 PD3 PC4 PB3 PB1 PB0 }BUS DATA1
+BUS{                         PC3 PD7 PD6 PD5 PD4 PD3 PD2 PD1 PD0 PB2 }BUS CONTROL
+BUS{     PB3 PB2 PB1 PB0 PB7 PB6 PB5 PB4 PC7 PC6 PC5 PC4 PC3 PC2 PC1 }BUS DATA2
+BUS{                                 PC0 PC1 PC2 PC3 PC4 PC5 PC6 PC7 }BUS DATA3
+BUS{                                                             PD7 }BUS DATA4
+BUS{ PB7 PB6 PB5 PB4 PB3 PB2 PB1 PB0 PC7 PC6 PC5 PC4 PC3 PC2 PC1 PC0 }BUS DATA5
+BUS{                                 PC7 PC6 PC5 PC4 PC3 PC2 PC1 PC0 }BUS DATA6
+BUS{                         PD2 PC1 PC0 PB6 PB7 PD1 PD0 PB5 PB4 PB2 }BUS BUTTONS
+
+[F] DECIMAL [P]
+1000000 CONSTANT F_CPU
+REQUIRE MS      lib/delay.spf
+
+: data1_read
+    DATA1 BUS.READ
+;
+
+: data1_write ( w -- )
+    DATA1 BUS.WRITE
+;
+
+: buttons_read
+    BUTTONS BUS.READ
+;
+
+: buttons_write
+    BUTTONS BUS.WRITE
+;
+
+: data2_read
+    DATA2 BUS.READ
+;
+
+: data2_write
+    DATA2 BUS.WRITE
+;
+
+: data3_read
+    DATA3 BUS.READ
+;
+
+: data3_write
+    DATA3 BUS.WRITE
+;
+
+: data4_read
+    DATA4 BUS.READ
+;
+
+: data4_write
+    DATA4 BUS.WRITE
+;
+
+: data5_read
+    DATA5 BUS.READ
+;
+
+: data5_write
+    DATA5 BUS.WRITE
+;
+
+: data6_read
+    DATA6 BUS.READ
+;
+
+: data6_write
+    DATA6 BUS.WRITE
+;
+
+: control_read
+    CONTROL BUS.READ
+;
+
+: control_write
+    CONTROL BUS.WRITE
+;
+
+100 == delay
+
+: MAIN
+\\ output
+ DATA1 BUS.OUTPUT
+\\ btn input
+ BUTTONS BUS.INPUT
+\\ btn pull_up
+ BUTTONS BUS.PULL_UP
+\ data2
+\ DATA2 BUS.OUTPUT
+\\ control write
+\ CONTROL BUS.WRITE
+\\ data2 write
+\ DATA2 BUS.WRITE
+\\ data3 write
+\ DATA3 BUS.WRITE
+\\ data4 write
+\ DATA4 BUS.PULL_UP
+
+\\ data write
+ 0x1 10 00 DO
+   DUP data1_write
+   delay MS
+   2*
+ LOOP
+ DROP
+ 0x1 10 00 DO
+   DUP INVERT data1_write
+   delay MS
+   2*
+ LOOP
+ DROP
+ NEW
+ 0x01 DATA1 BUS.WRITE
+ delay MS
+ 0x02 DATA1 BUS.WRITE
+ delay MS
+ 0x04 DATA1 BUS.WRITE
+ delay MS
+ 0x08 DATA1 BUS.WRITE
+ delay MS
+ 0x10 DATA1 BUS.WRITE
+ delay MS
+ 0x20 DATA1 BUS.WRITE
+ delay MS
+ 0x40 DATA1 BUS.WRITE
+ delay MS
+ 0x80 DATA1 BUS.WRITE
+ delay MS
+ 0x100 DATA1 BUS.WRITE
+ delay MS
+ 0x200 DATA1 BUS.WRITE
+ delay MS
+ 0x01 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x02 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x04 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x08 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x10 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x20 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x40 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x80 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x100 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x200 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x00 INVERT DATA1 BUS.WRITE
+ delay MS
+ 0x00 DATA1 BUS.WRITE
+
+    BEGIN
+        buttons_read
+        data1_write
+    AGAIN
+;
+
+
+' MAIN [->] {MAIN}

@@ -1,0 +1,21 @@
+: D+          ( d1 d2 -- d3 )                 ( double-cell add)
+  [
+	pusht
+	r16 push
+    yl xl movw
+    yl zl movw              \ ah am am al bh bm bm bl = [Y]
+	0x4 xl adiw
+	0x8 zl adiw             \ X -> A      Z -> B
+	0x4 r16 ldi
+	clc
+	for
+	  -[x] tmpl ld
+	  -[z] tmph ld
+	  tmph tmpl adc
+	  tmpl [z] st
+    r16 next
+    0x4 yl adiw
+    r16 pop
+    popt
+  ]
+;

@@ -1,0 +1,26 @@
+REQUIRE LCD_INIT lib/lcd/lcd.spf
+
+: DEFINECHAR ( code addr -- )
+    7 + SWAP                  ( addr code )
+    3 LSHIFT LCD_CGRAM BIT OR ( addr LCD_addr )
+    8 00 DO
+        2DUP LCD_COMMAND C@P LCD_DATA
+        1+ SWAP 1- SWAP
+    LOOP
+    2DROP
+;
+
+:: LCD_CHAR
+  PCREATE         \ ( 8-byte-char-def )
+        TC, TC, TC, TC, TC, TC, TC, TC,
+  PDOES>  ( char_code -- )
+        DEFINECHAR
+    ;
+;;
+\EOF
+Использование:
+0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH
+
+после LCD_INIT
+0x1 BACKSLASH \ определить символ с кодом 1
+0x1 EMIT      \ вывод

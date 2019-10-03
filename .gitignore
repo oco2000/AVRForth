@@ -1,0 +1,7 @@
+#*.geany
+*.DBK
+*.hex
+*.hex.asm
+*.bin
+*.lst
+*.PWI

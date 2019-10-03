@@ -1,0 +1,7 @@
+: M*            ( n1 n2 -- d )                  ( signed mult, double-cell result)
+    2DUP XOR 0< >R
+    ABS SWAP ABS UM*
+    R> IF
+        DNEGATE
+    THEN
+;

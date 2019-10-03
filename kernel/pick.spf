@@ -1,0 +1,9 @@
+: PICK       ( ... n -- ... xn )             ( get nth stack element)
+  yl zl movw
+  tosl lsl
+  tosh rol
+  tosl zl add
+  tosh zh adc
+  [z]+ tosh ld
+  [z]+ tosl ld
+;

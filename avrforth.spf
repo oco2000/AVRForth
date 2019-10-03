@@ -1,0 +1,90 @@
+\ AVR Forth
+DECIMAL
+
+C" 1.4.2" CONSTANT _VERSION
+.( AVRForth by Oleg Voronin. Version )
+_VERSION COUNT TYPE CR
+
+WARNING 0!
+
+S" src/lib/include/tools.spf" INCLUDED \ [IF] [THEN]
+S" src/lib/include/core-ext.spf" INCLUDED \ [IF] [THEN]
+S" src/lib/ext/case.spf"    INCLUDED \ CASE
+S" src/lib/ext/testcase.spf"  INCLUDED
+S" src/util.spf"      INCLUDED \ разные определения
+S" src/lib/stack.spf"      INCLUDED \ стеки
+S" src/lib/place.spf" INCLUDED
+S" src/hex.spf"      INCLUDED \ Intel hex saving
+
+VOCABULARY TARGET   \ словарь для целевого компилятора
+FORTH ONLY   ALSO TARGET   DEFINITIONS  \ новые определения в TARGET
+\ Context: TARGET FORTH
+\ Current: TARGET
+
+S" src/flash.spf"      INCLUDED \ flash
+S" src/avrasm.spf"      INCLUDED \ ассемблер
+S" src/avrdisasm.spf"      INCLUDED \ дизассемблер
+S" src/avrlist.spf"       INCLUDED \ создание листинга
+S" src/require.spf"     INCLUDED \ полуавтоматическое включение необходимых слов
+S" src/xfbase.spf"      INCLUDED \ определяющие слова и управляющие конструкции
+
+ALSO FORTH
+\ Context: FORTH TARGET FORTH
+\ Current: TARGET
+
+\ ================= контроллер
+S" devices/devices.spf" INCLUDED \ файл с константами типов контроллеров
+INCLUDED \ включить файл с определением контроллера, переданный в командной строке
+
+\ слова, определенные до этого слова, не попадут в листинг
+' RESET  'marker !
+
+PREVIOUS
+\ Context: TARGET FORTH
+\ Current: TARGET
+\ внимание, слова :, ;, CREATE, DOES> переопределены
+
+RAM-BOTTOM D-HERE ! \ начало RАМ
+0 E-HERE !      \ начало EEPROM
+
+[F] 2VARIABLE FNAME [P] \ имя файла программы
+
+2DUP FNAME 2!  \ запомним имя файла
+ONLY TARGET \ только TARGET
+
+INCLUDED  \ включить файл с программой, переданный в командной строке
+
+[F]
+CREATE FILENAME 256 ALLOT \ буфер для добавления расширений к файлу
+
+\ создание файла прошивки
+FNAME 2@ FILENAME  PLACE
+S" .hex" FILENAME +PLACE
+FILENAME COUNT T-SAVE
+
+FNAME 2@ FILENAME  PLACE
+S" .bin" FILENAME +PLACE
+FILENAME COUNT T-SAVE-BIN
+
+FNAME 2@ FILENAME  PLACE
+S" .eep.hex" FILENAME +PLACE
+FILENAME COUNT E-SAVE
+
+FNAME 2@ FILENAME  PLACE
+S" .eep.bin" FILENAME +PLACE
+FILENAME COUNT E-SAVE-BIN
+
+\ создание листинга
+FNAME 2@ FILENAME  PLACE
+S" .lst" FILENAME +PLACE
+FILENAME COUNT [P] LIST-SAVE
+[F]
+
+COMMENTS FREE THROW \ освободить память комментариев
+AIStack FreeStack \ освободить стек автоподключения слов
+
+?EMPTY
+DECIMAL
+.( Image  size: ) THERE . .( bytes) CR
+.( RAM    size: ) D-HERE @ RAM-BOTTOM - . .( bytes) CR
+.( EEPROM size: ) E-HERE @ . .( bytes) CR

@@ -1,0 +1,7 @@
+: -ROT       ( a b c -- c a b )              ( rotate top to third stack item)
+	tosl zl movw
+	popt
+	poptmp
+	zl pushd
+	pushtmp
+;

@@ -1,0 +1,8 @@
+: D2*        ( d1 -- d2 )                    ( left shift double)
+	poptmp
+	tmpl lsl
+	tmph rol
+	tosl rol
+	tosh rol
+	pushtmp
+;

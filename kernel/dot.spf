@@ -1,0 +1,2 @@
+: .             ( x -- )    ( display signed to output device)
+    (.) TYPE SPACE ;

@@ -1,0 +1,11 @@
+: UM+        ( u1 u2 -- ud )                 ( add top two items, double result)
+  [
+    poptmp
+    tmpl tosl add
+    tmph tosh adc
+    pusht
+    0x0 tosl ldi
+    tosl tosl adc
+    tosh clr
+  ]
+;

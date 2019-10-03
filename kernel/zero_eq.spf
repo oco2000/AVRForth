@@ -1,0 +1,10 @@
+: 0=         ( x -- f )                      ( T if zero )
+  [
+     tosh tosl or
+     0x0 tosh ldi
+     if_z
+		tosh dec
+	 then
+	 tosh tosl mov
+  ]
+;

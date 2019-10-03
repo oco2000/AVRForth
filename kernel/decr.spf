@@ -1,0 +1,10 @@
+: DECR       ( addr -- )
+  [
+    [x]+ zl ld
+    [x] zh ld
+    0x1 zl sbiw
+    zh [x] st
+    zl -[x] st
+    popt
+  ]
+;

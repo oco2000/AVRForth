@@ -1,0 +1,3 @@
+: ERASE         ( a n -- )              ( fill array with zeros)
+    0 FILL
+;

@@ -1,0 +1,6 @@
+: COUNT      ( a -- a' c )                   ( get length of a counted string)
+  [x]+ tmpl ld
+  pusht
+  tmpl tosl mov
+  tosh clr
+;

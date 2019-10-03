@@ -1,0 +1,7 @@
+: 0MAX       ( x -- u )                      ( limit TOS to 0)
+    tosh tst
+    if_<0
+        tosh clr
+        tosl clr
+    then
+;

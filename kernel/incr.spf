@@ -1,0 +1,10 @@
+: INCR       ( addr -- )		( [addr] := [addr]+1 )
+  [
+    [x]+ zl ld
+    [x] zh ld
+    0x1 zl adiw 
+    zh [x] st
+    zl -[x] st
+    popt
+  ]
+;

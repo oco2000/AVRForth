@@ -1,0 +1,10 @@
+: 0<         ( x -- f )                      ( T if negative )
+  [
+    tosl clr
+    tosh tst
+    if_<0
+      tosl dec
+    then
+    tosl tosh mov
+  ]
+;

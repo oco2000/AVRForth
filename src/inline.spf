@@ -1,0 +1,700 @@
+\ управляющие структуры и макроопределения
+
+\ используемые регистры:
+\ yh:yl - указатель на вершину стека данных
+\ xh:xl - число на вершине стека данных
+\ wh:wl - временный регистр, счетчик цикла DO
+\ zh:zl - временный регистр
+\ r20:r21 - верхний предел в цикле DO
+\ r22:r23 - временный регистр
+\ r16:r17 - временный, используется редко
+\ r18:r19 - временный, используется редко
+\ r0    - временный, используется командой lpm
+
+wl CONSTANT cntl    \ r24
+wh CONSTANT cnth    \ r25
+r20 CONSTANT cbl
+r21 CONSTANT cbh
+r0 CONSTANT tmpl
+r1 CONSTANT tmph
+r16 CONSTANT tmp1l
+r17 CONSTANT tmp1h
+r18 CONSTANT tmp2l
+r19 CONSTANT tmp2h
+xl CONSTANT tosl    \ r26
+xh CONSTANT tosh    \ r27
+
+: (PROLOG)  ( -- )  \ в начале определения
+
+;
+
+: (EPILOG)  ( -- )  \ в конце определения
+    OPTIM? CASE     \ пытаться оптимизировать хвостовую рекурсию
+      1 OF
+          DEBUG3" call>jmp"
+          THERE 4 - DUP TC@  2 - SWAP TC! ENDOF \ call -> jmp
+      2 OF
+          DEBUG3" rcall>rjmp"
+          THERE  1- DUP TC@ 10 - SWAP TC! ENDOF \ rcall -> rjmp
+      3 OF
+          DEBUG3" jmp,rjmp,ijmp>"
+          ENDOF  \ не вставлять ret после jmp, rjmp
+      ret
+    ENDCASE
+    NEW
+;
+
+: (CALL)    ( addr -- )
+    DUP ?FAR IF
+        call
+        1 TO OPTIM? \ пытаться оптимизировать хвостовую рекурсию
+    ELSE
+        rcall
+        2 TO OPTIM? \ пытаться оптимизировать хвостовую рекурсию
+    THEN ;
+
+: (JMP)     ( addr -- )
+    DUP ?FAR IF jmp  ELSE rjmp  THEN
+    3 TO OPTIM?      \ пытаться оптимизировать хвостовую рекурсию
+;
+
+: (UJMP)    ( -- )
+    ret ;
+
+: pushd     \ на стек данных r+1:r
+  DUP -[y] st
+  1+  -[y] st
+;
+
+: popd    \ со стека данных r+1:r
+  [y]+ OVER 1+ ld
+  [y]+ SWAP    ld
+;
+
+: pushtmp \ на стек данных tmph:tmpl
+  tmpl pushd
+;
+
+: poptmp  \ со стека данных tmph:tmpl
+  tmpl popd
+;
+
+: pusht   \ DUP
+  tosl pushd
+  4 TO OPTIM?
+;
+
+: popt    \ DROP
+  OPTIM? 4 = IF   \ убрать DUP DROP
+     DEBUG3" dup drop"
+    -4 TALLOT NEW
+  ELSE
+    tosl popd
+    5 TO OPTIM?
+  THEN
+;
+
+\ ------------------------ литералы
+
+: SLOWLITS
+  ?TEXEC
+  S" lit" TREQUIRED
+  4 TO LITSIZE
+;
+
+2VARIABLE LASTLITS      \ стек из двух последних литералов
+0. LASTLITS 2!
+\ первая ячейка - последний литерал
+
+2VARIABLE L_MARK     \ адреса компиляции двух последних литералов
+
+: LITS_MARK     ( -- )  L_MARK @ THERE L_MARK 2! ; \ запомнить адрес последнего литерала
+
+: PUSHLIT       ( n -- )  \ протолкнуть литерал в стек из двух литералов
+   LASTLITS 2@ NIP SWAP LASTLITS 2!
+   #LITS 1+ 02 MIN TO #LITS
+;
+
+: QLIT1?         ( -- F | lit T )
+\ если последний код - литерал, удалить его и вернуть этот литерал
+\ сбросить стек литералов
+[F]
+    #LITS IF
+      L_MARK @ ORG         \ удалить код литерала
+      LASTLITS @ TRUE      \ взять его значение
+    ELSE
+      FALSE
+    THEN
+    NEW
+[P]
+;
+
+: QLIT2?        ( -- F | lit T )
+\ если последний код - литерал, удалить его и вернуть этот литерал
+\ снять литерал с вершины стека литералов
+[F]
+    #LITS
+    IF
+      L_MARK 2@ ORG L_MARK !      \ удалить код литерала
+      LASTLITS 2@ SWAP LASTLITS ! \ взять его значение
+      #LITS 1- TO #LITS
+      TRUE
+    ELSE
+      FALSE NEW
+    THEN
+[P]
+;
+
+: (LIT)   ( n -- )  \ положить на стек литерал
+[F]
+    OPTIM? 5 = IF
+      DEBUG3" drop lit; "
+      -4 TALLOT
+      tosl ldiw
+    ELSE
+      LITS_MARK \ отметить адрес литерала
+      #LITS >R
+
+      DUP
+      (SLOWLIT) @ ?DUP IF
+        (CALL)
+        T,
+      ELSE
+        pusht
+        tosl ldiw
+      THEN
+
+      R>
+      TO #LITS  \ восстановить тек. количество литералов
+      PUSHLIT   \ запоминаем последний литерал
+    THEN
+[P]
+;
+
+: LITERAL
+    (LIT) ;
+
+: (2LIT)
+  SWAP (LIT) (LIT)
+;
+
+: 2LITERAL
+    (2LIT) ;
+
+: E_2LITERAL
+  -1 ABORT" Требуется два литерала"
+;
+
+: E_LITERAL
+  -1 ABORT" Требуется литерал"
+;
+
+\ Разрешение ссылок
+
+: T>MARK ( TOKEN -- ADDR TOKEN )
+  THERE  SWAP ( ADDR TOKEN )
+  2DUP EXECUTE
+;
+
+: T>RESOLVE ( ADDR TOKEN -- )
+  THERE ( ADDR TOKEN HERE )
+  SWAP ROT ( HERE TOKEN ADDR )
+  COMPILE-TO EXECUTE
+  NEW
+;
+
+: T<MARK ( -- ADDR )
+  THERE
+;
+
+: T<RESOLVE
+  EXECUTE
+;
+
+\ ============== управляющие структуры для ассемблера
+
+: if_z
+  ['] brne T>MARK
+;
+
+: if_<
+  ['] brge T>MARK
+;
+
+: if_u<
+  ['] brsh T>MARK
+;
+
+: if_u>=
+  ['] brlo T>MARK
+;
+
+: if_>=
+  ['] brlt T>MARK
+;
+
+: if_<0
+  ['] brpl T>MARK
+;
+
+: if_<>0
+  ['] breq T>MARK
+;
+
+: if_c
+  ['] brcc T>MARK
+;
+
+: then
+  T>RESOLVE
+;
+
+: else
+  >R >R
+  ['] (JMP) T>MARK
+  R> R> T>RESOLVE
+;
+
+: begin
+   T<MARK
+   NEW \ исключить оптимизацию
+;
+
+: again
+  ['] (JMP) T<RESOLVE
+;
+
+: while_<>0
+  ['] breq T>MARK
+;
+
+: while_z
+  ['] brne T>MARK
+;
+
+: repeat
+  >R >R
+  again
+  R> R> T>RESOLVE
+;
+
+: until_<>0
+  ['] brne T<RESOLVE
+;
+
+: until_=0
+  ['] breq T<RESOLVE
+;
+
+: for
+  begin
+;
+
+: next ( reg -- )
+  dec
+  until_<>0
+;
+
+\ ================= высокоуровневые
+
+: IF HAS IF
+  tosl tosh or
+  popt
+  if_<>0
+;
+
+: IFNOT
+  tosl tosh or
+  popt
+  if_z
+;
+
+: THEN HAS THEN
+  then
+;
+
+: ELSE HAS ELSE
+  else
+;
+
+: BEGIN HAS BEGIN
+   begin
+;
+
+: AGAIN HAS AGAIN
+   again
+;
+
+: UNTIL HAS UNTIL
+  tosh tosl or
+  popt
+  until_=0
+;
+
+: [UNTIL<>0] \ не разрушает вершину стека
+  tosl tmpl mov
+  tosh tmpl or
+  until_<>0
+;
+
+: WHILE HAS WHILE
+  tosl tosh or
+  popt
+  while_<>0
+;
+
+: WHILENOT
+  tosl tosh or
+  popt
+  while_z
+;
+
+: REPEAT HAS REPEAT
+   repeat
+;
+
+: (DO) ( -- ) \ скомпилировать начальную часть цикла
+[F]
+  QLIT2? IF
+    QLIT1? IF   ( известны нач.значение и предел )
+      DEBUG3" DO from to"
+      cbl pushw
+      cntl pushw
+      cbl  ldiw ( предел )
+      cntl ldiw ( нач.знач )
+    ELSE ( известно нач.значение )
+      DEBUG3" DO from"
+      cbl pushw
+      cntl pushw
+      cntl ldiw ( нач.знач )
+      tosl cbl movw ( предел )
+      popt
+    THEN
+  ELSE ( не известно ничего )
+    cbl pushw
+    cntl pushw
+    tosl cntl movw
+    [y]+ cbh ld
+    [y]+ cbl ld
+    popt
+  THEN
+[P]
+;
+
+: DO HAS DO ( -- 0 t>mark -1 t<mark )
+  (DO)
+  NEW \ исключить оптимизацию
+  0
+  ['] DROP T>MARK
+  NEW \ исключить оптимизацию
+  -1
+  T<MARK
+;
+
+: ?DO HAS ?DO ( -- 0 t>mark -1 t<mark )
+  (DO)
+  cntl cbl cp
+  cnth cbh cpc
+  0
+  ['] breq T>MARK
+  -1
+  T<MARK
+;
+
+: T>RESOLVE_ALL ( 0 x1 y1 x2 y2 .. xn yn -1 -- ) \ разрешить ссылки вперед
+[F]
+  -1 <> ABORT" Нарушение структуры DO..LOOP"
+  BEGIN
+    ?DUP
+  WHILE
+    T>RESOLVE
+  REPEAT
+[P]
+;
+
+: LOOP HAS LOOP
+[F]
+  1 cntl adiw           \ увеличим счетчик на 1
+  cbl cntl cp
+  cbh cnth cpc          \ пересекли границу?
+  ['] brne T<RESOLVE    \ разрешить ссылку назад
+  T>RESOLVE_ALL         \ разрешить все ссылки вперед
+  cntl popw             \ восстанавливаем счетчик и границу внешнего цикла
+  cbl popw
+[P]
+;
+
+: +LOOP HAS +LOOP
+[F]
+  QLIT1? IF ( приращение - литерал )
+    DEBUG3" +LOOP"
+    tmp1l ldiw
+    tmp1l cntl add         \ складываем счетчик и приращение
+    tmp1h cnth adc
+  ELSE
+    tosl cntl add         \ складываем счетчик и приращение
+    tosh cnth adc
+    tosl tmp1l movw        \ сохраним приращение
+    popt                  \ удаляем приращение со стека
+  THEN
+[P]
+  cntl zl movw
+  cbl zl sub            \ счетчик-предел
+  cbh zh sbc
+  0x80 zh subi          \ счетчик-предел-0х8000
+  tmp1l zl cp            \ сравниваем с приращением
+  tmp1h zh cpc
+
+  ['] brvc T<RESOLVE    \ разрешим ссылку назад для DO..+LOOP
+  T>RESOLVE_ALL         \ разрешим ссылки всперед для DO..+LOOP
+  cntl popw             \ восстанавливаем счетчик и приращение для внешнего цикла
+  cbl popw
+;
+
+: I HAS I
+  pusht
+  cntl tosl movw
+;
+
+: ALL>R ( -1 n1 n2 ... nx -- ) \ положить на стек возвратов все числа до -1
+         ( R: -- nx .. n1 -1 )
+[F]
+  R>
+  -1 >R
+  BEGIN
+    SWAP DUP -1 <>
+  WHILE
+    >R
+  REPEAT
+  DROP >R
+[P]
+;
+
+: ALLR> ( -- -1 n1 n2 ... nx ) \ снять со стека возвратов все числа до -1
+         ( R: nx .. n1 -1 )
+[F]
+  -1
+  R>
+  BEGIN
+    R> SWAP OVER
+    -1 =
+  UNTIL
+  >R DROP
+[P]
+;
+
+: LEAVE HAS LEAVE
+  ALL>R
+  ['] (JMP) T>MARK \ добавить еще одну ссылку вперед для разрешения в LOOP, +LOOP
+  ALLR>
+;
+
+: UNLOOP HAS UNLOOP
+  cntl popw
+  cbl  popw
+;
+
+\ ------------------------------
+\ макроопределения примитивов
+
+: SET ( bits port -- )   \ port |= bits    установить биты
+ [F]
+  QLIT2? IF ( port )
+    QLIT1? IF   ( port bits )
+      DEBUG3" SET bits port"
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      2DUP 1s 0x1 =
+      SWAP >reg  ?port0
+      AND IF \ установить один бит и порт меньше 32  - используем sbi
+        LSB SWAP sbi
+      ELSE
+        DEBUG3" SET port"
+        DUP 0xFF <> IF \ установить все - чтение не нужно
+            OVER ( p b p )
+            zl _in
+        THEN
+        zl ori
+        zl SWAP _out
+      THEN
+    ELSE
+      E_2LITERAL
+    THEN
+  ELSE
+    E_2LITERAL
+  THEN
+ [P]
+;
+
+: TOGGLE ( bits port -- )   \ port ^= bits
+ [F]
+  QLIT2? IF ( port )
+    QLIT1? IF   ( port bits )
+        DEBUG3" TOGGLE bits port"
+        0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+        OVER ( p b p )
+        zl _in
+        zh ldi
+        zh zl eor
+        zl SWAP _out
+    ELSE
+      E_2LITERAL
+    THEN
+  ELSE
+    E_2LITERAL
+  THEN
+ [P]
+;
+
+: MASK ( bits port -- )   \ port &= bits
+ [F]
+  QLIT2? IF ( port )
+    QLIT1? IF   ( port bits )
+        DEBUG3" MASK bits port"
+        0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+        OVER ( p b p )
+        zl _in
+        zl andi
+        zl SWAP _out
+    ELSE
+      E_2LITERAL
+    THEN
+  ELSE
+    E_2LITERAL
+  THEN
+ [P]
+;
+
+: CLEAR ( bits port -- )  \ port &= ~bits     очистить биты
+ [F]
+  QLIT2? IF ( port )
+    QLIT1? IF   ( port bits )
+      DEBUG3" CLEAR bits port"
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      2DUP 1s 0x1 =
+      SWAP >reg  ?port0
+      AND IF \ очистить один бит и порт меньше 32  - используем сbi
+        LSB SWAP cbi
+      ELSE
+        DEBUG3" CLEAR port"
+        OVER ( p b p )
+        zl _in
+        [F] INVERT [P] 0xFF AND
+        zl andi
+        zl SWAP _out
+      THEN
+    ELSE
+      E_2LITERAL
+    THEN
+  ELSE
+    E_2LITERAL
+  THEN
+ [P]
+;
+
+\ ===============================================
+: 1- HAS 1- ( n -- n-1 )
+  1 tosl sbiw
+;
+
+: 1+ HAS 1+ ( n -- n+1 )
+  1 tosl adiw
+;
+
+: 2+ HAS 2+ ( n -- n+2 )
+  2 tosl adiw
+;
+
+: 2- HAS 2- ( n -- n-2 )
+  2 tosl sbiw
+;
+
+: CELL+ HAS CELL+
+  TCELL tosl adiw
+;
+
+: CELL- HAS CELL-
+  TCELL tosl sbiw
+;
+
+: DUP HAS DUP
+  pusht
+;
+
+: DROP HAS DROP
+  popt
+;
+
+: NIP HAS NIP       ( x1 x2 -- x1 )                 ( discard 2nd item on stack)
+  0x2 yl adiw
+;
+
+: U2/ HAS U2/        ( x1 -- x2 )                 \   ( logical right shift one bit)
+  tosh lsr
+  tosl ror
+;
+
+: 2/ HAS 2/        ( x1 -- x2 )                 \   ( arithmetic right shift one bit)
+  tosh asr
+  tosl ror
+;
+
+: 2* HAS 2*        ( x1 -- x2 )                 \   ( logical left shift one bit)
+  tosl lsl
+  tosh rol
+;
+
+: NIBBLE-SWAP      ( x1 -- x2 )
+    tosl swap
+;
+
+: CELLS  ( x1 -- x2 )                 \   ( multiply by cell size)
+[F]
+  T-STATE @ IF \ компиляция
+      QLIT1? IF
+        DEBUG3" CELLS"
+        TCELL * (LIT)
+      ELSE
+        tosl lsl
+        tosh rol
+      THEN
+  ELSE
+    TCELL *
+  THEN
+[P]
+;
+
+: CHAR+ HAS CHAR+  ( n -- n+1 )
+  1 tosl adiw
+;
+
+: CHARS HAS CHARS  ( x1 -- x2 )
+;
+
+: INVERT HAS INVERT  ( x -- ~x )                     ( bitwise invert TOS )
+[F]
+  QLIT1? IF
+    DEBUG3" INVERT"
+    INVERT (LIT)
+  ELSE
+    tosl com
+    tosh com
+  THEN
+[P]
+;
+
+: HI         ( x -- hi[x] )                     ( return high byte )
+  tosh tosl mov
+  tosh clr
+;
+
+: LO         ( x -- low[x] )                     ( return low byte )
+  tosh clr
+;
+
+: REBOOT     ( -- )       ( reset the processor)
+  0x0 jmp
+;
+
+: EXIT HAS EXIT
+  ret
+;

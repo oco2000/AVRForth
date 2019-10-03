@@ -1,0 +1,3 @@
+: SPACE       ( -- )
+  BL EMIT
+;

@@ -1,0 +1,167 @@
+\ ---------------- отладка ----------------
+0 VALUE DEBUG-LEVEL \ уровень отладочных сообщений
+
+: ?DEBUG ( level -- f ) \ истина, если включена отладка для заданного уровня
+  DEBUG-LEVEL DUP IF > 0= ELSE NIP THEN
+;
+
+: LEVEL ( level -- )
+  CREATE , IMMEDIATE
+  DOES> @ TO DEBUG-LEVEL
+;
+
+\ уровень 0 - не выводить сообщения
+0 LEVEL -DEBUG  \ выключить отладку
+\ уровень 1 - пользовательские сообщения
+1 LEVEL +DEBUG  \ включить отладку на уровне 1
+1 LEVEL +DEBUG1 \ включить отладку на уровне 1
+2 LEVEL +DEBUG2 \ включить отладку на уровне 2
+\ уровень 3 - сообщения оптимизатора
+3 LEVEL +DEBUG3 \ включить отладку на уровне 3
+
+: [THEN]   \ переопределим для использования в режиме компиляции
+  STATE @ IF \ компиляция
+    POSTPONE THEN
+  THEN
+; IMMEDIATE
+
+: CONDITION ( level -- )
+  CREATE , IMMEDIATE
+  DOES> @
+    STATE @ IF
+      POSTPONE LITERAL POSTPONE ?DEBUG  POSTPONE IF
+    ELSE
+      ?DEBUG POSTPONE [IF]
+    THEN
+;
+
+1 CONDITION [IFDEBUG]   \ если включена отладка на уровне 1
+1 CONDITION [IFDEBUG1]  \ если включена отладка на уровне 1
+2 CONDITION [IFDEBUG2]  \ если включена отладка на уровне 2
+3 CONDITION [IFDEBUG3]  \ если включена отладка на уровне 3
+
+VECT (T.)
+
+: CONDITION_STRING ( level -- )
+  CREATE , IMMEDIATE
+  DOES>
+    @ POSTPONE LITERAL
+    POSTPONE ?DEBUG
+    POSTPONE IF
+      POSTPONE (T.)
+      POSTPONE SPACE
+      POSTPONE ."      \ "
+      POSTPONE CR
+    POSTPONE THEN
+;
+
+1 CONDITION_STRING DEBUG"   \ если включена отладка на уровне 1
+1 CONDITION_STRING DEBUG1"   \ если включена отладка на уровне 1
+2 CONDITION_STRING DEBUG2"   \ если включена отладка на уровне 2
+3 CONDITION_STRING DEBUG3"   \ если включена отладка на уровне 3
+\ -------------------------------------------------------
+
+: 2CONSTANT ( x1 x2 "<spaces>name" -- )
+  CREATE  , ,  DOES> 2@
+;
+
+: H.  BASE @ HEX SWAP U. BASE ! ;
+: H.N           ( n1 n2 -- )    \ display n1 as a HEX number of n2 digits
+    BASE @ >R HEX >R
+    0 <# R> 0 ?DO # LOOP #> TYPE
+    R> BASE ! ;
+
+: TAB   0x9 EMIT ;
+
+\ устраняем баг в SP-FORTH, когда отдельно взятый знак "-" воспринимается как число 0
+: ?SLITERAL3 ( c-addr u -- ... )
+  2DUP 1 = SWAP C@ [CHAR] - = AND IF -2003 THROW THEN
+  ?SLITERAL2
+;
+
+' ?SLITERAL3 TO ?SLITERAL
+
+\ выход при ошибке
+: ?HALT
+  ?DUP IF DUP ERROR2 HALT THEN ;
+
+' ?HALT TO ERROR
+
+C" 2VARIABLE" FIND NIP 0=
+[IF]
+ : 2VARIABLE
+  CREATE 0 , 0 ,
+  DOES> ;
+[THEN]
+
+: BYTE-SPLIT    ( W -- LO8 HI8 )
+  DUP 0xFF AND
+  SWAP 8 RSHIFT 0xFF AND ;
+
+: ?EMPTY ( -- ) \ контроль стека
+    CR .S
+    DEPTH 00 <> ABORT" Stack is not empty !!!"
+;
+
+: .BASE
+    BASE @ DUP DECIMAL ." BASE = " . BASE !
+;
+
+: NDROP ( x1 ... xn n -- )
+  DEPTH 0= IF ABORT" Stack is empty" THEN
+  DEPTH 1- OVER < IF ABORT" Stack underflow" THEN
+  0 ?DO DROP LOOP
+;
+\ ============================ битовые хитрости ================================
+
+: EXP2  ( u -- 2^u )
+    1 SWAP LSHIFT ;
+
+\ маска из n единиц начиная с позиции бита pos
+: SEQ_MASK ( pos n -- )
+    EXP2 1- SWAP LSHIFT
+;
+
+: 1s        ( x -- n )      \ определить количество единичных битов в байте
+  DUP 0x55 AND   SWAP 2/        0x55 AND   +
+  DUP 0x33 AND   SWAP 2/ 2/     0x33 AND   +
+  DUP 0x0F AND   SWAP 04 RSHIFT 0x0F AND   +
+;
+
+: LSB       ( x -- n )      \ получить позицию младшего единичного бита
+  0 ( x n )
+  BEGIN
+    OVER 1 AND 0=
+  WHILE
+    1+ SWAP 2/ SWAP
+  REPEAT
+  NIP
+;
+
+: RESET_LSB ( n -- n' )     \ сбросить младший единичный бит
+    DUP 1- AND
+;
+
+: EXTRACT_LSB ( n -- n' )   \ сбросить все биты кроме младшего единичного
+    DUP 1- INVERT AND
+;
+
+\EOF
+TESTCASES Utilities
+
+    (( 00 00 SEQ_MASK -> 00 ))
+    (( 00 01 SEQ_MASK -> 01 ))
+    (( 01 05 SEQ_MASK -> 0x3E ))
+    (( 05 03 SEQ_MASK -> 0xE0 ))
+
+    (( 02 RESET_LSB -> 00 ))
+    (( 03 RESET_LSB -> 02 ))
+    (( 0x0A RESET_LSB -> 08 ))
+    (( 0xFFFFFFF0 RESET_LSB -> 0xFFFFFFE0 ))
+
+    (( 02 EXTRACT_LSB -> 02 ))
+    (( 03 EXTRACT_LSB -> 01 ))
+    (( 0xFFFFFFFF EXTRACT_LSB -> 01 ))
+    (( 0xFFFFFFF0 EXTRACT_LSB -> 0x10 ))
+
+END-TESTCASES

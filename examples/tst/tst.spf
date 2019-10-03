@@ -1,0 +1,233 @@
+\ тест-файл для AVRFORTH
++DEBUG3 \ отладочные сообщения
+
+\
+\ 0x1000 TALLOT \ проверка дальних адресов
+\
+[F] DECIMAL
+1000000 == F_CPU
+HEX [P]
+
+[IFDEBUG]
+  S" lib/usart.spf" INCLUDED
+[THEN]
+\ =============== константы
+06 CONSTANT c6
+05 CONSTANT c5
+\ или так
+0x6 == 6
+0x5 == 5
+\ =============== переменные в RAM
+RCREATE RAM5 0x5 ALLOT
+VARIABLE VAR
+RCREATE RAM8 0x8 ALLOT
+\ =============== массив в ROM
+TCREATE ROM
+0x1 T, 0x2 T, 0x3 T, 0x4 T,
+\ =============== переменные в EEPROM
+ECREATE eeVAR
+10 EALLOT
+EVARIABLE eeVAR2
+\ =============== определяющие слова
+\ 111 дает адрес в ROM
+PCREATE 111
+\ константа
+
+TREQUIRE @P
+:: ===
+  PCREATE T,
+  PDOES>
+    @P ;
+;;
+
+0x2 === TWO
+0x3 === THREE
+
+: test
+  TWO
+  THREE
+;
+\ в RAM
+CREATE X1 0x2 ALLOT
+:: VECTOR  CREATE [F] 2* [P] ALLOT DOES> SWAP 2* + ; ;;  \ обязательно в конце ; ;;
+10 VECTOR X
+5 VECTOR Y
+
+: TEST2
+  1 X @
+  0 2 Y !
+;
+
+\ ========================== тест макросов
+: z
+  DUP
+  [ 0x1 tosl sbiw ]
+  DUP ;
+
+MACRO: M1 \ HAS M1 - если перекрываем существующее слово форта
+  z
+  0x1 tosl adiw
+;MACRO
+
+: MACRO-TEST
+  M1 M1
+;
+
+\ =============== управляющие структуры
+:  XX  ( n -- )
+ BEGIN 1- DUP
+ UNTIL DROP ;
+
+: _MAX
+  2DUP
+  < IF NIP
+  ELSE DROP
+  THEN ;
+
+: RST
+ 10
+ 0
+ ?DO
+   I @ DROP
+ LOOP
+ ;
+
+\ =============== управляющие структуры ассемблера
+
+: TEST3
+  [ tmpl clr
+    tosl tosh or
+    if_z
+    0x1 0x34 sbi
+  else
+      nop
+  then
+    tmpl tosl mov
+    tosl tosh mov
+  ]
+;
+
+: TEST4
+  [ begin
+      0x1 0x24 sbi
+    until_=0
+  ]
+;
+
+\ =============== обработка прерываний
+VARIABLE TICKS
+
+INT: TIMER0_TICK    \ обработчик
+  TICKS INCR
+;INT
+
+TIMER0_TICK ->INT TIMER0_OVF    \ задаем обработчик
+
+\ ===============
+
+PORTB == BTN_PORT
+DDRB  == BTN_DDR
+PINB  == BTN_PIN
+00 == BUTTON
+
+PORTD == LED_PORT
+DDRD  == LED_DDR
+00 == LED
+
+: MAIN
+  BITS{ LED }BITS LED_DDR C!    \ на выход
+  0x0 BTN_DDR C!          \ на вход
+  BITS{ LED }BITS BTN_PORT C!   \ подтяжка
+  BEGIN
+   BTN_PIN C@
+   LED_PORT C!
+  AGAIN
+;
+
+C" abcde" == abc
+
+: TEST
+  BEGIN DUP 0= WHILE TEST3 TEST4 REPEAT
+;
+
+1234 == 1234
+
+[IFDEBUG]
+
+[ELSE]
+
+RCREATE buf 0x100 ALLOT
+CVARIABLE ptr
+: .buf ( c -- )
+  ptr C@ buf + C!
+  ptr C@ 1+ 0xFF AND ptr C!
+;
+
+[THEN]
+
+: tst_unloop
+  10 0 DO
+    I 5 = IF UNLOOP EXIT THEN I . BL EMIT
+  LOOP
+;
+
+S" lib/ports.spf" INCLUDED
+
+PD3 WIRE LED
+
+[F] DECIMAL [P]
+: TST
+  DECIMAL
+  [IFDEBUG]
+    1200 BAUD USART_INIT
+  [ELSE]
+    00 ptr C!
+    ['] .buf IS EMIT
+  [THEN]
+  PD3 {SET}
+  LED {SET}
+  03 BIT PORTD SET
+
+  5 00  ?DO
+    00 10 ?DO
+       I 5 = IF LEAVE THEN I . BL EMIT
+    -1 +LOOP
+  LOOP
+  tst_unloop
+  34 34 = .
+  DEPTH .
+
+(  DDRD C@
+  123 @
+  TICKS @
+  01 DDRD C!
+  0xFFFF AND
+  0x12 OR
+  -30 -
+
+  0x0 BIT PORTD  SET
+  0x1 BIT SPH  SET
+  BITS{ 0x2 0x3 }BITS PORTD  CLEAR
+  0x2 BIT DDRB CLEAR
+
+  DROP NEW  8 +
+  DUP DUP DROP
+
+  DROP BEGIN 8 DROP AGAIN +
+)
+  BEGIN AGAIN
+;
+
+' TST [->] {MAIN}
+\ ' MAIN [->] {MAIN}
+
+:: 1234   \ отладка в макросе
+[F]
+  [IFDEBUG]
+   123
+  ELSE \ тут использовать обычное ELSE
+   234
+  [THEN]
+[P]
+;;
+

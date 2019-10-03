@@ -1,0 +1,202 @@
+\ LCD menu
+TREQUIRE --
+
+REQUIRE LCD_INIT lib/lcd/lcd.spf
+REQUIRE LCD_CHAR lib/lcd/definechar.spf
+
+0x10 == WIDTH \ LCD WIDTH
+
+\ Chars for on and off symbols
+BL == C_OFF
+7 == C_ON
+
+\ menu flags
+0x1 BIT == MenuFlag.isMenu
+0x2 BIT == MenuFlag.isMain
+
+0x0
+CELL -- Menu.title
+CELL -- Menu.parent
+CELL -- Menu.flags
+CELL -- Menu.getValue \ callback ( -- value )
+CELL -- Menu.format   \ callback ( value -- addr u )
+CELL -- Menu.edit     \ callback ( -- )
+0x0  -- Menu.items
+== /MENU
+
+CVARIABLE CUR-LINE
+
+:: MENU-ITEM ( name -- )
+  PCREATE
+    T, /MENU TALLOT
+  PDOES>
+
+  ;
+;;
+
+:: MENU ( name item*n -- )
+  PCREATE
+  [F]
+    THERE >R  T, 0x0 T, MenuFlag.isMenu T, 0x0 T, 0x0 T, 0x0 T,
+    BEGIN \ store items
+      DUP T,
+      R@ OVER Menu.parent T! \ set item parent
+    0= UNTIL
+    R> DROP
+  [P]
+  PDOES>
+  ;
+;;
+
+: ?MENU ( menu -- f )
+  Menu.flags @P MenuFlag.isMenu AND
+;
+
+: ?MAIN ( menu -- f )
+  Menu.flags @P MenuFlag.isMain AND
+;
+
+: PARENT-MENU ( menu -- parent )
+  Menu.parent @P
+;
+
+: FIND-SUBMENU ( menu submenu -- found_item_addr | false )
+  >R Menu.items BEGIN ( item_addr )
+    DUP @P DUP ( item_addr item item )
+    R@ = ( item_addr found )
+    SWAP 0= OR ( item_addr !found_or_end )
+  WHILENOT
+    CELL +
+  REPEAT
+  DUP @P R> <> IF DROP 0 THEN
+;
+
+: NEXT-MENU ( menu -- next | 0 )
+  DUP PARENT-MENU ( menu parent )
+  SWAP OVER SWAP FIND-SUBMENU ( parent item )
+  DUP IF
+    CELL + @P DUP 0= IF \ last item
+      DROP Menu.items @P
+    ELSE NIP THEN
+  ELSE 2DROP 0 THEN
+;
+
+: H.   DUP 0 <# # # # # #> TYPE SPACE ;
+
+: PREV-MENU ( menu -- next | 0 )
+  DUP PARENT-MENU ( menu parent )
+  SWAP OVER SWAP FIND-SUBMENU ( parent item_addr )
+  DUP IF
+    OVER Menu.items OVER = IF ( parent item_addr ) \ first item
+      DROP 0 FIND-SUBMENU ( found | 0 )
+      ?DUP IF CELL - @P THEN
+    ELSE CELL - @P NIP THEN
+  ELSE 2DROP 0 THEN
+;
+
+: @EXECUTE ( addr -- x*n )
+  @P ?DUP IF EXECUTE THEN
+;
+
+: .MENU ( menu -- )
+  ?DUP IF
+    1 CUR-LINE C@ AT
+    DUP Menu.title @P COUNTP TYPEP
+    DUP >R Menu.getValue @EXECUTE
+    R> Menu.format @P ?DUP IF
+      EXECUTE ( addr u )
+      WIDTH OVER - CUR-LINE C@ AT   TYPE
+    THEN
+  THEN
+;
+
+VARIABLE CUR-MENU
+
+: DISPLAY-MENU ( -- )
+  PAGE
+  [CHAR] > EMIT
+  0x0 CUR-LINE C! CUR-MENU @ .MENU
+  0x1 CUR-LINE C! CUR-MENU @ NEXT-MENU ?DUP IF .MENU THEN
+;
+
+: SET-MENU ( menu -- )
+  ?DUP IF CUR-MENU ! DISPLAY-MENU
+  THEN
+;
+
+[F]
+: SET-MAIN ( menu -- )
+  ?TEXEC   Menu.flags DUP T@ MenuFlag.isMain OR SWAP T!
+;
+
+: SET-GET-VALUE ( fn menu -- )
+  ?TEXEC   Menu.getValue T!
+;
+
+: SET-FORMAT ( fn menu -- )
+  ?TEXEC   Menu.format T!
+;
+
+: SET-EDIT ( fn menu -- )
+  ?TEXEC   Menu.edit T!
+;
+
+[P]
+
+: FORMAT-CHAR ( c -- a 1 )
+  <# HOLD HLD @ 1 ;
+
+: FORMAT-BOOL ( b -- a 1 )
+  IF C_ON ELSE C_OFF THEN FORMAT-CHAR ;
+
+: ENTER-MENU ( -- )
+  CUR-MENU @ DUP ?MENU IF
+    Menu.items @P SET-MENU
+  ELSE
+    Menu.edit @EXECUTE DISPLAY-MENU
+  THEN
+;
+
+: EXIT-MENU ( -- )
+  CUR-MENU @ PARENT-MENU DUP ?MAIN IFNOT
+    SET-MENU
+  ELSE DROP THEN
+;
+
+: UP-MENU ( -- )
+  CUR-MENU @ PREV-MENU SET-MENU
+;
+
+: DOWN-MENU
+  CUR-MENU @ NEXT-MENU SET-MENU
+;
+
+[F] BASE @ 2 BASE ! [P]
+(
+00000000
+00011111
+00010001
+00010001
+00010001
+00011111
+00000000
+00000000
+LCD_CHAR SET_C_OFF
+)
+
+00000000
+00000001
+00000010
+00010010
+00001100
+00000100
+00000000
+00000000
+LCD_CHAR SET_C_ON
+
+[F] BASE ! [P]
+
+: MENU-INIT ( -- )
+  \ C_OFF SET_C_OFF
+  C_ON SET_C_ON
+;

@@ -1,0 +1,23 @@
+: (C!)         ( c addr -- )                   ( char store )
+  poptmp
+  tmpl [x] st
+  popt
+;
+
+MACRO: C!    ( -- )  
+[F]
+  QLIT2? IF ( addr ) 
+    QLIT1? IF   ( addr lit )  \ известен адрес и значение
+      DEBUG3" C! addr+lit"
+      zl ldi
+      zl SWAP _out
+    ELSE  \ известен адрес
+      DEBUG3" C! addr"
+      tosl SWAP _out
+      popt
+    THEN  
+  ELSE 
+    (C!)
+  THEN
+[P]
+;MACRO

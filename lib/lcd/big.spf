@@ -1,0 +1,230 @@
+\ A set of custom made large numbers for a 16x2 LCD using the LiquidCrystal librabry.
+
+REQUIRE LCD_INIT lib/lcd/lcd.spf
+REQUIRE LCD_CHAR lib/lcd/definechar.spf
+
+[F] BASE @ 02 BASE ! [P]
+
+  00111
+  01111
+  11111
+  11111
+  11111
+  11111
+  11111
+  11111
+LCD_CHAR _LT
+
+  11111
+  11111
+  11111
+  00000
+  00000
+  00000
+  00000
+  00000
+LCD_CHAR _UB
+
+  11100
+  11110
+  11111
+  11111
+  11111
+  11111
+  11111
+  11111
+LCD_CHAR _RT
+
+  11111
+  11111
+  11111
+  11111
+  11111
+  11111
+  01111
+  00111
+LCD_CHAR _LL
+
+  00000
+  00000
+  00000
+  00000
+  00000
+  11111
+  11111
+  11111
+LCD_CHAR _LB
+
+  11111
+  11111
+  11111
+  11111
+  11111
+  11111
+  11110
+  11100
+LCD_CHAR _LR
+
+  11111
+  11111
+  11111
+  00000
+  00000
+  00000
+  11111
+  11111
+LCD_CHAR _UMB
+
+  11111
+  00000
+  00000
+  00000
+  00000
+  11111
+  11111
+  11111
+LCD_CHAR _LMB
+
+[F] DECIMAL [P]
+
+: BIG_SETUP
+  0 _LT
+  1 _UB
+  2 _RT
+  3 _LL
+  4 _LB
+  5 _LR
+  6 _UMB
+  7 _LMB
+;
+
+\ print char: 0 x x x x x x x
+\ gotoxy:     1 0 0 0 x x x y
+\ end:        1 1 1 1 1 1 1 1
+
+:: LETTER{      ( -- there )
+    THERE
+;;
+
+[F]
+
+: CH
+    CREATE C,
+    DOES> C@ TC,
+;
+
+00 CH LT
+01 CH UB
+02 CH RT
+03 CH LL
+04 CH LB
+05 CH LR
+06 CH UMB
+07 CH LMB
+32 CH SP
+
+[P]
+
+:: CUR ( x y -- )
+    [F]
+        01 AND
+        SWAP 07 AND 01 LSHIFT
+        OR 0x80 OR
+        TC,
+    [P]
+;;
+
+[F] [DEFINED] !BIG_LETTERS [P] [IF] 48 [ELSE] 10 [THEN]
+TCREATE LETTERS CELLS TALLOT
+
+:: }LETTER ( where width -- )
+    [F] 0xFF TC, TC,  \ end marker and put width
+        BL WORD CHAR+ C@ 0x30 - 2* ['] LETTERS >BODY @ + T!
+    [P]
+    TALIGN
+;;
+
+\ 00 LT   01 UB   02 RT   03 LL   04 LB   05 LR   06 UMB   07 LMB
+
+LETTER{ 00 00 CUR  LT UB RT    00 01 CUR  LL LB LR        04 }LETTER 0
+LETTER{ 00 00 CUR  UB RT       01 01 CUR  LR              03 }LETTER 1
+LETTER{ 00 00 CUR  UMB UMB RT  00 01 CUR  LL LMB LMB      04 }LETTER 2
+LETTER{ 00 00 CUR  UMB UMB RT  00 01 CUR  LMB LMB LR      04 }LETTER 3
+LETTER{ 00 00 CUR  LL LB RT    02 01 CUR  LR              04 }LETTER 4
+LETTER{ 00 00 CUR  LT UMB UMB  00 01 CUR  LMB LMB LR      04 }LETTER 5
+LETTER{ 00 00 CUR  LT UMB UMB  00 01 CUR  LL LMB LR       04 }LETTER 6
+LETTER{ 00 00 CUR  UB UB RT    01 01 CUR  LT              04 }LETTER 7
+LETTER{ 00 00 CUR  LT UMB RT   00 01 CUR  LL LMB LR       04 }LETTER 8
+LETTER{ 00 00 CUR  LT UMB RT   02 01 CUR  LR              04 }LETTER 9
+
+[F] [DEFINED] !BIG_LETTERS [P] [IF]
+
+    LETTER{ 00 00 CUR  LT UMB RT      00 01 CUR  LL SP LR        04 }LETTER A
+    LETTER{ 00 00 CUR  LT UMB LR      00 01 CUR  LL LMB RT       04 }LETTER B
+    LETTER{ 00 00 CUR  LT UB UB       00 01 CUR  LL LB LB        04 }LETTER C
+    LETTER{ 00 00 CUR  RT UB RT       00 01 CUR  LR LB LR        04 }LETTER D
+    LETTER{ 00 00 CUR  LT UMB UMB     00 01 CUR  LL LMB LMB      04 }LETTER E
+    LETTER{ 00 00 CUR  LT UMB UMB     00 01 CUR  LL              04 }LETTER F
+    LETTER{ 00 00 CUR  LT UB UB       00 01 CUR  LL LB RT        04 }LETTER G
+    LETTER{ 00 00 CUR  LT LB RT       00 01 CUR  LL SP LR        04 }LETTER H
+    LETTER{ 00 00 CUR  UB RT UB       00 01 CUR  LB LR LB        04 }LETTER I
+    LETTER{ 02 00 CUR  RT             00 01 CUR  LB LB LR        04 }LETTER J
+    LETTER{ 00 00 CUR  LT LB LR       00 01 CUR  LL SP RT        04 }LETTER K
+    LETTER{ 00 00 CUR  LT             00 01 CUR  LL LB LB        04 }LETTER L
+    LETTER{ 00 00 CUR  LT UB LL UB RT 00 01 CUR  LL SP SP SP LR  06 }LETTER M
+    LETTER{ 00 00 CUR  LT LL SP RT    00 01 CUR  LL SP RT LR     05 }LETTER N
+    LETTER{ 00 00 CUR  LT UB RT       00 01 CUR  LL LB LR        04 }LETTER O
+    LETTER{ 00 00 CUR  LT UMB RT      00 01 CUR  LL              04 }LETTER P
+    LETTER{ 00 00 CUR  LT UB RT       00 01 CUR  LL LB LL LB     05 }LETTER Q
+    LETTER{ 00 00 CUR  LT UMB LR      00 01 CUR  LL SP RT        04 }LETTER R
+    LETTER{ 00 00 CUR  LT UMB UMB     00 01 CUR  LMB LMB LR      04 }LETTER S
+    LETTER{ 00 00 CUR  UB RT UB       00 01 CUR  SP LR           04 }LETTER T
+    LETTER{ 00 00 CUR  LT SP RT       00 01 CUR  LL LB LR        04 }LETTER U
+    LETTER{ 00 00 CUR  LL SP LR       01 01 CUR  LL LR           04 }LETTER V
+    LETTER{ 00 00 CUR  LT SP SP SP RT 00 01 CUR  LL LB LT LB LR  06 }LETTER W
+    LETTER{ 00 00 CUR  LL LB LR       00 01 CUR  LT SP RT        04 }LETTER X
+    LETTER{ 00 00 CUR  LL LB LR       01 01 CUR  LR              04 }LETTER Y
+    LETTER{ 00 00 CUR  UB UMB LR      00 01 CUR  LT LMB LB       04 }LETTER Z
+
+[THEN]
+
+CVARIABLE X
+
+: GET_X ( -- x )
+    LCD_GETXY 0x3F AND
+;
+
+: .LETTER ( addr -- )
+    GET_X X C!
+    BEGIN ( addr )
+        DUP C@P DUP 0xFF <>
+    WHILE ( addr c )
+        DUP 0x80 AND IF \ cursor
+            DUP 2/ 0x7 AND X C@ + SWAP 0x1 AND LCD_GOTOXY
+        ELSE \ char
+            0x7F AND LCD_DATA
+        THEN
+        1+
+    REPEAT
+    DROP 1+ C@P X C@ + 0 LCD_GOTOXY
+;
+
+\ +DEBUG3
+: .BIG  ( char -- )
+    DUP BL = IF
+        DROP GET_X 02 + 0 LCD_GOTOXY
+    ELSE
+        0x30 - CELLS LETTERS + @P ( addr )
+        ?DUP IF .LETTER THEN
+    THEN
+;
+
+: BIG_LETTERS ( -- )
+    ['] .BIG IS EMIT
+;
+
+: NORMAL_LETTERS ( -- )
+    ['] LCD_DATA IS EMIT
+;
+
+[F] BASE ! [P]
