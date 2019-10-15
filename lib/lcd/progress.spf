@@ -44,46 +44,30 @@ LCD_CHAR PRG4
 
 [F] BASE ! [P]
 
-: CHARS ( n char -- )
+: .CHARS ( n char -- )
   SWAP 0 ?DO
     DUP EMIT
   LOOP DROP
 ;
-
-: H.   DUP 0 <# # # # # #> TYPE SPACE ;
 
 : SCALE ( min max position -- newmax newposition )
   >R OVER -
   SWAP R> SWAP -
 ;
 
-: PROGRESSBAR ( min max length position x y -- )
-  AT SWAP >R ( min max position ) .S
-  SCALE ( newmax newposition )
-  R@ 5 * ROT */MOD DUP >R ( rest full )
-  DROP \ 0xFF CHARS
-  ?DUP IF 1- EMIT R> 1+ >R THEN
-  R> R> SWAP - H. \ [CHAR] - CHARS
+: CLIP ( value min max -- newvalue )
+  ROT MIN MAX
 ;
 
-\ ~uint16_t new_pos;
-\ ~uint8_t full;
-\ ~uint8_t rest;
-\ ~uint8_t i;
-    \ ~max=max-min;
-    \ ~position=position-min;
-    \ ~new_pos=position*length*5/max;      // масштабируем
-    \ ~full=new_pos/5;                     // к-во заполненных символов
-    \ ~rest=new_pos%5;                     // к-во полосок в последнем символе индикатора
-    \ ~lcd_gotoxy(x,y);
-    \ ~for (i=0;i<length;i++) {            // поехали
-        \ ~if (i<full)                     // выводим полные квадраты
-            \ ~lcd_data(0xff);
-        \ ~else if ((i==full)&&(rest!=0))  // выводим один символ, который заполнен не до конца
-            \ ~lcd_data(rest-1);
-        \ ~else                            // остаток индикатора
-            \ ~lcd_data('-');
-    \ ~}
+: PROGRESSBAR ( min max length position x y -- )
+  AT SWAP >R ( min max position )
+  >R 2DUP R> -ROT CLIP ( min max position )
+  SCALE ( newmax newposition )
+  R@ 5 * ROT */ 5 /MOD DUP >R ( rest full )
+  0xFF .CHARS
+  ?DUP IF 1- EMIT R> 1+ >R THEN
+  R> R> SWAP - [CHAR] - .CHARS
+;
 
 : PROGRESS-INIT
   0 PRG1

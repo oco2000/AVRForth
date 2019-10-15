@@ -48,7 +48,7 @@ ALSO FORTH
 : \EOF    \EOF ;
 : CHAR    CHAR ;
 : FCONST  CONSTANT ;
-: .S      .S ;
+: .STACK  .S ;
 : H.      H. ;
 : WORDS   WORDS ;
 : ORDER   ORDER ;

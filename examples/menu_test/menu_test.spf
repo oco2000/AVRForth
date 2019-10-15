@@ -23,8 +23,9 @@ REQUIRE D3              lib/lcd/lcd_conf_std.spf
 REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
 REQUIRE PROGRESSBAR     lib/lcd/progress.spf
 REQUIRE RTOS_RUN        lib/eertos.spf
-REQUIRE MENU            lib/lcd_menu/menu.spf
 REQUIRE DEBOUNCE        lib/buttons.spf
+REQUIRE MENU            lib/lcd_menu/menu.spf
+REQUIRE INT-EDITOR      lib/lcd_menu/int_editor.spf
 
 [F] DECIMAL [P]
 
@@ -45,41 +46,16 @@ REQUIRE DEBOUNCE        lib/buttons.spf
 TCREATE BTN_TASKS
 ' DOWN T,   ' UP T,   ' ENTER T,   ' CANCEL T,
 
-: CLIP ( value min max -- newvalue )
-  ROT MIN MAX
-;
-
-VARIABLE PROGRESS
-
-: SHOW-PROGRESS
-  0 100 15 50 0 0 PROGRESSBAR
-;
-
-: CHANGE-PROGRESS ( increment -- )
-  PROGRESS @ + CLIP PROGRESS !
-;
-
-: LEFT   -1 CHANGE-PROGRESS ;
-: RIGHT   1 CHANGE-PROGRESS ;
-TCREATE PROGRESS_TASKS
-' LEFT T,   ' LEFT T,   ' RIGHT T,   ' RIGHT T,
-
-: INIT-PROGRESS-TEST
-  10 PROGRESS !
-  SHOW-PROGRESS
-;
-
 : INIT
   HEX
   LED {OUTPUT}
   LCD_DISP_ON  LCD_INIT
   MENU-INIT
   PROGRESS-INIT
-  PAGE INIT-PROGRESS-TEST
+
   BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!
   0x3 BUTTONS_REPEATABLE C!
   BTN_TASKS BUTTONS_TASKS !
-  \ ~PROGRESS_TASKS BUTTONS_TASKS !
   BUTTONS_INIT
   RTOS_INIT
   ['] BUTTONS_TASK RTOS_SET_TASK
@@ -88,21 +64,26 @@ TCREATE PROGRESS_TASKS
 : (H) ( n -- addr u )  0 <# # # # # #> ;
 : HEX.  ( n -- ) (H) TYPE SPACE ;
 
+
 CEVARIABLE VOLUME  0x0 VOLUME C!E
  63 == MAX-VOLUME
 0x0 == MIN-VOLUME
 : GET-VOLUME   ( -- value )   VOLUME C@E ;
 : SET-VOLUME   ( value -- )   MIN-VOLUME MAX-VOLUME CLIP   VOLUME C!E ;
 
-C" Volume" MENU-ITEM I_Volume
+C" Volume" == I_VOLUME_Tttle
+I_VOLUME_Tttle MIN-VOLUME MAX-VOLUME ' GET-VOLUME ' SET-VOLUME INT-EDITOR   VOLUME-EDITOR
+
+I_VOLUME_Tttle MENU-ITEM I_Volume
 ' GET-VOLUME    I_Volume SET-GET-VALUE
 ' (.)           I_Volume SET-FORMAT
+' VOLUME-EDITOR I_Volume SET-EDIT
 
 CEVARIABLE MUTED
 : GET-MUTED   ( -- value )   MUTED C@E ;
 : SET-MUTED   MUTED C!E ;
 : MUTE ( -- )
-  GET-MUTED 0= SET-MUTED ;
+  GET-MUTED 0= SET-MUTED TRUE ( redraw ) ;
 
 C" Mute" MENU-ITEM I_Mute
 ' GET-MUTED    I_Mute SET-GET-VALUE
@@ -132,7 +113,7 @@ M_Main SET-MAIN
 
 : MAIN
   INIT
-  \ ~M_Main SET-MENU ENTER-MENU
+  M_Main SET-MENU ENTER-MENU
 
   RTOS_RUN
 
