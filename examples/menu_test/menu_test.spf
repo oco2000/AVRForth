@@ -29,6 +29,7 @@ REQUIRE DEBOUNCE        lib/buttons.spf
 REQUIRE MENU            lib/lcd_menu/menu.spf
 REQUIRE INT-EDITOR      lib/lcd_menu/int_editor.spf
 REQUIRE PROGRESS-DISPLAY lib/lcd_menu/progress_editor.spf
+REQUIRE SUPERSTRING     lib/superstring.spf
 
 [F] DECIMAL [P]
 
@@ -149,25 +150,62 @@ I_BALANCE_Title MENU-ITEM I_Balance
 \ ------------------------ Sound menu ----------------------
 0x0 I_Bass I_Treble I_Mute I_Balance I_Volume C" Sound" MENU M_Sound
 
+\ ======================== Hours ==========================
 C" Hours" MENU-ITEM I_Hours
+
+\ ======================== Minutes ==========================
 C" Minutes" MENU-ITEM I_Minutes
 
+\ ------------------------ Time menu ----------------------
 0x0 I_Hours I_Minutes C" Time" MENU M_Time
 
+
+\ ======================== Day ==========================
 C" Day" MENU-ITEM I_Day
-C" Month" MENU-ITEM I_Month
+
+\ ======================== Month ==========================
+CEVARIABLE MONTH  0x1 MONTH C!E
+ 12 == MAX-MONTH
+ 01 == MIN-MONTH
+: GET-MONTH   ( -- value )   MONTH C@E ;
+: SET-MONTH   ( value -- )   MIN-MONTH MAX-MONTH CLIP   MONTH C!E ;
+
+C" JanFebMarAprMayJunJulAugSepOctNovDec" 0x3 SUPERSTRING Month
+: (.MONTH) ( month -- a u )
+  MIN-MONTH MAX-MONTH CLIP 1- Month
+;
+
+: MONTH-DISPLAY ( -- )
+  1 1 AT
+  GET-INT-VALUE (.MONTH) TYPE
+;
+
+C" Month" == I_MONTH_Title
+I_MONTH_Title MIN-MONTH MAX-MONTH ' GET-MONTH ' SET-MONTH INT-EDITOR   MONTH-EDITOR
+' MONTH-DISPLAY  MONTH-EDITOR SET-DISPLAY
+
+I_MONTH_Title MENU-ITEM I_Month
+' GET-MONTH      I_Month SET-GET-VALUE
+' (.MONTH)       I_Month SET-FORMAT
+' MONTH-EDITOR   I_Month SET-EDIT
+
+\ ======================== Year ==========================
 C" Year" MENU-ITEM I_Year
 
-0x0 I_Day I_Month I_Year C" Date" MENU M_Date
+\ ------------------------ Date menu ----------------------
+0x0 I_Year I_Month I_Day C" Date" MENU M_Date
 
+\ ------------------------ Setup menu ----------------------
 0x0 M_Time M_Date C" Setup" MENU M_Setup
 
+\ ------------------------ Main menu ----------------------
 0x0 M_Sound M_Setup C" _" MENU M_Main
 M_Main SET-MAIN
 
 : MAIN
   INIT
   M_Main SET-MENU ENTER-MENU
+  \ ~PAGE 0x1 Month TYPE
 
   RTOS_RUN
 
