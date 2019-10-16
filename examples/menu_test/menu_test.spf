@@ -87,13 +87,13 @@ I_VOLUME_Tttle MENU-ITEM I_Volume
 CEVARIABLE MUTED
 : GET-MUTED   ( -- value )   MUTED C@E ;
 : SET-MUTED   MUTED C!E ;
-: MUTE ( -- )
+: TOGGLE-MUTE ( -- )
   GET-MUTED 0= SET-MUTED TRUE ( redraw ) ;
 
 C" Mute" MENU-ITEM I_Mute
 ' GET-MUTED    I_Mute SET-GET-VALUE
 ' FORMAT-BOOL  I_Mute SET-FORMAT
-' MUTE         I_Mute SET-EDIT
+' TOGGLE-MUTE  I_Mute SET-EDIT
 
 \ ======================== BASS ==========================
 CEVARIABLE BASS  0x0 BASS C!E
@@ -132,22 +132,22 @@ I_TREBLE_Title MENU-ITEM I_Treble
 \ ======================== Balance ==========================
 CEVARIABLE BALANCE  0x0 BALANCE C!E
  31 == MAX-BALANCE
-0x0 == MIN-BALANCE
-: GET-BALANCE   ( -- value )   BALANCE C@E ;
+-30 == MIN-BALANCE
+: GET-BALANCE   ( -- value )   BALANCE C@E C>N ;
 : SET-BALANCE   ( value -- )   MIN-BALANCE MAX-BALANCE CLIP   BALANCE C!E ;
 
-C" BALANCE" == I_BALANCE_Title
+C" Balance" == I_BALANCE_Title
 I_BALANCE_Title MIN-BALANCE MAX-BALANCE ' GET-BALANCE ' SET-BALANCE INT-EDITOR   BALANCE-EDITOR
 ' PROGRESS-DISPLAY  BALANCE-EDITOR SET-DISPLAY
 TRUE                BALANCE-EDITOR SET-IMMEDIATE
 
-I_BALANCE_Title MENU-ITEM I_BALANCE
-' GET-BALANCE      I_BALANCE SET-GET-VALUE
-' (.)              I_BALANCE SET-FORMAT
-' BALANCE-EDITOR   I_BALANCE SET-EDIT
+I_BALANCE_Title MENU-ITEM I_Balance
+' GET-BALANCE      I_Balance SET-GET-VALUE
+' (.)              I_Balance SET-FORMAT
+' BALANCE-EDITOR   I_Balance SET-EDIT
 
 \ ------------------------ Sound menu ----------------------
-0x0 I_Bass I_Treble I_Volume I_Mute C" Sound" MENU M_Sound
+0x0 I_Bass I_Treble I_Mute I_Balance I_Volume C" Sound" MENU M_Sound
 
 C" Hours" MENU-ITEM I_Hours
 C" Minutes" MENU-ITEM I_Minutes

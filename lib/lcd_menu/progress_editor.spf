@@ -2,9 +2,10 @@ REQUIRE PROGRESSBAR ../lcd/progress.spf
 REQUIRE INT-EDITOR ./int_editor.spf
 
 : PROGRESS-DISPLAY ( -- )
-  14 0 AT GET-INT-VALUE .
+  INT-EDITOR-FORMAT
+  WIDTH OVER - 1- 0 AT SPACE TYPE
 
-  CUR-EDITOR@ IntEditor.min C@P
-  CUR-EDITOR@ IntEditor.max C@P
+  CUR-EDITOR@ IntEditor.min C@P C>N
+  CUR-EDITOR@ IntEditor.max C@P C>N
   16 GET-INT-VALUE 0 1 PROGRESSBAR
 ;

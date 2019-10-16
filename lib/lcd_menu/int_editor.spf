@@ -6,6 +6,7 @@ CELL -- IntEditor.getValue
 0x1 CHARS -- IntEditor.max
 0x1 CHARS -- IntEditor.min
 CELL -- IntEditor.prompt
+CELL -- IntEditor.format
 CELL -- IntEditor.display
 0x1 CHARS -- IntEditor.immediate
 == /IntEditor
@@ -21,7 +22,7 @@ VARIABLE PREV-BUTTONS-TASKS
 ;
 
 : ACTUALLY-SET-VALUE ( value -- )
-  CUR-VALUE @ CUR-EDITOR@ IntEditor.setValue @EXECUTE
+  GET-INT-VALUE CUR-EDITOR@ IntEditor.setValue @EXECUTE
 ;
 
 : SET-INT-VALUE ( value -- )
@@ -31,18 +32,21 @@ VARIABLE PREV-BUTTONS-TASKS
   THEN
 ;
 
-: INT-EDITOR-DISPLAY
+: INT-EDITOR-DISPLAY ( -- )
   CUR-EDITOR@ IntEditor.display @EXECUTE
 ;
 
+: INT-EDITOR-FORMAT ( -- a u )
+  CUR-VALUE @ CUR-EDITOR@ IntEditor.format @EXECUTE
+;
+
 : NUMBER-DISPLAY ( -- )
-  0 1 AT
-  GET-INT-VALUE .
+  0 1 AT  INT-EDITOR-FORMAT TYPE
 ;
 
 : INT-EDITOR-INC-TASK ( -- )
   GET-INT-VALUE ( value )
-  DUP CUR-EDITOR@ IntEditor.max C@P < IF
+  DUP CUR-EDITOR@ IntEditor.max C@P C>N < IF
     1+ SET-INT-VALUE
     INT-EDITOR-DISPLAY
   ELSE DROP THEN
@@ -50,7 +54,7 @@ VARIABLE PREV-BUTTONS-TASKS
 
 : INT-EDITOR-DEC-TASK ( -- )
   GET-INT-VALUE ( value )
-  DUP CUR-EDITOR@ IntEditor.min C@P > IF
+  DUP CUR-EDITOR@ IntEditor.min C@P C>N > IF
     1- SET-INT-VALUE
     INT-EDITOR-DISPLAY
   ELSE DROP THEN
@@ -82,11 +86,13 @@ TCREATE INT-EDITOR-TASKS
 ;
 
 ' NUMBER-DISPLAY == 'DEFAULT-DISPLAY
+' (.) == 'DEFAULT-FORMAT
 
 :: INT-EDITOR
   PCREATE
   [F]
     T, T, TC, TC, T,
+    'DEFAULT-FORMAT T,
     'DEFAULT-DISPLAY T,
     0x0 TC,
     TALIGN
