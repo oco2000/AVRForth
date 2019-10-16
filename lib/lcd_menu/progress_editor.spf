@@ -1,0 +1,10 @@
+REQUIRE PROGRESSBAR ../lcd/progress.spf
+REQUIRE INT-EDITOR ./int_editor.spf
+
+: PROGRESS-DISPLAY ( -- )
+  14 0 AT GET-INT-VALUE .
+
+  CUR-EDITOR@ IntEditor.min C@P
+  CUR-EDITOR@ IntEditor.max C@P
+  16 GET-INT-VALUE 0 1 PROGRESSBAR
+;

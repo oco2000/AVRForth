@@ -5,9 +5,8 @@ CELL -- IntEditor.setValue
 CELL -- IntEditor.getValue
 0x1 CHARS -- IntEditor.max
 0x1 CHARS -- IntEditor.min
-\ ~0x1 CHARS -- IntEditor.immediate
 CELL -- IntEditor.prompt
-CELL -- IntEditor.extra
+CELL -- IntEditor.display
 0x1 CHARS -- IntEditor.immediate
 == /IntEditor
 
@@ -29,10 +28,14 @@ VARIABLE PREV-BUTTONS-TASKS
   CUR-VALUE !
   CUR-EDITOR@ IntEditor.immediate C@P IF
     ACTUALLY-SET-VALUE
-  ELSE DROP THEN
+  THEN
 ;
 
-: INT-EDITOR-DISPLAY ( -- )
+: INT-EDITOR-DISPLAY
+  CUR-EDITOR@ IntEditor.display @EXECUTE
+;
+
+: NUMBER-DISPLAY ( -- )
   0 1 AT
   GET-INT-VALUE .
 ;
@@ -78,12 +81,28 @@ TCREATE INT-EDITOR-TASKS
   INT-EDITOR-DISPLAY
 ;
 
+' NUMBER-DISPLAY == 'DEFAULT-DISPLAY
+
 :: INT-EDITOR
   PCREATE
   [F]
-    T, T, TC, TC, T, 0x0 TC, TALIGN
+    T, T, TC, TC, T,
+    'DEFAULT-DISPLAY T,
+    0x0 TC,
+    TALIGN
   [P]
   PDOES>
     INT-EDIT FALSE
   ;
 ;;
+
+[F]
+: SET-DISPLAY ( fn editor -- )
+  ?TEXEC   IntEditor.display T!
+;
+
+: SET-IMMEDIATE ( b editor -- )
+  ?TEXEC   IntEditor.immediate TC!
+;
+
+[P]
