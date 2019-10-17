@@ -21,6 +21,7 @@ CELL -- Menu.flags
 CELL -- Menu.getValue \ callback ( -- value )
 CELL -- Menu.format   \ callback ( value -- addr u )
 CELL -- Menu.edit     \ callback ( -- )
+CELL -- Menu.cancel   \ callback ( -- )
 0x0  -- Menu.items
 == /MENU
 
@@ -37,7 +38,7 @@ CVARIABLE CUR-LINE
 :: MENU ( name item*n -- )
   PCREATE
   [F]
-    THERE >R  T, 0x0 T, MenuFlag.isMenu T, 0x0 T, 0x0 T, 0x0 T,
+    THERE >R  T, 0x0 T, MenuFlag.isMenu T, 0x0 T, 0x0 T, 0x0 T, 0x0 T,
     BEGIN \ store items
       DUP T,
       R@ OVER Menu.parent T! \ set item parent
@@ -141,6 +142,10 @@ VARIABLE CUR-MENU
   ?TEXEC   Menu.edit T!
 ;
 
+: SET-CANCEL ( fn menu -- )
+  ?TEXEC   Menu.cancel T!
+;
+
 [P]
 
 : FORMAT-CHAR ( c -- a 1 )
@@ -159,8 +164,9 @@ VARIABLE CUR-MENU
 
 : EXIT-MENU ( -- )
   CUR-MENU @ PARENT-MENU DUP ?MAIN IFNOT
-    SET-MENU
-  ELSE DROP THEN
+    DUP SET-MENU
+  THEN
+  Menu.cancel @EXECUTE
 ;
 
 : UP-MENU ( -- )

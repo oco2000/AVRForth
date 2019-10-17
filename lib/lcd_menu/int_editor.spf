@@ -1,5 +1,7 @@
 REQUIRE MENU ./menu.spf
 
+TREQUIRE (.)
+
 0x0
 CELL -- IntEditor.setValue
 CELL -- IntEditor.getValue
