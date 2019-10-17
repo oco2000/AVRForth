@@ -87,7 +87,7 @@ CVARIABLE pos
         "found"
 \        0x23 0x59 0x55 DS1307_SET_TIME     \ для теста задаем начальные время и дату
 \        0x13 0x05 0x30 DS1307_SET_DATE
-\        DS1307_Weekday 5 DS1307_SET
+\        5 DS1307_Weekday DS1307_SET
         00 pos C!
         ['] Task_Print 250 RTOS_SET_TIMER_TASK
     THEN

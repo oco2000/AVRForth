@@ -37,9 +37,9 @@ REQUIRE I2C_START lib/i2c.spf
     I2C_STOP
 ;
 
-: DS1307_SET ( reg value -- ) \  write a register
+: DS1307_SET ( value reg -- ) \  write a register
     _DS1307_start_write DROP
-    SWAP I2C_WRITE_DROP       \ write register
+    I2C_WRITE_DROP       \ write register
     I2C_WRITE_DROP      \ write value
     I2C_STOP
 ;
@@ -48,9 +48,9 @@ REQUIRE I2C_START lib/i2c.spf
     _DS1307_start_write
     DUP INVERT IF   \ device present
         I2C_STOP
-        0 DUP DS1307_GET
+        0 DS1307_GET
         [ DS1307_CH BIT [F] INVERT [P] ] LITERAL AND \ clock halt bit reset - turn on the clock
-        DS1307_SET
+        0 DS1307_SET
     THEN
 ;
 

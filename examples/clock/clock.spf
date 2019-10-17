@@ -186,7 +186,7 @@ CVARIABLE TIMER2         \ для мигания точкой и цифрами
 
 : (SET) ( reg value -- ) \ установить регистр часов, отформатировать время,
                           \ вернуться к нормальному режиму через 10 секунд
-     DS1307_SET
+     SWAP DS1307_SET
      PARSE_TIME
      RAW_FORMAT
      RETURN_TO_NORMAL
