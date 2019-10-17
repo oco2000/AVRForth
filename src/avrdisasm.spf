@@ -115,7 +115,7 @@ VECT {.NAME}
 : RELJUMP       ( -- A )      \ 12-BIT BRANCH
                 OPCODE 0FFF AND
                 DUP 800 AND 0<> -1000 AND OR \ SIGN EXTEND 0..4095 TO -2K..+2K
-                2* DPC + DUP .ADDR ;
+                2* DPC + 1FFF AND DUP .ADDR ;
 
 : LONGJUMP      ( addr x1 x2 -- addr+2 x1 x2 addr' )
     >R >R 2+ ( addr+2 )
