@@ -1,3 +1,5 @@
+TREQUIRE NEGATE
+
 : ABS        ( x -- |x| )                    ( absolute value )
   [
     tosh tst

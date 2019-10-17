@@ -1,0 +1,120 @@
+REQUIRE MENU ./menu.spf
+
+TREQUIRE (.)
+
+0x0
+CELL -- IntEditor.setValue
+CELL -- IntEditor.getValue
+0x1 CHARS -- IntEditor.max
+0x1 CHARS -- IntEditor.min
+CELL -- IntEditor.prompt
+CELL -- IntEditor.format
+CELL -- IntEditor.display
+0x1 CHARS -- IntEditor.immediate
+== /IntEditor
+
+VARIABLE CUR-EDITOR
+VARIABLE CUR-VALUE
+VARIABLE PREV-BUTTONS-TASKS
+
+: CUR-EDITOR@   CUR-EDITOR @ ;
+
+: GET-INT-VALUE ( -- value )
+  CUR-VALUE @
+;
+
+: ACTUALLY-SET-VALUE ( value -- )
+  GET-INT-VALUE CUR-EDITOR@ IntEditor.setValue @EXECUTE
+;
+
+: SET-INT-VALUE ( value -- )
+  CUR-VALUE !
+  CUR-EDITOR@ IntEditor.immediate C@P IF
+    ACTUALLY-SET-VALUE
+  THEN
+;
+
+: INT-EDITOR-DISPLAY ( -- )
+  CUR-EDITOR@ IntEditor.display @EXECUTE
+;
+
+: INT-EDITOR-FORMAT ( -- a u )
+  CUR-VALUE @ CUR-EDITOR@ IntEditor.format @EXECUTE
+;
+
+: DEFAULT-DISPLAY ( -- )
+  1 1 AT  INT-EDITOR-FORMAT TYPE SPACE
+;
+
+: INT-EDITOR-INC-TASK ( -- )
+  GET-INT-VALUE ( value )
+  DUP CUR-EDITOR@ IntEditor.max C@P C>N < IF
+    1+ SET-INT-VALUE
+    INT-EDITOR-DISPLAY
+  ELSE DROP THEN
+;
+
+: INT-EDITOR-DEC-TASK ( -- )
+  GET-INT-VALUE ( value )
+  DUP CUR-EDITOR@ IntEditor.min C@P C>N > IF
+    1- SET-INT-VALUE
+    INT-EDITOR-DISPLAY
+  ELSE DROP THEN
+;
+
+: INT-EDITOR-CANCEL
+  PREV-BUTTONS-TASKS @ BUTTONS_TASKS !
+  DISPLAY-MENU
+;
+
+: INT-EDITOR-OK
+  CUR-EDITOR@ IntEditor.immediate C@P IFNOT
+    ACTUALLY-SET-VALUE
+  THEN
+  INT-EDITOR-CANCEL
+;
+
+TCREATE INT-EDITOR-TASKS
+' INT-EDITOR-DEC-TASK T,   ' INT-EDITOR-INC-TASK T,   ' INT-EDITOR-OK T,   ' INT-EDITOR-CANCEL T,
+
+: INT-EDIT ( editor -- )
+  CUR-EDITOR !
+  BUTTONS_TASKS @ PREV-BUTTONS-TASKS !
+  INT-EDITOR-TASKS BUTTONS_TASKS !
+  PAGE
+  CUR-EDITOR@ IntEditor.prompt @P COUNTP TYPEP
+  CUR-EDITOR@ IntEditor.getValue @EXECUTE  CUR-VALUE !
+  INT-EDITOR-DISPLAY
+;
+
+' DEFAULT-DISPLAY == 'DEFAULT-DISPLAY
+' (.) == 'DEFAULT-FORMAT
+
+:: INT-EDITOR
+  PCREATE
+  [F]
+    T, T, TC, TC, T,
+    'DEFAULT-FORMAT T,
+    'DEFAULT-DISPLAY T,
+    0x0 TC,
+    TALIGN
+  [P]
+  PDOES>
+    INT-EDIT FALSE
+  ;
+;;
+
+[F]
+: SET-DISPLAY ( fn editor -- )
+  ?TEXEC   IntEditor.display T!
+;
+
+: SET-FORMAT ( fn editor -- )
+  ?TEXEC   IntEditor.format T!
+;
+
+: SET-IMMEDIATE ( b editor -- )
+  ?TEXEC   IntEditor.immediate TC!
+;
+
+[P]
