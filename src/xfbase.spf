@@ -109,18 +109,22 @@ ALSO FORTH
   AIStack StackDrop AIStack ArrayStackDrop
 ;
 
+: COLON-WORD ( -- )
+  CREATE T-HERE @ , -1 , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
+;
+
 \ Если компилируемое слово встречается в режиме
 \ TARGET-компиляции, то компилируется вызов слова
 : :
   [T] SAVE-INPUT [P]
-  CREATE T-HERE @ , ]T (PROLOG)   \ запомним адрес начала тела слова в целевой памяти
+  COLON-WORD
   DOES> ?TCOMP @ TCOMPILE,  \ компилируем
 ;
 \ двоеточечное определение при выполнении компилирует свой вызов в целевую память
 
 : CALL-ONLY:                        \ не оптимизировать хвостовую рекурсию
   [T] SAVE-INPUT [F]
-  CREATE T-HERE @ , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
+  COLON-WORD
   DOES> ?TCOMP @ TCOMPILE, NEW  \ компилируем
 ;
 
@@ -129,17 +133,16 @@ ALSO FORTH
   (EPILOG) T[
 ;   \ компилирует ret, режим целевой интерпретации
 
-: T:
-  [T] SAVE-INPUT [P]
-  CREATE
-    T-HERE @ , ]T (PROLOG)
-  DOES> ?TCOMP @ TCOMPILE,
-; \ !!!
+\ ~: T:
+  \ ~[T] SAVE-INPUT [P]
+  \ ~COLON-WORD
+  \ ~DOES> ?TCOMP @ TCOMPILE,
+\ ~; \ !!!
 
-: ;T
-  DROP-SAVED-INPUT
-  (EPILOG) T[
-;
+\ ~: ;T
+  \ ~DROP-SAVED-INPUT
+  \ ~(EPILOG) T[
+\ ~;
 
 : LCONST ( n -- | -- n )    \ константа просто как литерал (для оптимизаций)
   CREATE , DOES> ?TCOMP @ (LIT)
@@ -293,7 +296,7 @@ VARIABLE @DOVECT
 
 : [VECT] ( a -- ) \ вектор
   CREATE
-    T-HERE @ ,
+    T-HERE @ , -1 ,
     (UJMP)
     ROM-SIZE 8192 > IF
       nop      \ зарезервируем еще 2 байта, вдруг будет длинный jmp
