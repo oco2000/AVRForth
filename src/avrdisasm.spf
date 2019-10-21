@@ -27,6 +27,7 @@ MODULE: AVRDIS
 EXPORT
 
   T-MEM-SIZE CELLS ALLOCATE THROW  CONSTANT COMMENTS
+  -1 CONSTANT INLISTING
 
 DEFINITIONS
 
@@ -54,7 +55,7 @@ VECT {.NAME}
   BEGIN
     DUP     ( link link )
   WHILE
-    DUP NAME> >BODY DUP @ R@ = SWAP CELL+ @ -1 = AND IF \ colon word
+    DUP NAME> >BODY DUP @ R@ = SWAP CELL+ @ INLISTING = AND IF \ colon word
       DUP {.NAME} CDR
       DROP 0 \ exit
     ELSE

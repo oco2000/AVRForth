@@ -110,7 +110,7 @@ ALSO FORTH
 ;
 
 : COLON-WORD ( -- )
-  CREATE T-HERE @ , -1 , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
+  CREATE T-HERE @ , INLISTING , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
 ;
 
 \ Если компилируемое слово встречается в режиме
@@ -296,7 +296,7 @@ VARIABLE @DOVECT
 
 : [VECT] ( a -- ) \ вектор
   CREATE
-    T-HERE @ , -1 ,
+    T-HERE @ , INLISTING ,
     (UJMP)
     ROM-SIZE 8192 > IF
       nop      \ зарезервируем еще 2 байта, вдруг будет длинный jmp
