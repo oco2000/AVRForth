@@ -99,5 +99,3 @@ CVARIABLE pos
         RTOS_TASK_MANAGER
     AGAIN
 ;
-
-' MAIN [->] {MAIN}

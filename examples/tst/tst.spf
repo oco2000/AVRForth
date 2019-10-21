@@ -176,7 +176,7 @@ S" lib/ports.spf" INCLUDED
 PD3 WIRE LED
 
 [F] DECIMAL [P]
-: TST
+: MAIN
   DECIMAL
   [IFDEBUG]
     1200 BAUD USART_INIT
@@ -217,9 +217,6 @@ PD3 WIRE LED
 )
   BEGIN AGAIN
 ;
-
-' TST [->] {MAIN}
-\ ' MAIN [->] {MAIN}
 
 :: 1234   \ отладка в макросе
 [F]

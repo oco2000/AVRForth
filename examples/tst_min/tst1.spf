@@ -22,5 +22,3 @@ LED BIT LED_PORT 2== {LED}
       THEN
   AGAIN
 ;
-
-' MAIN [->] {MAIN}

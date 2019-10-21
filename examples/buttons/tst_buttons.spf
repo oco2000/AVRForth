@@ -79,6 +79,3 @@ TCREATE BTN_TASKS           \ задачи для кнопок
         RTOS_TASK_MANAGER
     AGAIN
 ;
-
-' MAIN [->] {MAIN}
-

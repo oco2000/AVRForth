@@ -1,7 +1,7 @@
 \ AVR Forth
 DECIMAL
 
-C" 1.4.2" CONSTANT _VERSION
+C" 1.4.3" CONSTANT _VERSION
 .( AVRForth by Oleg Voronin. Version )
 _VERSION COUNT TYPE CR
 
@@ -35,7 +35,6 @@ ALSO FORTH
 \ ================= контроллер
 S" devices/devices.spf" INCLUDED \ файл с константами типов контроллеров
 INCLUDED \ включить файл с определением контроллера, переданный в командной строке
-
 \ слова, определенные до этого слова, не попадут в листинг
 ' RESET  'marker !
 
@@ -53,6 +52,7 @@ RAM-BOTTOM D-HERE ! \ начало RАМ
 ONLY TARGET \ только TARGET
 
 INCLUDED  \ включить файл с программой, переданный в командной строке
+' MAIN [->] {MAIN} \ set main word
 
 [F]
 CREATE FILENAME 256 ALLOT \ буфер для добавления расширений к файлу

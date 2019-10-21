@@ -191,6 +191,3 @@ REQUIRE MS      lib/delay.spf
         data1_write
     AGAIN
 ;
-
-
-' MAIN [->] {MAIN}

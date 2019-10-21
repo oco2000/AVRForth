@@ -73,5 +73,3 @@ REQUIRE MS     lib/delay.spf   \ задержка
     AGAIN
 ;
 
-' MAIN [->] {MAIN}    \ главная процедура
-
