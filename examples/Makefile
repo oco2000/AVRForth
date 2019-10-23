@@ -1,4 +1,4 @@
-DIRS = buttons clock lcd lcd_big menu_test pwm_demo spi tembr tester tst tst_bus tst_min usart
+DIRS = buttons clock lcd lcd_big menu_test pwm_demo spi tembr tester tst tst_bus tst_min usart encoder
 
 .PHONY: subdirs $(CLEANDIRS)
 .PHONY: subdirs $(SUBDIRS)
