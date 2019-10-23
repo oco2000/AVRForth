@@ -10,6 +10,9 @@ GROUP{ BUTTON_DOWN BUTTON_UP }GROUP BUTTONS
 
 PD5 WIRE LED
 
+TREQUIRE C!E
+CEVARIABLE Counter  0x7F Counter C!E
+
 : INIT
     LED {OUTPUT}
     BUTTONS {INPUT}
@@ -20,7 +23,7 @@ PD5 WIRE LED
     BITS{ CS21 }BITS TCCR2 SET  \ prescaler ClkIO/8
     BITS{ OCIE2 TOIE2 }BITS TIMSK SET \ interrupts by mathch compare and overflow
 
-    0x00 OCR2 C! \ initial timer counter
+    Counter C@ OCR2 C!E \ initial timer counter
     sei
 ;
 
@@ -36,11 +39,11 @@ INT: COMPARE
     INIT
     BEGIN
       BUTTON_UP {READ&MASK} IF
-        OCR2 C@ 1- 0 MAX OCR2 C!
+        Counter C@E 1- 0 MAX DUP OCR2 C! Counter C!E
         1 MS
       THEN
       BUTTON_DOWN {READ&MASK} IF
-        OCR2 C@ 1+ 0xFF MIN OCR2 C!
+        Counter C@E 1+ 0xFF MIN DUP OCR2 C! Counter C!E
         1 MS
       THEN
     AGAIN

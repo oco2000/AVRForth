@@ -10,5 +10,8 @@ $(project).spf.hex: $(project).spf
 flash: $(project).spf.hex
 	avrdude -c $(avrdude_programmer) -p $(avrdude_device) -U flash:w:$^
 
+eeprom: $(project).spf.eep.hex
+	avrdude -c $(avrdude_programmer) -p $(avrdude_device) -U eeprom:w:$^
+
 clean:
 	rm $(project).spf.*
