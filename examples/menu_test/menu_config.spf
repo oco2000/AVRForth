@@ -88,7 +88,7 @@ I_BALANCE_Title MENU-ITEM I_Balance
 : DS1307R 0 ;
 : DS1307W 1 ;
 
-: DS1307_Access ( value? r/w params -- value? )
+: _DS1307_Access ( value? r/w params -- value? )
   C@P SWAP ( value? reg r/w )
   IF \ write
     DS1307_Present? C@ IF
@@ -102,6 +102,14 @@ I_BALANCE_Title MENU-ITEM I_Balance
     ELSE
       0
     THEN
+  THEN
+;
+
+: DS1307_Access  ( value? r/w params -- value? )
+  DS1307_Present? IF
+    _DS1307_Access
+  ELSE
+    DROP IF DROP ELSE 1 THEN
   THEN
 ;
 
