@@ -1,0 +1,20 @@
+\ EncBus should be defined before including this
+
+CVARIABLE EncState
+
+TCREATE EncStates
+  00 TC, -01 TC,  01 TC, 00 TC,
+  01 TC,  00 TC, -01 TC, 00 TC,
+ -01 TC,  00 TC,  00 TC, 01 TC,
+  00 TC,  01 TC, -01 TC, 00 TC,
+
+: EncIncrement ( -- n )
+  EncBus BUS.READ 0x3 AND
+  EncState C@ OVER EncState C!
+  2* 2* + EncStates + C@P C>S
+;
+
+: EncInit
+  0 EncState C!
+  EncBus BUS.INPUT
+;

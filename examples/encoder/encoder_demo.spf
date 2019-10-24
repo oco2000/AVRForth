@@ -2,30 +2,30 @@
 
 1000000 == F_CPU
 
-REQUIRE {WRITE} lib/ports.spf
+REQUIRE BUS.WRITE       lib/bus.spf
+REQUIRE D3              lib/lcd/lcd_conf_std.spf
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
 
-PB0 WIRE ENC_DOWN
-PB1 WIRE ENC_UP
-GROUP{ ENC_DOWN ENC_UP }GROUP ENCODER_WIRES
-
-{PORTD} FCONST DIGITS_PORT
-
-: >BCD  ( value -- bcd )
-  0x0A /MOD ( hi lo )
-  NIBBLE-JOIN
-;
-
-: PRINT ( n -- )
-  >BCD DIGITS_PORT PORT.WRITE
-;
+BUS{ PB1 PB0 }BUS EncBus
+REQUIRE EncInit         lib/encoder.spf
 
 : INIT
-  ENCODER_WIRES {INPUT}
-  ENCODER_WIRES {PULL_UP}
-  [ 0xFF DIGITS_PORT ] {OUTPUT}
+  DECIMAL
+  LCD_DISP_ON  LCD_INIT  PAGE
+  EncInit
+;
+
+: PRINT
+  0 0 AT .
 ;
 
 : MAIN
   INIT
-  10 PRINT
+
+  0 0 PRINT
+  BEGIN
+    EncIncrement ?DUP IF
+      + DUP PRINT
+    THEN
+  AGAIN
 ;
