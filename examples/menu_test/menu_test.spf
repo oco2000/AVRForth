@@ -8,6 +8,7 @@ SLOWLITS
 1000000 == F_CPU
 
 REQUIRE {SET}     lib/ports.spf
+REQUIRE BUS.WRITE       lib/bus.spf
 
 PD7 WIRE LED
 
@@ -17,6 +18,8 @@ PB2 WIRE BTN_DOWN
 PB3 WIRE BTN_EXIT
 
 GROUP{ BTN_SELECT BTN_UP BTN_DOWN BTN_EXIT }GROUP BUTTONS
+
+BUS{ PB7 PB6 }BUS EncBus
 
 REQUIRE D3               lib/lcd/lcd_conf_std.spf
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
@@ -28,6 +31,7 @@ REQUIRE INT-EDITOR       lib/lcd_menu/int_editor.spf
 REQUIRE PROGRESS-DISPLAY lib/lcd_menu/progress_editor.spf
 REQUIRE SUPERSTRING      lib/superstring.spf
 REQUIRE DS1307           lib/ds1307.spf
+REQUIRE EncInit          lib/encoder.spf
 
 CVARIABLE DS1307_Present?
 C" DS1307 not found!" == "DS1307_error"
@@ -61,7 +65,7 @@ C" DS1307 not found!" == "DS1307_error"
 
 S" ./menu_config.spf" INCLUDED
 
-: MAIN-TASK
+: IDLE-TASK
   4 1 LCD_GOTOXY
   TRUE FORMAT-TIME TYPE
 
@@ -71,7 +75,7 @@ S" ./menu_config.spf" INCLUDED
   12 0 LCD_GOTOXY
   GET-DOW (.DOW) TYPE
 
-  ['] MAIN-TASK 100 RTOS_SET_TIMER_TASK
+  ['] IDLE-TASK 100 RTOS_SET_TIMER_TASK
 ;
 
 : UP   UP-MENU BLIP ;
@@ -86,17 +90,17 @@ TCREATE BTN_TASKS_MENU
   M_Main SET-MENU
   ENTER-MENU
   BTN_TASKS_MENU BUTTONS_TASKS !
-  ['] MAIN-TASK RTOS_REMOVE_TASK
+  ['] IDLE-TASK RTOS_REMOVE_TASK
 ;
 
 TCREATE BTN_TASKS
 ' NOOP T,   ' NOOP T,   ' EnterMainMenu T,   ' NOOP T,
 
-: CancelMainMenu
+: SetIdleTask
   BTN_TASKS BUTTONS_TASKS !
-  PAGE MAIN-TASK
+  PAGE IDLE-TASK
 ;
-' CancelMainMenu M_Main SET-CANCEL
+' SetIdleTask M_Main SET-CANCEL
 
 : INIT
   DECIMAL
@@ -104,15 +108,27 @@ TCREATE BTN_TASKS
   LCD_DISP_ON  LCD_INIT
   MENU-INIT
   PROGRESS-INIT
+  EncInit
   DS1307_INIT 0= DS1307_Present? C!
 
   BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!
   0x3 BUTTONS_REPEATABLE C!
-  BTN_TASKS BUTTONS_TASKS !
   BUTTONS_INIT
   RTOS_INIT
   ['] BUTTONS_TASK RTOS_SET_TASK
-  PAGE MAIN-TASK
+  SetIdleTask
+;
+
+: ProcessEncoder ( increment -- )
+  BUTTONS_TASKS @
+  SWAP 0< IF CELL+ THEN
+  @P RTOS_SET_TASK
+;
+
+: CheckEncoder
+  EncIncrement ?DUP IF
+    ProcessEncoder
+  THEN
 ;
 
 : MAIN
@@ -125,6 +141,17 @@ TCREATE BTN_TASKS
   RTOS_RUN
 
   BEGIN
-      RTOS_TASK_MANAGER
+    RTOS_TASK_MANAGER
   AGAIN
 ;
+
+INT: TIMER
+    CheckEncoder
+    RTOS_TIMER_SERVICE
+;INT
+
+[F] DEVICE mega8 = [P] [IF]
+    TIMER ->INT TIMER0_OVF
+[ELSE]
+    TIMER ->INT TIMER2_COMPA
+[THEN]
