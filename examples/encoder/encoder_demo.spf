@@ -7,6 +7,7 @@ REQUIRE D3              lib/lcd/lcd_conf_std.spf
 REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
 
 BUS{ PB1 PB0 }BUS EncBus
+0x2 == ChangesPerClick \ should be a power of two
 REQUIRE EncInit         lib/encoder.spf
 
 : INIT

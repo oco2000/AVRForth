@@ -19,6 +19,7 @@ PB3 WIRE BTN_EXIT
 
 GROUP{ BTN_SELECT BTN_UP BTN_DOWN BTN_EXIT }GROUP BUTTONS
 
+0x4 == ChangesPerClick \ should be a power of two
 BUS{ PB7 PB6 }BUS EncBus
 
 REQUIRE D3               lib/lcd/lcd_conf_std.spf
