@@ -100,7 +100,7 @@ I_BALANCE_Title MENU-ITEM I_Balance
     DS1307_Present? C@ IF
       DS1307_GET BCD>
     ELSE
-      0
+      DROP 0
     THEN
   THEN
 ;

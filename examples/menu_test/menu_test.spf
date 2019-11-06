@@ -5,7 +5,7 @@
 
 SLOWLITS
 
-1000000 == F_CPU
+8000000 == F_CPU
 
 REQUIRE {SET}     lib/ports.spf
 REQUIRE BUS.WRITE       lib/bus.spf
@@ -67,16 +67,16 @@ C" DS1307 not found!" == "DS1307_error"
 S" ./menu_config.spf" INCLUDED
 
 : IDLE-TASK
-  4 1 LCD_GOTOXY
+  4 1 AT
   TRUE FORMAT-TIME TYPE
 
-  2 0 LCD_GOTOXY
+  2 0 AT
   FORMAT-SHORT-DATE TYPE
 
-  12 0 LCD_GOTOXY
+  12 0 AT
   GET-DOW (.DOW) TYPE
 
-  ['] IDLE-TASK 100 RTOS_SET_TIMER_TASK
+  ['] IDLE-TASK 250 RTOS_SET_TIMER_TASK
 ;
 
 : UP   UP-MENU BLIP ;
