@@ -1,0 +1,20 @@
+[F] DECIMAL [P]
+
+1000000 == F_CPU
+
+REQUIRE BUS.WRITE       lib/bus.spf
+REQUIRE D3              lib/lcd/lcd_conf_std.spf
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
+
+INT0 == RC5_Interrupt
+REQUIRE RC5Init         lib/rc5.spf
+
+: INIT
+  DECIMAL
+  LCD_DISP_ON  LCD_INIT  PAGE
+  RC5Init
+;
+
+: MAIN
+  INIT
+;

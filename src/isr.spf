@@ -62,11 +62,14 @@
     THEN
   DOES>
     T-STATE @ IF
-    (CALL)          \ скомпилировать вызов
-  THEN
+      (CALL)          \ скомпилировать вызов
+    ELSE @ THEN
+;
+
+: INT! ( addr vector -- )  \ задать обработчик
+  COMPILE-TO (JMP)
 ;
 
 : ->INT   \ задать обработчик
-  ' >BODY
-  @ COMPILE-TO (JMP)
+  ?TEXEC   ' >BODY @   INT!
 ;

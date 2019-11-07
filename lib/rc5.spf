@@ -1,0 +1,6 @@
+\ RC5Wire
+
+
+: RC5Init
+
+;
