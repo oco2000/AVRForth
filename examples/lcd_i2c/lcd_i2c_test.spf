@@ -33,7 +33,7 @@ C" 89"   == "89"
   LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
 
   PAGE
-  1 1 AT ." 13"
+  5 1 AT ." Wait..."
 
   BIG_SETUP BIG_LETTERS
   BEGIN

@@ -50,9 +50,9 @@ BITS{ TWS7 TWS6 TWS5 TWS4 TWS3 }BITS == TW_STATUS_MASK
 \ Initialization of the I2C bus interface. Need to be called only once
 \ *************************************************************************/
 : I2C_INIT ( -- )
-  \  initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
+  \  initialize TWI clock: max 100 kHz clock, TWPS = 0 => prescaler = 1 */
   00 TWSR C!                               \  no prescaler */
-  [  [F] F_CPU SCL_CLOCK / 1000 / 16 - 2/ [P] ] LITERAL TWBR C! \  must be > 10 for stable operation */
+  [  [F] F_CPU SCL_CLOCK / 1000 / 16 - 2/ 01 MAX [P] ] LITERAL TWBR C! \  must be > 10 for stable operation */
 ;
 
 : _i2c_wait ( -- )
