@@ -11,13 +11,6 @@ REQUIRE BUS.WRITE lib/bus.spf
 0x54 == LCD_START_LINE4       \ DDRAM address of first char of line 4
 0x0  == LCD_WRAP_LINES        \ 0: no wrap, 1: wrap at end of visibile line
 
-\ D3..D0, E, RW, RS wires should be defined
-\ See lcd_conf_std for example
-
-BUS{ D3 D2 D1 D0 }BUS DATA
-
-BUS{ E RW RS D3 D2 D1 D0 }BUS ALL \ all lines for fast set for output
-
 \ instruction register bit positions, see HD44780U data sheet
 0x0  == LCD_CLR                     \ DB0: clear display
 0x1  == LCD_HOME                    \ DB1: return to home position
@@ -83,35 +76,153 @@ MACRO: LCD_E_DELAY
 \   без задержки, времени на вызов подготовительных процедур достаточно для задержки
 ;MACRO
 
+[F] [DEFINED] LCD_I2C [P] [IF]
+\ LCD connected via I2C extender
+REQUIRE I2C_START lib/i2c.spf
+
+\ LCD_Addr
+
+0x0 BIT == BitRS
+0x1 BIT == BitRW
+0x2 BIT == BitE
+
+CVARIABLE ExtByte
+
+: ExtenderWrite ( byte -- )
+  LCD_Addr I2C_START DROP
+  I2C_WRITE_DROP
+  I2C_STOP
+;
+
+: ExtenderRead ( -- b )
+  [ LCD_Addr 0x1 [F] + [P] ] LITERAL I2C_START DROP
+  I2C_READ_NAK    \ read value
+  I2C_STOP
+;
+
+TREQUIRE C!
+TREQUIRE C@
+TREQUIRE @P
+TREQUIRE EXECUTE
+
+:: DoAndWrite
+  PCREATE T,
+  PDOES>
+    ExtByte C@
+    SWAP @P EXECUTE
+    DUP ExtByte C!
+    ExtenderWrite
+  ;
+;;
+
+: _LCD_RS_HIGH ( x -- y )
+  BitRS OR
+;
+
+: _LCD_RS_LOW ( x -- y )
+  [ BitRS [F] INVERT [P] ] LITERAL AND
+;
+
+: _LCD_RW_HIGH ( x -- y )
+  BitRW OR
+;
+
+: _LCD_RW_LOW ( x -- y )
+  [ BitRW [F] INVERT [P] ] LITERAL AND
+;
+
+: _LCD_E_HIGH ( x -- y )
+  BitE OR
+;
+
+: _LCD_E_LOW ( x -- y )
+  [ BitE [F] INVERT [P] ] LITERAL AND
+;
+
+: _DATA_WRITE ( b existing -- )
+  0x0F AND SWAP
+  4 LSHIFT 0xF0 AND
+  OR
+;
+
+: data_read ( -- b )
+  ExtenderRead 4 RSHIFT
+;
+
+' _LCD_RS_HIGH DoAndWrite LCD_RS_HIGH
+' _LCD_RS_LOW  DoAndWrite LCD_RS_LOW
+' _LCD_RW_HIGH DoAndWrite LCD_RW_HIGH
+' _LCD_RW_LOW  DoAndWrite LCD_RW_LOW
+' _LCD_E_HIGH  DoAndWrite LCD_E_HIGH
+' _LCD_E_LOW   DoAndWrite LCD_E_LOW
+' _DATA_WRITE  DoAndWrite data_write
+
+:: set_data_output ;;
+:: set_all_output ;;
+:: set_input ;;
+
+
+[ELSE]
+\ LCD connected directly to the microcontroller
+\ D3..D0, E, RW, RS wires should be defined
+\ See lcd_conf_std for example
+
+BUS{ D3 D2 D1 D0 }BUS DATA
+
+BUS{ E RW RS D3 D2 D1 D0 }BUS ALL \ all lines for fast set for output
+
 MACRO: LCD_E_HIGH
-   E {SET}
+  E {SET}
 ;MACRO
 
 MACRO: LCD_E_LOW
-   E {CLEAR}
+  E {CLEAR}
 ;MACRO
 
-: LCD_E_TOGGLE
-    LCD_E_HIGH
-    LCD_E_DELAY
-    LCD_E_LOW
-;
-
 MACRO: LCD_RW_HIGH
-    RW {SET}
+  RW {SET}
 ;MACRO
 
 MACRO: LCD_RW_LOW
-    RW {CLEAR}
+  RW {CLEAR}
 ;MACRO
 
 MACRO: LCD_RS_HIGH
-    RS {SET}
+  RS {SET}
 ;MACRO
 
 MACRO: LCD_RS_LOW
-    RS {CLEAR}
+  RS {CLEAR}
 ;MACRO
+
+: data_write ( b -- )
+  DATA BUS.WRITE
+;
+
+: data_read ( -- b )
+  DATA BUS.READ
+;
+
+: set_data_output ( -- )
+  DATA BUS.OUTPUT
+;
+
+: set_all_output ( -- )
+  ALL BUS.OUTPUT
+;
+
+: set_input ( -- )
+  DATA BUS.INPUT
+;
+
+[THEN]
+
+: LCD_E_TOGGLE
+  LCD_E_HIGH
+  LCD_E_DELAY
+  LCD_E_LOW
+;
+
 
 \ *************************************************************************
 \ Low-level function to write byte to LCD controller
@@ -121,32 +232,32 @@ MACRO: LCD_RS_LOW
 \ Returns:  none
 \ *************************************************************************/
 
-: data_write ( w -- )
-    DATA BUS.WRITE
+: SET_RS ( rs -- )
+  IF      \ write data        (RS=1, RW=0) */
+    LCD_RS_HIGH
+  ELSE    \ write instruction (RS=0, RW=0) */
+    LCD_RS_LOW
+  THEN
 ;
 
+
 : LCD_WRITE ( data rs -- )
+  SET_RS
+  LCD_RW_LOW
 
-    IF      \ write data        (RS=1, RW=0) */
-       LCD_RS_HIGH
-    ELSE    \ write instruction (RS=0, RW=0) */
-       LCD_RS_LOW
-    THEN
-    LCD_RW_LOW
+  ( data )
+  \  configure data pins as output */
+  set_data_output
+  \  output high nibble first */
+  DUP 04 RSHIFT data_write
+  LCD_E_TOGGLE
 
-    ( data )
-    \  configure data pins as output */
-    DATA BUS.OUTPUT
-    \  output high nibble first */
-    DUP 04 RSHIFT data_write
-    LCD_E_TOGGLE
+  \  output low nibble */
+  data_write
+  LCD_E_TOGGLE
 
-    \  output low nibble */
-    data_write
-    LCD_E_TOGGLE
-
-    \  all data pins high (inactive) */
-    0x0F DATA BUS.WRITE
+  \  all data pins high (inactive) */
+  0x0F data_write
 ;
 
 \ ************************************************************************
@@ -156,46 +267,38 @@ MACRO: LCD_RS_LOW
 \ Returns:  byte read from LCD controller
 \ *************************************************************************/
 
-: data_read
-    DATA BUS.READ
-;
-
 : LCD_READ  ( rs -- byte )
 
-    IF      \ read data        (RS=1, RW=1) */
-       LCD_RS_HIGH
-    ELSE    \ read instruction (RS=0, RW=1) */
-       LCD_RS_LOW
-    THEN
-    LCD_RW_HIGH
+  SET_RS
+  LCD_RW_HIGH
 
-    DATA BUS.INPUT
+  set_input
 
-    LCD_E_HIGH
-    LCD_E_DELAY
-    data_read NIBBLE-SWAP      \  read high nibble first */
-    LCD_E_LOW
-    LCD_E_DELAY
+  LCD_E_HIGH
+  LCD_E_DELAY
+  data_read NIBBLE-SWAP      \  read high nibble first */
+  LCD_E_LOW
+  LCD_E_DELAY
 
-    LCD_E_HIGH
-    LCD_E_DELAY
-    data_read  0x0F AND   \  read low nibble */
-    OR
-    LCD_E_LOW
+  LCD_E_HIGH
+  LCD_E_DELAY
+  data_read  0x0F AND   \  read low nibble */
+  OR
+  LCD_E_LOW
 ;
 
 \ ************************************************************************
 \ loops while lcd is busy, returns address counter
 \ *************************************************************************/
 : LCD_WAITBUSY ( -- address )
-    BEGIN
-        0 LCD_READ
-        LCD_BUSY BIT AND 0=
-    UNTIL
-    \  the address counter is updated 4us after the busy flag is cleared */
-    0x4 US
-    \  now read the address counter */
-    0 LCD_READ  \ return address counter
+  BEGIN
+    0 LCD_READ
+    LCD_BUSY BIT AND 0=
+  UNTIL
+  \  the address counter is updated 4us after the busy flag is cleared */
+  0x4 US
+  \  now read the address counter */
+  0 LCD_READ  \ return address counter
 ;
 
 \ *************************************************************************
@@ -204,8 +307,8 @@ MACRO: LCD_RS_LOW
 \ Returns: none
 \ *************************************************************************/
 : LCD_COMMAND ( cmd -- )
-    LCD_WAITBUSY DROP
-    0 LCD_WRITE
+  LCD_WAITBUSY DROP
+  0 LCD_WRITE
 ;
 
 \ *************************************************************************
@@ -214,15 +317,15 @@ MACRO: LCD_RS_LOW
 \ Returns: none
 \ *************************************************************************/
 : LCD_DATA ( data -- )
-    LCD_WAITBUSY DROP
-    1 LCD_WRITE
+  LCD_WAITBUSY DROP
+  1 LCD_WRITE
 ;
 
 \ *************************************************************************
 \ Clear display and set cursor to home position
 \ *************************************************************************/
 : LCD_CLRSCR ( -- )
-    LCD_CLR BIT LCD_COMMAND
+  LCD_CLR BIT LCD_COMMAND
 ;
 
 \ ************************************************************************
@@ -233,34 +336,34 @@ MACRO: LCD_RS_LOW
 \ *************************************************************************/
 : LCD_GOTOXY ( x y -- )
 [ [F] LCD_LINES 01 = [P] ] [IF]
-    DROP LCD_START_LINE1 + LCD_DDRAM BIT +
+  DROP LCD_START_LINE1 + LCD_DDRAM BIT +
 [THEN]
 [ [F] LCD_LINES 02 = [P] ] [IF]
-    0= IF
-       LCD_START_LINE1
-    ELSE
-       LCD_START_LINE2
-    THEN
-     + LCD_DDRAM BIT +
+  0= IF
+     LCD_START_LINE1
+  ELSE
+     LCD_START_LINE2
+  THEN
+   + LCD_DDRAM BIT +
 [THEN]
 [ [F] LCD_LINES 04 = [P] ] [IF]
-    DUP 0= IF
-        LCD_START_LINE1
-    ELSE DUP 01 = IF
-        LCD_START_LINE2
-    ELSE DUP 02 = IF
-        LCD_START_LINE3
-    ELSE
-        LCD_START_LINE4
-    THEN THEN THEN
-    NIP
-     + LCD_DDRAM BIT +
+  DUP 0= IF
+      LCD_START_LINE1
+  ELSE DUP 01 = IF
+      LCD_START_LINE2
+  ELSE DUP 02 = IF
+      LCD_START_LINE3
+  ELSE
+      LCD_START_LINE4
+  THEN THEN THEN
+  NIP
+   + LCD_DDRAM BIT +
 [THEN]
-    LCD_COMMAND
+  LCD_COMMAND
 ;
 
 MACRO: LCD_GETXY ( -- address )
-    LCD_WAITBUSY
+  LCD_WAITBUSY
 ;MACRO
 
 \ ************************************************************************
@@ -272,34 +375,37 @@ MACRO: LCD_GETXY ( -- address )
 \ Returns:  none
 \ *************************************************************************/
 : LCD_INIT ( dispAttr -- )
-    ['] LCD_DATA IS EMIT
-    ['] LCD_GOTOXY IS AT
-    ['] LCD_CLRSCR IS PAGE
 
-    \  Initialize LCD to 4 bit I/O mode
-    \  configure all port bits as output (all LCD lines on same port) */
-    ALL BUS.OUTPUT
-    16000 US        \  wait 16ms or more after power-on       */
-    \  initial write to lcd is 8bit */
-    D1 {SET}
-    D0 {SET}
-    LCD_E_TOGGLE
-    4992 US         \  delay, busy flag can't be checked here */
-    \  repeat last command */
-    LCD_E_TOGGLE
-    64 US           \  delay, busy flag can't be checked here */
-    \  repeat last command a third time */
-    LCD_E_TOGGLE
-    64 US           \  delay, busy flag can't be checked here */
-    \  now configure for 4bit mode */
-    D0 {CLEAR}
-    LCD_E_TOGGLE
-    64 US           \  some displays need this additional delay */
-    \  from now the LCD only accepts 4 bit I/O, we can use lcd_command() */
+[ [F] [DEFINED] LCD_I2C [P] [IF] ]
+  0 ExtByte C!
+[ [THEN] ]
+  ['] LCD_DATA IS EMIT
+  ['] LCD_GOTOXY IS AT
+  ['] LCD_CLRSCR IS PAGE
 
-    LCD_FUNCTION_DEFAULT LCD_COMMAND        \  function set: display lines  */
-    LCD_DISP_OFF  LCD_COMMAND               \  display off                  */
-    LCD_CLRSCR                              \  display clear                */
-    LCD_MODE_DEFAULT LCD_COMMAND            \  set entry mode               */
-    LCD_COMMAND                             \  display/cursor control       */
+  \  Initialize LCD to 4 bit I/O mode
+  \  configure all port bits as output (all LCD lines on same port) */
+  set_all_output
+  16000 US        \  wait 16ms or more after power-on       */
+  \  initial write to lcd is 8bit */
+  3 data_write
+  LCD_E_TOGGLE
+  4992 US         \  delay, busy flag can't be checked here */
+  \  repeat last command */
+  LCD_E_TOGGLE
+  64 US           \  delay, busy flag can't be checked here */
+  \  repeat last command a third time */
+  LCD_E_TOGGLE
+  64 US           \  delay, busy flag can't be checked here */
+  \  now configure for 4bit mode */
+  2 data_write
+  LCD_E_TOGGLE
+  64 US           \  some displays need this additional delay */
+  \  from now the LCD only accepts 4 bit I/O, we can use lcd_command() */
+
+  LCD_FUNCTION_DEFAULT LCD_COMMAND        \  function set: display lines  */
+  LCD_DISP_OFF  LCD_COMMAND               \  display off                  */
+  LCD_CLRSCR                              \  display clear                */
+  LCD_MODE_DEFAULT LCD_COMMAND            \  set entry mode               */
+  LCD_COMMAND                             \  display/cursor control       */
 ;

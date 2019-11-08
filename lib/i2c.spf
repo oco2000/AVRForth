@@ -58,8 +58,8 @@ BITS{ TWS7 TWS6 TWS5 TWS4 TWS3 }BITS == TW_STATUS_MASK
 : _i2c_wait ( -- )
   \  wait until transmission completed
   BEGIN
-        TWCR C@  TWINT BIT AND
-    UNTIL
+    TWCR C@  TWINT BIT AND
+  UNTIL
 ;
 
 \ ************************************************************************
@@ -70,9 +70,9 @@ BITS{ TWS7 TWS6 TWS5 TWS4 TWS3 }BITS == TW_STATUS_MASK
 \    uint8_t   twst;
 
   \  send START condition
-    BITS{ TWINT TWSTA TWEN }BITS TWCR C!
+  BITS{ TWINT TWSTA TWEN }BITS TWCR C!
   \  wait until transmission completed
-    _i2c_wait
+  _i2c_wait
 
   \  check value of TWI Status Register. Mask prescaler bits.
   TW_STATUS 0xF8 AND
@@ -114,8 +114,8 @@ MACRO: I2C_REP_START ( address -- err )
 
   \  wait until stop condition is executed and bus released
   BEGIN
-        TWCR C@ TWSTO BIT AND 0=
-    UNTIL
+    TWCR C@ TWSTO BIT AND 0=
+  UNTIL
 ;
 
 \ ************************************************************************
@@ -141,7 +141,7 @@ MACRO: I2C_REP_START ( address -- err )
 ;
 
 : I2C_WRITE_DROP ( data -- )
-    I2C_WRITE DROP
+  I2C_WRITE DROP
 ;
 
 \ ************************************************************************
@@ -152,7 +152,7 @@ MACRO: I2C_REP_START ( address -- err )
 : I2C_READ_ACK ( -- byte )
   BITS{ TWINT TWEN TWEA }BITS  TWCR C!
   _i2c_wait
-    TWDR C@
+  TWDR C@
 ;
 
 \ ************************************************************************
@@ -163,58 +163,8 @@ MACRO: I2C_REP_START ( address -- err )
 : I2C_READ_NAK ( -- byte )
   BITS{ TWINT TWEN }BITS TWCR C!
   _i2c_wait
-    TWDR C@
+  TWDR C@
 ;
 
 [F] BASE ! [P]
-
-
-\EOF
-\ ************************************************************************
-\ Issues a start condition and sends address and transfer direction.
-\ If device is busy, use ack polling to wait until device is ready
-\
-\ Input:   address and transfer direction of I2C device
-\ *************************************************************************/
-void i2c_start_wait(unsigned char address)
-{
-    uint8_t   twst;
-
-
-    while ( 1 )
-    {
-      \  send START condition
-      TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
-
-      \  wait until transmission completed
-      while(!(TWCR & (1<<TWINT)));
-
-      \  check value of TWI Status Register. Mask prescaler bits.
-      twst = TW_STATUS & 0xF8;
-      if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
-
-      \  send device address
-      TWDR = address;
-      TWCR = (1<<TWINT) | (1<<TWEN);
-
-      \  wail until transmission completed
-      while(!(TWCR & (1<<TWINT)));
-
-      \  check value of TWI Status Register. Mask prescaler bits.
-      twst = TW_STATUS & 0xF8;
-      if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) )
-      {
-          \  device busy, send stop condition to terminate write operation */
-          TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
-
-          \  wait until stop condition is executed and bus released
-          while(TWCR & (1<<TWSTO));
-
-          continue;
-      }
-      \ if( twst != TW_MT_SLA_ACK) return 1;
-      break;
-     }
-
-}\  i2c_start_wait */
 
