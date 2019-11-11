@@ -95,7 +95,7 @@ CVARIABLE ExtByte
 ;
 
 : ExtenderRead ( -- b )
-  [ LCD_Addr 0x1 [F] + [P] ] LITERAL I2C_START DROP
+  [ LCD_Addr #I2C_READ [F] + [P] ] LITERAL I2C_START DROP
   I2C_READ_NAK    \ read value
   I2C_STOP
 ;
