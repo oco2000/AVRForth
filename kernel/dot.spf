@@ -1,2 +1,5 @@
 : .             ( x -- )    ( display signed to output device)
-    (.) TYPE SPACE ;
+  (.) TYPE SPACE ;
+
+: D.  ( d -- )
+  (D.) TYPE SPACE ;

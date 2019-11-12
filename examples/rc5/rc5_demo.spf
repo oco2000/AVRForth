@@ -1,6 +1,6 @@
 [F] DECIMAL [P]
 
-1000000 == F_CPU
+8000000 == F_CPU
 
 :: LCD_I2C ;;
 0x40 == LCD_Addr
@@ -11,7 +11,8 @@ PD2         WIRE RC5_Signal_Wire
 EXT_INT0      == RC5_Signal_Interrupt
 64            == RC5_Timer_Prescaler
 TIMER1_COMPA  == RC5_Timer_Interrupt
-F_CPU RC5_Timer_Prescaler [F] / 1100 / [P] == RC5_Timer_Divider
+\ TODO: something is wrong here
+F_CPU RC5_Timer_Prescaler [F] / 01 550 */ [P] == RC5_Timer_Divider
 VECT RC5_Task
 
 : RC5_Init_Timer
@@ -42,11 +43,19 @@ VECT RC5_Task
   INT0 BIT GICR CLEAR
 ;
 
-REQUIRE RC5Init         lib/rc5.spf
+REQUIRE RC5Init         lib/rc5/rc5.spf
 
 : Print_RC5_Command ( -- )
   PAGE
-  RC5_Command 2@ . .
+  RC5_Command 2@ RC5_Analyze IF
+    RC5_Command 2@ UD.
+    10 0 AT ." Tgl: " .
+    0 1 AT ." Cmd: " .
+    ." Adr: " .
+  ELSE
+    0 1 AT ." Decoding Error!"
+  THEN
+
 ;
 
 

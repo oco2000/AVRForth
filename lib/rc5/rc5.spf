@@ -1,0 +1,71 @@
+2VARIABLE RC5_Bits
+2VARIABLE RC5_Command
+CVARIABLE RC5_Bitcount
+
+VARIABLE SignalCount
+VARIABLE TimerCount
+
+: RC5_Init
+  SignalCount OFF
+  TimerCount OFF
+
+  RC5_Signal_Wire {INPUT}
+  RC5_Signal_Wire {PULL_UP}
+
+  RC5_Init_Timer
+  RC5_Init_Interrupt
+
+  RC5_Signal_Enable
+;
+
+: RC5_Analyze ( 2*bits -- address command toggle -1 | 0 )
+  0 ( 2*bits buf )
+  14 00 DO \ 14 bits in a packet
+    1 RSHIFT
+    2 PICK 03 AND ( 2*bits buf pair )
+    DUP DUP 3 = SWAP 0= OR IF \ check manchester code
+      2DROP 2DROP UNLOOP 0 EXIT
+    THEN
+    0x2 AND \ take bit #1
+    IF 0x8000 OR THEN \ set rightmost bit?
+    >R D2/ D2/ R>
+  LOOP
+
+  NIP NIP 2 RSHIFT   ( packet )
+
+  DUP >R 0x3000 AND 0x3000 <> IF \ check for start bits
+    RDROP 0 EXIT
+  THEN
+
+  R@ 6 RSHIFT 0x1F AND \ address
+  R@ 0x3F AND \ command
+  R> 11 RSHIFT 0x1 AND \ toggle
+  -1
+;
+
+INT: RC5_Signal_Interrupt_Handler
+  SignalCount INCR
+  0xFFFF DUP RC5_Bits 2!
+  0 RC5_Bitcount C!
+  RC5_Signal_Disable
+  100 US
+  RC5_Timer_Enable
+;INT
+
+INT: RC5_Timer_Interrupt_Handler
+  TimerCount INCR
+  RC5_Signal_Wire {READ&MASK} 0= INVERT 0x1 AND >R
+  RC5_Bits 2@ D2* SWAP R> + SWAP RC5_Bits 2!
+
+  RC5_Bitcount C@ 1+ DUP RC5_Bitcount C!
+  0x1B = IF \ 13*2 + 1
+    RC5_Timer_Disable
+    RC5_Bits 2@ RC5_Command 2!
+    ['] RC5_Task RTOS_SET_TASK
+    10 MS
+    RC5_Signal_Enable
+  THEN
+;INT
+
+' RC5_Signal_Interrupt_Handler RC5_Signal_Interrupt INT!
+' RC5_Timer_Interrupt_Handler RC5_Timer_Interrupt INT!
