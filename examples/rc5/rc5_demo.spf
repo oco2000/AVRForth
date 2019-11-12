@@ -7,43 +7,8 @@
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
 REQUIRE RTOS_RUN         lib/eertos.spf
 
-PD2         WIRE RC5_Signal_Wire
-EXT_INT0      == RC5_Signal_Interrupt
-64            == RC5_Timer_Prescaler
-TIMER1_COMPA  == RC5_Timer_Interrupt
-\ TODO: something is wrong here
-F_CPU RC5_Timer_Prescaler [F] / 01 550 */ [P] == RC5_Timer_Divider
-VECT RC5_Task
-
-: RC5_Init_Timer
-  BITS{ CS11 CS10 }BITS TCCR1B SET
-  BITS{ WGM12 }BITS TCCR1B SET
-  RC5_Timer_Divider BYTE-SPLIT OCR1AH C! OCR1AL C!
-;
-
-: RC5_Init_Interrupt
-  BITS{ ISC01 ISC00 }BITS MCUCR CLEAR \ interrupt on low level
-;
-
-: RC5_Timer_Enable ( -- )
-  0x0 TCNT1H C!
-  0x0 TCNT1L C!
-  BITS{ OCIE1A OCIE1B TOIE1 }BITS TIMSK SET
-;
-
-: RC5_Timer_Disable
-  BITS{ OCIE1A OCIE1B TOIE1 }BITS TIMSK CLEAR
-;
-
-: RC5_Signal_Enable
-  INT0 BIT GICR SET
-;
-
-: RC5_Signal_Disable
-  INT0 BIT GICR CLEAR
-;
-
-REQUIRE RC5Init         lib/rc5/rc5.spf
+REQUIRE RC5_Init_Timer   lib/rc5/atmega8-rc5-config.spf
+REQUIRE RC5Init          lib/rc5/rc5.spf
 
 : Print_RC5_Command ( -- )
   PAGE
@@ -55,9 +20,7 @@ REQUIRE RC5Init         lib/rc5/rc5.spf
   ELSE
     0 1 AT ." Decoding Error!"
   THEN
-
 ;
-
 
 : INIT
   HEX

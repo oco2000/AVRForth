@@ -2,6 +2,8 @@
 2VARIABLE RC5_Command
 CVARIABLE RC5_Bitcount
 
+VECT RC5_Task
+
 VARIABLE SignalCount
 VARIABLE TimerCount
 
