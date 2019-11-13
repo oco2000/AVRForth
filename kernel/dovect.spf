@@ -12,14 +12,14 @@ TREQUIRE !
 [F]
 : VECT                \ определяющее слово с параметрами во flash
     CREATE
-        T-HERE @ ,
+        T-HERE @ , INLISTING ,
         D-HERE @ DUP , TCELL [T] ALLOT [P] ( d-here )
         zl ldiw
         ['] (DOVECT) >BODY @ (JMP)
   DOES> ?TCOMP @ TCOMPILE, ;
 
 : IS ( xt -- )
-    ' >BODY CELL+ @ ( ram_addr )
+    ' >BODY CELL+ CELL+ @ ( ram_addr )
     (LIT) [T] ! [P]
 ;
 [P]

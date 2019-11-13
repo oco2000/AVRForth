@@ -226,20 +226,22 @@ tmp1h FCONST counter    \ счетчик сдвигов
 tmp2l FCONST copyl      \ копия записываемого слова
 tmp2h FCONST copyh
 
-[T]
 : shift_copy_left ( -- ) \ сдвинуть копию влево на counter разрядов
+[T]
   for
     copyl lsl
     copyh rol
   counter next
+[P]
 ;
 : shift_copy_right ( -- ) \ сдвинуть копию вправо на counter разрядов
+[T]
   for
     copyh asr
     copyl ror
   counter next
-;
 [P]
+;
 
 : SHIFT_COPY_LEFT ( n -- ) \ компилировать сдвиг копии влево на n разрядов
   DUP 01 = IF DROP
