@@ -1,5 +1,6 @@
 [F] DECIMAL [P]
 
+\ +DEBUG
 8000000 == F_CPU
 
 :: LCD_I2C ;;

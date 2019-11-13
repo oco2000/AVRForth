@@ -4,12 +4,16 @@ CVARIABLE RC5_Bitcount
 
 VECT RC5_Task
 
-VARIABLE SignalCount
-VARIABLE TimerCount
+[IFDEBUG]
+  VARIABLE SignalCount
+  VARIABLE TimerCount
+[THEN]
 
 : RC5_Init
-  SignalCount OFF
-  TimerCount OFF
+  [IFDEBUG]
+    SignalCount OFF
+    TimerCount OFF
+  [THEN]
 
   RC5_Signal_Wire {INPUT}
   RC5_Signal_Wire {PULL_UP}
@@ -46,16 +50,22 @@ VARIABLE TimerCount
 ;
 
 INT: RC5_Signal_Interrupt_Handler
-  SignalCount INCR
+  RC5_Signal_Disable
+  [IFDEBUG]
+    SignalCount INCR
+  [THEN]
+
   0xFFFF DUP RC5_Bits 2!
   0 RC5_Bitcount C!
-  RC5_Signal_Disable
   100 US
   RC5_Timer_Enable
 ;INT
 
 INT: RC5_Timer_Interrupt_Handler
-  TimerCount INCR
+  [IFDEBUG]
+    TimerCount INCR
+  [THEN]
+
   RC5_Signal_Wire {READ&MASK} 0= INVERT 0x1 AND >R
   RC5_Bits 2@ D2* SWAP R> + SWAP RC5_Bits 2!
 
