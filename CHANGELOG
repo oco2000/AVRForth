@@ -119,4 +119,8 @@
 + рефакторинг
 + быстрые/медленные литералы
 
+Version 1.5, november 2019
++ RC5, LCD I2C libraries
+! some critical bugfixes
+! documentation was updated
 
