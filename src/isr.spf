@@ -46,7 +46,7 @@
 
 : INT:
   [T] SAVE-INPUT [P]
-  CREATE T-HERE @ , ]T (INTPROLOG)   \ создать обработчик прерываний
+  CREATE T-HERE @ , INLISTING , ]T (INTPROLOG)   \ создать обработчик прерываний
   DOES> @ T-STATE @ IF (CALL) THEN  ;
 
 : ;INT
