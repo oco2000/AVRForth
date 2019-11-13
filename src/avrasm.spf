@@ -14,7 +14,7 @@ HEX
     RELATIVE-ONLY? IF \ если память до 8кБ - только относительные адреса
         DROP FALSE
     ELSE
-        THERE - ABS 0x1FFE >
+        THERE - ABS 0xFFE >
     THEN
 ;
 : >JMP  ( addr -- addr/2 )
