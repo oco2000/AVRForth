@@ -7,5 +7,5 @@
   (UD.) TYPE SPACE ;
 
 : U.            ( u -- )
-  0 UD.
+  0 UD. ;
 

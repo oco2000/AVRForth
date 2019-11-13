@@ -15,9 +15,9 @@ REQUIRE RC5Init          lib/rc5/rc5.spf
   PAGE
   RC5_Command 2@ RC5_Analyze IF
     RC5_Command 2@ UD.
-    10 0 AT ." Tgl: " .
-    0 1 AT ." Cmd: " .
-    ." Adr: " .
+    10 0 AT ." Tgl: " U.
+    0 1 AT ." Cmd: " U.
+    ." Adr: " U.
   ELSE
     0 1 AT ." Decoding Error!"
   THEN
