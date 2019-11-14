@@ -7,7 +7,7 @@
 8000000 == F_CPU
 
 :: LCD_I2C ;;
-0x40 == LCD_Addr
+0x4E == LCD_Addr
 REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
 REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
 REQUIRE BIG_SETUP       lib/lcd/big.spf

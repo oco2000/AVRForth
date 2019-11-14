@@ -85,6 +85,7 @@ REQUIRE I2C_START lib/i2c.spf
 0x0 BIT == BitRS
 0x1 BIT == BitRW
 0x2 BIT == BitE
+0x3 BIT == BitBacklight
 
 CVARIABLE ExtByte
 
@@ -139,6 +140,14 @@ TREQUIRE EXECUTE
   [ BitE [F] INVERT [P] ] LITERAL AND
 ;
 
+: _Backlight_ON ( x -- y )
+  BitBacklight OR
+;
+
+: _Backlight_OFF ( x -- y )
+  [ BitBacklight [F] INVERT [P] ] LITERAL AND
+;
+
 : _DATA_WRITE ( b existing -- )
   0x0F AND SWAP
   4 LSHIFT 0xF0 AND
@@ -149,13 +158,15 @@ TREQUIRE EXECUTE
   ExtenderRead 4 RSHIFT
 ;
 
-' _LCD_RS_HIGH DoAndWrite LCD_RS_HIGH
-' _LCD_RS_LOW  DoAndWrite LCD_RS_LOW
-' _LCD_RW_HIGH DoAndWrite LCD_RW_HIGH
-' _LCD_RW_LOW  DoAndWrite LCD_RW_LOW
-' _LCD_E_HIGH  DoAndWrite LCD_E_HIGH
-' _LCD_E_LOW   DoAndWrite LCD_E_LOW
-' _DATA_WRITE  DoAndWrite data_write
+' _LCD_RS_HIGH    DoAndWrite LCD_RS_HIGH
+' _LCD_RS_LOW     DoAndWrite LCD_RS_LOW
+' _LCD_RW_HIGH    DoAndWrite LCD_RW_HIGH
+' _LCD_RW_LOW     DoAndWrite LCD_RW_LOW
+' _LCD_E_HIGH     DoAndWrite LCD_E_HIGH
+' _LCD_E_LOW      DoAndWrite LCD_E_LOW
+' _Backlight_OFF  DoAndWrite LCD_Backlight_OFF
+' _Backlight_ON   DoAndWrite LCD_Backlight_ON
+' _DATA_WRITE     DoAndWrite data_write
 
 :: set_data_output ;;
 :: set_all_output ;;
@@ -214,6 +225,9 @@ MACRO: LCD_RS_LOW
 : set_input ( -- )
   DATA BUS.INPUT
 ;
+
+:: LCD_Backlight_OFF ;;
+:: LCD_Backlight_ON ;;
 
 [THEN]
 
@@ -408,4 +422,5 @@ MACRO: LCD_GETXY ( -- address )
   LCD_CLRSCR                              \  display clear                */
   LCD_MODE_DEFAULT LCD_COMMAND            \  set entry mode               */
   LCD_COMMAND                             \  display/cursor control       */
+  LCD_Backlight_ON
 ;

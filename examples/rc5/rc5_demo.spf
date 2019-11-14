@@ -4,7 +4,7 @@
 8000000 == F_CPU
 
 :: LCD_I2C ;;
-0x40 == LCD_Addr
+0x4E == LCD_Addr
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
 REQUIRE RTOS_RUN         lib/eertos.spf
 
