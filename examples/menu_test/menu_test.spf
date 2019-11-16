@@ -27,7 +27,8 @@ REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
 REQUIRE PROGRESSBAR      lib/lcd/progress.spf
 REQUIRE RTOS_INIT_TIMER  lib/eertos/atmega8-eertos-config.spf
 REQUIRE RTOS_RUN         lib/eertos/eertos.spf
-REQUIRE DEBOUNCE         lib/buttons.spf
+REQUIRE BUTTONS_PERIOD   lib/buttons/buttons-std-config.spf
+REQUIRE DEBOUNCE         lib/buttons/buttons.spf
 REQUIRE MENU             lib/lcd_menu/menu.spf
 REQUIRE INT-EDITOR       lib/lcd_menu/int_editor.spf
 REQUIRE PROGRESS-DISPLAY lib/lcd_menu/progress_editor.spf

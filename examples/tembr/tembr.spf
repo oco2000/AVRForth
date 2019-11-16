@@ -36,7 +36,8 @@ PB4 WIRE BTN_CANCEL
 
 GROUP{ BTN_POWER BTN_UP BTN_DOWN BTN_OK BTN_CANCEL }GROUP BUTTONS
 
-REQUIRE DEBOUNCE        lib/buttons.spf          \ кнопки
+REQUIRE BUTTONS_PERIOD    lib/buttons/buttons-std-config.spf
+REQUIRE DEBOUNCE          lib/buttons/buttons.spf
 
 \ :: !BIG_LETTERS ;;
 REQUIRE BIG_SETUP       lib/lcd/big.spf

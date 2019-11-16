@@ -9,19 +9,14 @@
 
 [F] BASE @ DECIMAL [P]
 
-REQUIRE RTOS_INIT lib/eertos.spf
 REQUIRE VECTOR    lib/vector.spf
 
   08 == BUTTONS_MAX                 \  количество кнопок
-  10 == BUTTONS_PERIOD              \  период опроса кнопок, ms
   BUTTONS_PERIOD [F] NEGATE [P] == -BUTTONS_PERIOD
- 500 == BUTTONS_REP_DELAY           \  задержка перед повтором, ms
- 150 == BUTTONS_REPEAT              \  период между повторами, ms
 
 VARIABLE BUTTONS_TASKS      \  задачи для кнопок - содержит адрес массива во flash
 CVARIABLE BUTTONS_ENABLED    \  маска рабочих кнопок
 CVARIABLE BUTTONS_REPEATABLE \  маска повторяемых кнопок
-
 
 \ внутренние переменные
 CVARIABLE clock_A

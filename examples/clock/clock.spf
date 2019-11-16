@@ -21,13 +21,14 @@ PB7 WIRE BTN_-
 
 GROUP{ BTN_SET BTN_+ BTN_- }GROUP BUTTONS
 
-REQUIRE DS1307      lib/ds1307.spf    \ библиотека для DS1307
-REQUIRE RTOS_INIT_TIMER  lib/eertos/atmega8-eertos-config.spf
-REQUIRE RTOS_INIT   lib/eertos/eertos.spf    \ ОС
-REQUIRE DEBOUNCE    lib/buttons.spf   \ обработка кнопок
-REQUIRE СVECTOR     lib/cvector.spf   \ массив
-REQUIRE WDR         lib/wdt.spf       \ сторожевой таймер
-REQUIRE MS          lib/delay.spf     \ задержка
+REQUIRE DS1307            lib/ds1307.spf    \ библиотека для DS1307
+REQUIRE RTOS_INIT_TIMER   lib/eertos/atmega8-eertos-config.spf
+REQUIRE RTOS_INIT         lib/eertos/eertos.spf    \ ОС
+REQUIRE BUTTONS_PERIOD    lib/buttons/buttons-std-config.spf
+REQUIRE DEBOUNCE          lib/buttons/buttons.spf
+REQUIRE СVECTOR           lib/cvector.spf   \ массив
+REQUIRE WDR               lib/wdt.spf       \ сторожевой таймер
+REQUIRE MS                lib/delay.spf     \ задержка
 
 00 BIT  == a  \ Эти константы содержат числа, соответствующие двойке,
 01 BIT  == b  \ возведенной в степень, равной номеру "ножки" того
