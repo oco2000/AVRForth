@@ -19,7 +19,8 @@ PD6 WIRE E            \ E WIRE
 
 REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
 REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
-REQUIRE RTOS_RUN        lib/eertos.spf           \ ОС
+REQUIRE RTOS_INIT_TIMER lib/eertos/atmega8-eertos-config.spf
+REQUIRE RTOS_RUN        lib/eertos/eertos.spf
 REQUIRE DS1307          lib/ds1307.spf           \ часы
 REQUIRE {SET}           lib/ports.spf
 REQUIRE USART_INIT      lib/usart.spf            \ USART

@@ -6,7 +6,8 @@
 :: LCD_I2C ;;
 0x4E == LCD_Addr
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
-REQUIRE RTOS_RUN         lib/eertos.spf
+REQUIRE RTOS_INIT_TIMER  lib/eertos/atmega8-eertos-config.spf
+REQUIRE RTOS_RUN         lib/eertos/eertos.spf
 
 REQUIRE RC5_Init_Timer   lib/rc5/atmega8-rc5-config.spf
 REQUIRE RC5Init          lib/rc5/rc5.spf

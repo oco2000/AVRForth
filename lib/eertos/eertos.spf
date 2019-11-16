@@ -1,0 +1,126 @@
+\ ========== EERTOS based on DiHalt's routines (easyelectronics.ru)
+\ Минимальная F_CPU = 1MHz
+
+[F] BASE @ DECIMAL [P]
+
+0x8 == QueueSize            \ очередь на 8 задач
+QueueSize CELLS == bQueueSize
+\ Очередь задач
+CREATE Tasks bQueueSize ALLOT
+\ Счетчики
+CREATE Timers bQueueSize ALLOT
+
+: [] ( i addr1 -- addr2 )
+  SWAP CELLS +
+;
+
+\ RTOS Запуск системного таймера
+: RTOS_RUN ( -- )
+  RTOS_INIT_TIMER
+  sei
+;
+
+\ Пустая процедура - простой ядра.
+: IDLE ( -- )   ;
+
+\  RTOS Подготовка. Очистка очередей
+: RTOS_INIT ( -- )
+  Tasks bQueueSize ERASE
+  Timers bQueueSize ERASE
+;
+
+: RTOS_TASK_IN_QUEUE ( task -- -1 | index )
+  -1 SWAP           ( flag task )
+  QueueSize 00 DO
+    DUP I Tasks [] @ =
+    IF  ( flag task )
+      NIP I SWAP LEAVE  ( index task )
+    THEN
+  LOOP
+  DROP
+;
+
+\ Функция установки задачи по таймеру. Передаваемые параметры - указатель на функцию,
+\ Время выдержки в тиках системного таймера.
+: RTOS_SET_TIMER_TASK ( task time -- )
+  SREG C@ cli >R
+  OVER RTOS_TASK_IN_QUEUE DUP -1 = IF  \ нет такой задачи
+    DROP ( task time ) \ поставим в очередь
+    0 RTOS_TASK_IN_QUEUE DUP -1 = IF  \ ищем пустое место в очереди
+      DROP 2DROP \ нет места в очереди
+    ELSE ( task time index )
+      SWAP OVER ( task index time index )
+      Timers [] ! Tasks [] !
+    THEN
+  ELSE    ( task time index )     \ есть такая задача в очереди
+    Timers [] ! DROP            \ Перезаписываем ей выдержку
+  THEN
+  R> SREG C!
+;
+
+: RTOS_SET_TASK ( task -- )          \ Поставить задачу в очередь для немедленного выполнения
+  0 RTOS_SET_TIMER_TASK
+;
+
+: RTOS_REMOVE_TASK ( task -- )      \ Удалить задачу из очереди
+  RTOS_TASK_IN_QUEUE DUP -1 = IF
+    DROP
+  ELSE
+    Tasks [] OFF
+  THEN
+;
+
+\ =================================================================================
+\ Диспетчер задач ОС. Выбирает из очереди задачи и отправляет на выполнение.
+
+: RTOS_TASK_MANAGER ( -- )
+  cli  \ комментирование этой инструкции может привести к трудновыявляемым конфликтам,
+       \ но повышает стабильность временных интервалов
+  -1
+  QueueSize 00 DO ( flag )
+    I Tasks [] @ IF \ есть задача в очереди
+      I Timers [] @ 0= IF \ и у нее выщелкал таймер
+        I Tasks [] DUP @ SWAP OFF \ ставим на ее место 0
+        sei
+        EXECUTE \ и выполняем задачу
+        DROP 00 LEAVE
+      THEN
+    THEN
+  LOOP
+  sei
+  IF IDLE THEN
+;
+
+\ Служба таймеров ядра. Должна вызываться из прерывания раз в 1мс.
+\ Хотя время можно варьировать в зависимости от задачи
+
+: RTOS_TIMER_SERVICE ( -- )
+  Timers
+  [
+    QueueSize tmp1l ldi
+    begin               \ по всем таймерам
+      [x]+ zl ld
+      [x]+  zh ld
+      01 zl sbiw
+      if_c            \ не меньше 0
+        zl clr
+        zh clr
+      then
+      zh -[x] st      \ записываем назад
+      zl -[x]  st
+      02 tosl adiw    \ продвигаемся дальше
+      tmp1l dec
+    until_<>0
+    popt
+  ]
+
+  RTOS_FIX_TIMER
+;
+
+INT: RTOS_INT
+  RTOS_TIMER_SERVICE
+;INT
+
+RTOS_INT RTOS_TIMER_INTERRUPT INT!
+
+[F] BASE ! [P]

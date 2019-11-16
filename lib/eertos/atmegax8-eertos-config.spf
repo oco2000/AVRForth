@@ -1,0 +1,18 @@
+\ System Timer Config
+64 == Prescaler
+[F] F_CPU Prescaler / 1000 ( мс ) / [P] == TimerDivider   \ 1 mS
+[F] TimerDivider NEGATE [P] == -TimerDivider
+
+: RTOS_INIT_TIMER
+  WGM21 BIT  TCCR2A C!          \  Freq = CK/64 - Установить режим и предделитель
+                                \  Автосброс после достижения регистра сравнения
+  CS22  BIT  TCCR2B C!
+  0x0 TCNT2 C!
+  [ TimerDivider 0xFF [F] AND [P] ] LITERAL OCR2A C!
+                                \  Установить значение в регистр сравнения
+  OCIE2A BIT  TIMSK2 C!         \  Разрешаем прерывание RTOS - запуск ОС
+;
+
+MACRO: RTOS_FIX_TIMER   ;MACRO
+
+TIMER2_COMPA == RTOS_TIMER_INTERRUPT

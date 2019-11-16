@@ -19,8 +19,9 @@ PB2 WIRE BTN_-
 
 GROUP{ BTN_SET BTN_+ BTN_- }GROUP BUTTONS
 
-REQUIRE RTOS_INIT   lib/eertos.spf
-REQUIRE DEBOUNCE    lib/buttons.spf
+REQUIRE RTOS_INIT_TIMER   lib/eertos/atmegax8-eertos-config.spf
+REQUIRE RTOS_INIT         lib/eertos/eertos.spf
+REQUIRE DEBOUNCE          lib/buttons.spf
 
 MACRO: LED_ON
     LED {CLEAR}

@@ -1,0 +1,22 @@
+\ System Timer Config
+64 == Prescaler
+[F] F_CPU Prescaler / 1000 ( мс ) / [P] == TimerDivider   \ 1 mS
+[F] TimerDivider NEGATE [P] == -TimerDivider
+
+: RTOS_INIT_TIMER
+  BITS{ CS01 CS00 }BITS TCCR0 C!         \  Freq = CK/64 - Установить режим и предделитель
+  -TimerDivider TCNT0 C!
+  TOIE0 BIT TIMSK C!            \  Разрешаем прерывание RTOS - запуск ОС
+;
+
+TREQUIRE C@
+TREQUIRE -
+
+MACRO: RTOS_FIX_TIMER
+  TCNT0 C@
+  TimerDivider -
+  TCNT0 C!
+  \ корректируем счетчик
+;MACRO
+
+TIMER0_OVF == RTOS_TIMER_INTERRUPT

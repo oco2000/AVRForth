@@ -25,7 +25,8 @@ BUS{ PB7 PB6 }BUS EncBus
 REQUIRE D3               lib/lcd/lcd_conf_std.spf
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
 REQUIRE PROGRESSBAR      lib/lcd/progress.spf
-REQUIRE RTOS_RUN         lib/eertos.spf
+REQUIRE RTOS_INIT_TIMER  lib/eertos/atmega8-eertos-config.spf
+REQUIRE RTOS_RUN         lib/eertos/eertos.spf
 REQUIRE DEBOUNCE         lib/buttons.spf
 REQUIRE MENU             lib/lcd_menu/menu.spf
 REQUIRE INT-EDITOR       lib/lcd_menu/int_editor.spf
@@ -159,12 +160,8 @@ TCREATE IDLE_BTN_TASKS
 ;
 
 INT: TIMER
-    CheckEncoder
-    RTOS_TIMER_SERVICE
+  CheckEncoder
+  RTOS_TIMER_SERVICE
 ;INT
 
-[F] DEVICE mega8 = [P] [IF]
-    TIMER ->INT TIMER0_OVF
-[ELSE]
-    TIMER ->INT TIMER2_COMPA
-[THEN]
+TIMER RTOS_TIMER_INTERRUPT INT!
