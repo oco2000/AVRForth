@@ -2,18 +2,17 @@
 
 VARIABLE 'marker        \ переменная для организации листинга
 
-C" H." FIND NIP 0=
-[IF]
- : H.  BASE @ HEX SWAP U. BASE ! ;
+[UNDEFINED] H. [IF]
+  : H.  BASE @ HEX SWAP U. BASE ! ;
 \ OP1
 [THEN]
 
-C" /STRING" FIND NIP 0=
-[IF] : /STRING DUP >R - SWAP R> + SWAP ;
+[UNDEFINED] /STRING [IF]
+  : /STRING DUP >R - SWAP R> + SWAP ;
 [THEN]
 
-BASE @
-HEX
+BASE @ HEX
+
 MODULE: AVRDIS
 
 

@@ -50,6 +50,11 @@ ALSO FORTH
 : FCONST  CONSTANT ;
 : .STACK  .S ;
 : H.      H. ;
+: BASE@   BASE @ ;
+: @DECIMAL   BASE@ DECIMAL ;
+: @HEX       BASE@ HEX ;
+: @BINARY    BASE@ 2 BASE ! ;
+: BASE!   BASE ! ;
 : WORDS   WORDS ;
 : ORDER   ORDER ;
 \ ~ : ''   ' ;

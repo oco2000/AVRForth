@@ -1,21 +1,21 @@
 REQUIRE LCD_INIT lib/lcd/lcd.spf
 
 : DEFINECHAR ( code addr -- )
-    7 + SWAP                  ( addr code )
-    3 LSHIFT LCD_CGRAM BIT OR ( addr LCD_addr )
-    8 00 DO
-        2DUP LCD_COMMAND C@P LCD_DATA
-        1+ SWAP 1- SWAP
-    LOOP
-    2DROP
+  7 + SWAP                  ( addr code )
+  3 LSHIFT LCD_CGRAM BIT OR ( addr LCD_addr )
+  8 00 DO
+    2DUP LCD_COMMAND C@P LCD_DATA
+    1+ SWAP 1- SWAP
+  LOOP
+  2DROP
 ;
 
 :: LCD_CHAR
   PCREATE         \ ( 8-byte-char-def )
-        TC, TC, TC, TC, TC, TC, TC, TC,
+    TC, TC, TC, TC, TC, TC, TC, TC,
   PDOES>  ( char_code -- )
-        DEFINECHAR
-    ;
+    DEFINECHAR
+  ;
 ;;
 \EOF
 Использование:

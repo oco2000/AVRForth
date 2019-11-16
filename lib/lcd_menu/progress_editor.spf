@@ -1,3 +1,5 @@
+@DECIMAL
+
 REQUIRE PROGRESSBAR ../lcd/progress.spf
 REQUIRE INT-EDITOR ./int_editor.spf
 
@@ -9,3 +11,5 @@ REQUIRE INT-EDITOR ./int_editor.spf
   CUR-EDITOR@ IntEditor.max C@P C>S
   16 GET-INT-VALUE 0 1 PROGRESSBAR
 ;
+
+BASE!

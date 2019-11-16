@@ -1,5 +1,7 @@
 \ RC5 configuration for ATMega 8
 
+@DECIMAL
+
 PD2         WIRE RC5_Signal_Wire
 EXT_INT0      == RC5_Signal_Interrupt
 64            == RC5_Timer_Prescaler
@@ -33,3 +35,4 @@ F_CPU RC5_Timer_Prescaler [F] / 01 1100 */ [P] == RC5_Timer_Divider
   INT0 BIT GICR CLEAR
 ;
 
+BASE!

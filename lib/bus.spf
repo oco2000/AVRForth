@@ -1,9 +1,9 @@
 \ =================== шины =====================
 REQUIRE {SET} lib/ports.spf
 
-[F]
+@DECIMAL
 
-BASE @ DECIMAL
+[F]
 
 MODULE: BUS
 
@@ -695,7 +695,6 @@ EXPORT
 
 ;MODULE
 
-BASE !
-
 [P]
 
+BASE!

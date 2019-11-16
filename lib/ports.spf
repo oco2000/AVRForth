@@ -15,116 +15,116 @@ DROP
 
 \ определение порта ввода-вывода
 : PORT ( port ddr pin -- )
-    CREATE ROT , SWAP , ,
-    DOES>
+  CREATE ROT , SWAP , ,
+  DOES>
 ;
 \ получить DDR порта
 : {DDR} ( 'port -- ddr )
-    ddr @
+  ddr @
 ;
 \ получить PIN порта
 : {PIN} ( 'port -- pin )
-    pin @
+  pin @
 ;
 \ получить PORT порта
 : {PORT} ( 'port -- port )
-    port @
+  port @
 ;
 
 \ определения битов портов
 : PORTx.x ( bit port -- bit+1 port )
-    2DUP SWAP EXP2 SWAP 2CONSTANT
-    SWAP 1+ SWAP
+  2DUP SWAP EXP2 SWAP 2CONSTANT
+  SWAP 1+ SWAP
 ;
 
 [DEFINED] PORTA [IF]
-    PORTA DDRA PINA   PORT {PORTA}
-    00 {PORTA}
-        PORTx.x PA0
-        PORTx.x PA1
-        PORTx.x PA2
-        PORTx.x PA3
-        PORTx.x PA4
-        PORTx.x PA5
-        PORTx.x PA6
-        PORTx.x PA7
-    2DROP
+  PORTA DDRA PINA   PORT {PORTA}
+  00 {PORTA}
+    PORTx.x PA0
+    PORTx.x PA1
+    PORTx.x PA2
+    PORTx.x PA3
+    PORTx.x PA4
+    PORTx.x PA5
+    PORTx.x PA6
+    PORTx.x PA7
+  2DROP
 [THEN]
 
 [DEFINED] PORTB [IF]
-    PORTB DDRB PINB   PORT {PORTB}
-    00 {PORTB}
-        PORTx.x PB0
-        PORTx.x PB1
-        PORTx.x PB2
-        PORTx.x PB3
-        PORTx.x PB4
-        PORTx.x PB5
-        PORTx.x PB6
-        PORTx.x PB7
-    2DROP
+  PORTB DDRB PINB   PORT {PORTB}
+  00 {PORTB}
+    PORTx.x PB0
+    PORTx.x PB1
+    PORTx.x PB2
+    PORTx.x PB3
+    PORTx.x PB4
+    PORTx.x PB5
+    PORTx.x PB6
+    PORTx.x PB7
+  2DROP
 [THEN]
 
 [DEFINED] PORTC [IF]
-    PORTC DDRC PINC   PORT {PORTC}
-    00 {PORTC}
-        PORTx.x PC0
-        PORTx.x PC1
-        PORTx.x PC2
-        PORTx.x PC3
-        PORTx.x PC4
-        PORTx.x PC5
-        PORTx.x PC6
-        PORTx.x PC7
-    2DROP
+  PORTC DDRC PINC   PORT {PORTC}
+  00 {PORTC}
+    PORTx.x PC0
+    PORTx.x PC1
+    PORTx.x PC2
+    PORTx.x PC3
+    PORTx.x PC4
+    PORTx.x PC5
+    PORTx.x PC6
+    PORTx.x PC7
+  2DROP
 [THEN]
 
 [DEFINED] PORTD [IF]
-    PORTD DDRD PIND   PORT {PORTD}
-    00 {PORTD}
-        PORTx.x PD0
-        PORTx.x PD1
-        PORTx.x PD2
-        PORTx.x PD3
-        PORTx.x PD4
-        PORTx.x PD5
-        PORTx.x PD6
-        PORTx.x PD7
-    2DROP
+  PORTD DDRD PIND   PORT {PORTD}
+  00 {PORTD}
+    PORTx.x PD0
+    PORTx.x PD1
+    PORTx.x PD2
+    PORTx.x PD3
+    PORTx.x PD4
+    PORTx.x PD5
+    PORTx.x PD6
+    PORTx.x PD7
+  2DROP
 [THEN]
 
 [DEFINED] PORTE [IF]
-    PORTE DDRE PINE   PORT {PORTE}
-    00 {PORTE}
-        PORTx.x PE0
-        PORTx.x PE1
-        PORTx.x PE2
-        PORTx.x PE3
-        PORTx.x PE4
-        PORTx.x PE5
-        PORTx.x PE6
-        PORTx.x PE7
-    2DROP
+  PORTE DDRE PINE   PORT {PORTE}
+  00 {PORTE}
+    PORTx.x PE0
+    PORTx.x PE1
+    PORTx.x PE2
+    PORTx.x PE3
+    PORTx.x PE4
+    PORTx.x PE5
+    PORTx.x PE6
+    PORTx.x PE7
+  2DROP
 [THEN]
 
 [DEFINED] PORTF [IF]
-    PORTF DDRF PINF   PORT {PORTF}
-    00 {PORTF}
-        PORTx.x PF0
-        PORTx.x PF1
-        PORTx.x PF2
-        PORTx.x PF3
-        PORTx.x PF4
-        PORTx.x PF5
-        PORTx.x PF6
-        PORTx.x PF7
-    2DROP
+  PORTF DDRF PINF   PORT {PORTF}
+  00 {PORTF}
+    PORTx.x PF0
+    PORTx.x PF1
+    PORTx.x PF2
+    PORTx.x PF3
+    PORTx.x PF4
+    PORTx.x PF5
+    PORTx.x PF6
+    PORTx.x PF7
+  2DROP
 [THEN]
 
 \ ================== группы линий порта ввода-вывода ====================
 
 : ?ONE_PORT ( port1 port2 -- )
-    <> ABORT" В группе должен быть только один порт"
+  <> ABORT" В группе должен быть только один порт"
 ;
 
 \ группа линий порта, заданная маской
@@ -133,117 +133,116 @@ DROP
 ;
 
 : }GROUP      ( -1 mask0 port0 mask1 port1 .. maskx portx -- )
-    CREATE
-        DUP >R ( R: port )
-        00 BEGIN ( mask )
-            OVER -01 <>      \ пока не встретим -1
-        WHILE
-            SWAP R@ ?ONE_PORT
-            OR
-        REPEAT
-            R> , ,
-            DROP
-        \ n portn bitn  ...  port0 bit0
-    DOES>   ( mask port )
-        2@
+  CREATE
+    DUP >R ( R: port )
+    00 BEGIN ( mask )
+      OVER -01 <>      \ пока не встретим -1
+    WHILE
+      SWAP R@ ?ONE_PORT
+      OR
+    REPEAT
+      R> , ,
+      DROP
+    \ n portn bitn  ...  port0 bit0
+  DOES>   ( mask port )
+    2@
 ;
 
 \ добавить группу к группе
 : +GROUP     ( mask1 port1 mask2 port2 -- mask port )
-    ROT OVER ?ONE_PORT
-    -ROT OR SWAP
+  ROT OVER ?ONE_PORT
+  -ROT OR SWAP
 ;
 
 \ вычесть группу из группы
 : -GROUP     ( mask1 port1 mask2 port2 -- mask port )
-    ROT OVER ?ONE_PORT
-    -ROT INVERT AND SWAP
+  ROT OVER ?ONE_PORT
+  -ROT INVERT AND SWAP
 ;
 
 \ одна линия порта
 : WIRE
-    2CONSTANT
+  2CONSTANT
 ;
 
 \ компилировать регистр PORT группы как литерал или оставить порт на стеке хоста
 : {GROUP.PORT} ( mask port -- )
-    NIP T-STATE @ IF
-      {PORT} [T] LITERAL [P]
-    THEN
+  NIP T-STATE @ IF
+    {PORT} [T] LITERAL [P]
+  THEN
 ;
 
 \ компилировать маску группы как литерал или оставить на стеке хоста
 : {GROUP.MASK} ( mask port -- )
-    DROP T-STATE @ IF
-        [T] LITERAL [P]
-    THEN
+  DROP T-STATE @ IF
+    [T] LITERAL [P]
+  THEN
 ;
 
 \ компилировать маску группы как литерал и оставить порт на стеке
 : ,MASK     ( mask port -- port )
-    ?TCOMP
-    SWAP [T] LITERAL [P]
+  ?TCOMP
+  SWAP [T] LITERAL [P]
 ;
 
 [P]
 
 \ установить биты группы
 :: {SET} ( mask port -- )
-    ?TCOMP ,MASK {PORT} LITERAL SET
+  ?TCOMP ,MASK {PORT} LITERAL SET
 ;;
 
 \ переключить биты группы
 :: {TOGGLE} ( mask port -- )
-    ?TCOMP ,MASK {PORT} LITERAL TOGGLE
+  ?TCOMP ,MASK {PORT} LITERAL TOGGLE
 ;;
 
 \ очистить биты группы
 :: {CLEAR} ( mask port -- )
-    ?TCOMP ,MASK {PORT} LITERAL CLEAR
+  ?TCOMP ,MASK {PORT} LITERAL CLEAR
 ;;
 
 \ настроить биты группы на выход
 :: {OUTPUT} ( mask port -- )
-    ?TCOMP ,MASK {DDR} LITERAL SET
+  ?TCOMP ,MASK {DDR} LITERAL SET
 ;;
 
 \ настроить биты группы на вход
 :: {INPUT} ( mask port -- )
-    ?TCOMP ,MASK {DDR} LITERAL CLEAR
+  ?TCOMP ,MASK {DDR} LITERAL CLEAR
 ;;
 
 \ включить подтягивающие резисторы
 :: {PULL_UP} ( mask port -- )
-    {SET}
+  {SET}
 ;;
 
 \ прочитать значение из порта группы
 :: {READ} ( mask port -- )
           ( T: -- c )
-    ?TCOMP {PIN} LITERAL C@ [F] DROP [P]
+  ?TCOMP {PIN} LITERAL C@ [F] DROP [P]
 ;;
 
 \ прочитать значение из порта группы и маскировать
 :: {READ&MASK} ( mask port -- )
-          ( T: -- c )
-    ?TCOMP {PIN} LITERAL C@ LITERAL AND
+              ( T: -- c )
+  ?TCOMP {PIN} LITERAL C@ LITERAL AND
 ;;
 
 \ записать байт в порт группы
 :: {WRITE} ( mask port -- )
-           ( T: c -- )
-    ?TCOMP {PORT} LITERAL C! [F] DROP [P]
+          ( T: c -- )
+  ?TCOMP {PORT} LITERAL C! [F] DROP [P]
 ;;
 
 \ прочитать значение из порта
 :: PORT.READ ( port -- )
-          ( T: -- c )
-    ?TCOMP {PIN} LITERAL C@
+              ( T: -- c )
+  ?TCOMP {PIN} LITERAL C@
 ;;
 
 \ записать байт в порт группы
 :: PORT.WRITE ( mask port -- )
-           ( T: c -- )
-    ?TCOMP {PORT} LITERAL C!
+              ( T: c -- )
+  ?TCOMP {PORT} LITERAL C!
 ;;
-

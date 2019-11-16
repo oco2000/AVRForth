@@ -7,7 +7,7 @@
 \
 \ ======================================
 
-[F] BASE @ DECIMAL [P]
+@DECIMAL
 
 REQUIRE VECTOR    lib/vector.spf
 
@@ -105,4 +105,4 @@ CVARIABLE locked             \  флаг "залипания" кнопок
     BUTTONS {PULL_UP}
 ;
 
-[F] BASE ! [P]
+BASE!

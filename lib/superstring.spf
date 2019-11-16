@@ -1,8 +1,8 @@
 : (EXTRACT) ( value params -- a u )
-    2@P ( value str width )
-    DUP>R ROT * SWAP COUNTP DROP +
-    PAD R@ CMOVEP
-    PAD R>
+  2@P ( value str width )
+  DUP>R ROT * SWAP COUNTP DROP +
+  PAD R@ CMOVEP
+  PAD R>
 ;
 
 :: SUPERSTRING

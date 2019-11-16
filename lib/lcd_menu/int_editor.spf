@@ -1,3 +1,5 @@
+@DECIMAL
+
 REQUIRE MENU ./menu.spf
 
 TREQUIRE (.)
@@ -135,3 +137,5 @@ TCREATE INT-EDITOR-TASKS
 ;
 
 [P]
+
+BASE!

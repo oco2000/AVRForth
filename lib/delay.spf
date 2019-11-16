@@ -1,4 +1,4 @@
-[F] BASE @ DECIMAL [P]
+@DECIMAL
 
 \ *************************************************************************
 \ delay loop for small accurate delays: 16-bit counter, 4 cycles/loop
@@ -38,4 +38,4 @@ MACRO: US ( n -- ) \ задержка n микросекунд, должно б�
     DROP
 ;
 
-[F] BASE ! [P]
+BASE!

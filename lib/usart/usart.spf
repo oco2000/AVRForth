@@ -39,33 +39,33 @@ TREQUIRE EMIT
 
 [F] [DEFINED] _USART1_INIT [P] [IF] \ 2 usarts
 
-    : USART1_SEND ( c -- )
-    [
-    \ wait for empty transmit buffer
-      begin
-        UCSR1A zl _in
-        UDRE BIT zl andi
-      until_=0
-    \ Put data into buffer, sends the data
-      tosl UDR1 _out
+  : USART1_SEND ( c -- )
+  [
+  \ wait for empty transmit buffer
+    begin
+      UCSR1A zl _in
+      UDRE BIT zl andi
+    until_=0
+  \ Put data into buffer, sends the data
+    tosl UDR1 _out
+    popt
+  ]
+  ;
+
+  : USART1 ( -- )
+    ['] USART1_SEND IS EMIT
+  ;
+
+
+  : USART1_INIT ( baudrate -- )
+    [ tosh UBRR1H _out
+      tosl UBRR1L _out
       popt
+      NEW
     ]
-    ;
 
-    : USART1 ( -- )
-      ['] USART1_SEND IS EMIT
-    ;
-
-
-    : USART1_INIT ( baudrate -- )
-      [ tosh UBRR1H _out
-        tosl UBRR1L _out
-        popt
-        NEW
-      ]
-
-      _USART1_INIT
-      USART1
-    ;
+    _USART1_INIT
+    USART1
+  ;
 
 [THEN]

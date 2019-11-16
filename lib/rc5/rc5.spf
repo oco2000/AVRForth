@@ -1,3 +1,5 @@
+@DECIMAL
+
 2VARIABLE RC5_Bits
 2VARIABLE RC5_Command
 CVARIABLE RC5_Bitcount
@@ -81,3 +83,5 @@ INT: RC5_Timer_Interrupt_Handler
 
 ' RC5_Signal_Interrupt_Handler RC5_Signal_Interrupt INT!
 ' RC5_Timer_Interrupt_Handler RC5_Timer_Interrupt INT!
+
+BASE!

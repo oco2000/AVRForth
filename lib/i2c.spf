@@ -1,7 +1,7 @@
 \ I2C master library using hardware TWI interface
 \ Based on P.Fleury routines
 
-[F] BASE @ DECIMAL [P]
+@DECIMAL
 
 \ I2C clock in kHz */
 100 ( kHz ) == SCL_CLOCK
@@ -166,5 +166,4 @@ MACRO: I2C_REP_START ( address -- err )
   TWDR C@
 ;
 
-[F] BASE ! [P]
-
+BASE!

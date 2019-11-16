@@ -1,3 +1,5 @@
+@DECIMAL
+
 \ System Timer Config
 64 == Prescaler
 [F] F_CPU Prescaler / 1000 ( мс ) / [P] == TimerDivider   \ 1 mS
@@ -20,3 +22,5 @@ MACRO: RTOS_FIX_TIMER
 ;MACRO
 
 TIMER0_OVF == RTOS_TIMER_INTERRUPT
+
+BASE!

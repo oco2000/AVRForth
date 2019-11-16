@@ -1,3 +1,5 @@
+@DECIMAL
+
 REQUIRE BUS.WRITE lib/bus.spf
 
 \ ======= lcd routines based on Peter Fleury library
@@ -424,3 +426,5 @@ MACRO: LCD_GETXY ( -- address )
   LCD_COMMAND                             \  display/cursor control       */
   LCD_Backlight_ON
 ;
+
+BASE!

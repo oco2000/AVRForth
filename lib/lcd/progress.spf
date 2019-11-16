@@ -1,6 +1,6 @@
 REQUIRE LCD_CHAR lib/lcd/definechar.spf
 
-[F] BASE @ 0x2 BASE ! [P]
+@BINARY
 
 00010000
 00010000
@@ -42,7 +42,7 @@ LCD_CHAR PRG3
 00011110
 LCD_CHAR PRG4
 
-[F] BASE ! [P]
+BASE!
 
 : .CHARS ( n char -- )
   SWAP 0 ?DO

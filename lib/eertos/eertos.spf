@@ -1,7 +1,7 @@
 \ ========== EERTOS based on DiHalt's routines (easyelectronics.ru)
 \ Минимальная F_CPU = 1MHz
 
-[F] BASE @ DECIMAL [P]
+@DECIMAL
 
 0x8 == QueueSize            \ очередь на 8 задач
 QueueSize CELLS == bQueueSize
@@ -123,4 +123,4 @@ INT: RTOS_INT
 
 RTOS_INT RTOS_TIMER_INTERRUPT INT!
 
-[F] BASE ! [P]
+BASE!
