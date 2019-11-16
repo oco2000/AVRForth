@@ -1,4 +1,4 @@
-project = tembr
+project = preamp
 device = devices/atmega8.spf
 compiler = ../../spf4
 avrdude_programmer = usbasp
