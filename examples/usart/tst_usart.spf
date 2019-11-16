@@ -2,10 +2,11 @@
 [F] DECIMAL [P]
 1000000 == F_CPU
 
-S" lib/usart.spf" INCLUDED
+REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
+REQUIRE USART         lib/usart/usart.spf
 
 : .N ( n -- )
-    >DIGIT EMIT SPACE
+  >DIGIT EMIT SPACE
 ;
 
 : LINE ( from -- )
@@ -22,8 +23,7 @@ S" lib/usart.spf" INCLUDED
 ;
 
 : MAIN
-  1200 BAUD USART_INIT
+  2400 BAUD USART_INIT
   ." Terminal ASCII table:" CR
   ASCII
 ;
-

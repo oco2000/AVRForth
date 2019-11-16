@@ -24,38 +24,20 @@ TREQUIRE EMIT
 ;
 
 : USART ( -- )
-    ['] USART_SEND IS EMIT
+  ['] USART_SEND IS EMIT
 ;
 
-[F] DEVICE mega8 = [P] [IF] \
+: USART_INIT ( UBRR -- )
+  [ tosh UBRR0H _out
+    tosl UBRR0L _out
+    popt
+    NEW
+  ]
+  _USART_INIT
+  USART
+;
 
-    : USART_INIT ( UBRR -- )
-      [ tosh UBRR0H _out
-        tosl UBRR0L _out
-        popt
-        NEW
-      ]
-      TXEN BIT UCSR0B C!    \ enable transmitter
-      BITS{ URSEL UCSZ1 UCSZ0 }BITS UCSR0C C! \ 8bit 1stop
-      USART
-    ;
-
-[ELSE]
-
-    : USART_INIT ( UBRR -- )
-      [ tosh UBRR0H _out
-        tosl UBRR0L _out
-        popt
-        NEW
-      ]
-      TXEN BIT UCSR0B C!    \ enable transmitter
-      BITS{ UCSZ1 UCSZ0 }BITS UCSR0C C! \ 8bit 1stop
-      USART
-    ;
-
-[THEN]
-
-[F] DEVICE mega128 = [P] [IF] \ 2 usarts
+[F] [DEFINED] _USART1_INIT [P] [IF] \ 2 usarts
 
     : USART1_SEND ( c -- )
     [
@@ -81,13 +63,9 @@ TREQUIRE EMIT
         popt
         NEW
       ]
-      TXEN BIT UCSR1B C!    \ enable transmitter
-      BITS{ UCSZ1 UCSZ0 }BITS UCSR1C C! \ 8bit 1stop
+
+      _USART1_INIT
       USART1
     ;
 
-[ELSE] \ 1 usart
-
-
 [THEN]
-

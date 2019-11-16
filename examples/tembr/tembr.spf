@@ -23,8 +23,8 @@ REQUIRE RTOS_INIT_TIMER lib/eertos/atmega8-eertos-config.spf
 REQUIRE RTOS_RUN        lib/eertos/eertos.spf
 REQUIRE DS1307          lib/ds1307.spf           \ часы
 REQUIRE {SET}           lib/ports.spf
-REQUIRE USART_INIT      lib/usart.spf            \ USART
-
+REQUIRE _USART_INIT     lib/usart/atmega8-usart-config.spf
+REQUIRE USART           lib/usart/usart.spf
 
 \ обязательно надо определить порт с кнопками для buttons.spf
 
