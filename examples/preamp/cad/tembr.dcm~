@@ -1,9 +1,0 @@
-EESchema-DOCLIB  Version 2.0
-#
-$CMP ATMEGA8A-PU
-D PDIP28 Narrow, 8k Flash, 1k SRAM, 512B EEPROM
-K AVR 8bit Microcontroller MegaAVR
-F http://www.atmel.com/images/atmel-8159-8-bit-avr-microcontroller-atmega8a_datasheet.pdf
-$ENDCMP
-#
-#End Doc Library

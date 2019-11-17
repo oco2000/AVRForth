@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name tembr)(type Legacy)(uri /home/oleg/program/avr/avrforth/avrforth/examples/preamp/cad/tembr.lib)(options "")(descr ""))
+)
