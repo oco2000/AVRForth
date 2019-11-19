@@ -1,5 +1,5 @@
 EESchema Schematic File Version 4
-LIBS:tembr-cache
+LIBS:preamp-cache
 EELAYER 30 0
 EELAYER END
 $Descr A3 16535 11693
@@ -178,7 +178,7 @@ $EndComp
 Text Label 12300 4000 2    60   ~ 0
 +9V
 $Comp
-L tembr:TDA7313 U4
+L preamp:TDA7313 U4
 U 1 1 5A02EE35
 P 12100 6350
 F 0 "U4" H 11350 7650 50  0000 L BNN
@@ -446,17 +446,6 @@ F 3 "~" H 12250 8050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector_Generic:Conn_01x07 J6
-U 1 1 5A035898
-P 10100 5550
-F 0 "J6" H 10100 5950 50  0000 C CNN
-F 1 "CONN_01X07" V 10200 5550 50  0000 C CNN
-F 2 "Connector_PinHeader_2.00mm:PinHeader_1x07_P2.00mm_Vertical" H 10100 5550 50  0001 C CNN
-F 3 "~" H 10100 5550 50  0001 C CNN
-	1    10100 5550
-	-1   0    0    1   
-$EndComp
-$Comp
 L Connector_Generic:Conn_01x03 J5
 U 1 1 5A0359FA
 P 13600 5350
@@ -470,12 +459,12 @@ $EndComp
 $Comp
 L power:GNDA #PWR011
 U 1 1 5A036037
-P 10300 6050
-F 0 "#PWR011" H 10300 5800 50  0001 C CNN
-F 1 "GNDA" H 10300 5900 50  0000 C CNN
-F 2 "" H 10300 6050 50  0001 C CNN
-F 3 "" H 10300 6050 50  0001 C CNN
-	1    10300 6050
+P 10000 6300
+F 0 "#PWR011" H 10000 6050 50  0001 C CNN
+F 1 "GNDA" H 10000 6150 50  0000 C CNN
+F 2 "" H 10000 6300 50  0001 C CNN
+F 3 "" H 10000 6300 50  0001 C CNN
+	1    10000 6300
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1007,31 +996,19 @@ Wire Wire Line
 Wire Wire Line
 	10300 5250 10600 5250
 Wire Wire Line
-	10300 5350 10850 5350
-Wire Wire Line
-	10300 5450 10600 5450
-Wire Wire Line
 	10600 5450 10600 5550
-Wire Wire Line
-	10300 5550 10550 5550
 Wire Wire Line
 	10550 5550 10550 5650
 Wire Wire Line
 	10550 5650 10850 5650
 Wire Wire Line
-	10300 5650 10500 5650
-Wire Wire Line
 	10500 5650 10500 5850
 Wire Wire Line
 	10500 5850 10600 5850
 Wire Wire Line
-	10300 5750 10450 5750
-Wire Wire Line
 	10450 5750 10450 5950
 Wire Wire Line
 	10450 5950 10900 5950
-Wire Wire Line
-	10300 5850 10300 6050
 Wire Wire Line
 	13400 5450 13400 5600
 Wire Wire Line
@@ -1430,10 +1407,95 @@ Entry Wire Line
 	6100 3450 6200 3550
 Wire Wire Line
 	5150 3450 6100 3450
+$Comp
+L Connector_Generic:Conn_01x03 J6
+U 1 1 5DD651FA
+P 9750 5200
+F 0 "J6" H 9668 4875 50  0000 C CNN
+F 1 "Conn_01x03" H 9668 4966 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" H 9750 5200 50  0001 C CNN
+F 3 "~" H 9750 5200 50  0001 C CNN
+	1    9750 5200
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x03 J10
+U 1 1 5DD66517
+P 9750 5550
+F 0 "J10" H 9668 5225 50  0000 C CNN
+F 1 "Conn_01x03" H 9668 5316 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" H 9750 5550 50  0001 C CNN
+F 3 "~" H 9750 5550 50  0001 C CNN
+	1    9750 5550
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x03 J11
+U 1 1 5DD66C0D
+P 9750 5900
+F 0 "J11" H 9668 5575 50  0000 C CNN
+F 1 "Conn_01x03" H 9668 5666 50  0000 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical" H 9750 5900 50  0001 C CNN
+F 3 "~" H 9750 5900 50  0001 C CNN
+	1    9750 5900
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	9950 5100 10300 5100
+Wire Wire Line
+	10300 5100 10300 5250
+Wire Wire Line
+	9950 5200 10250 5200
+Wire Wire Line
+	10250 5200 10250 5350
+Wire Wire Line
+	10250 5350 10850 5350
+Wire Wire Line
+	9950 5450 10600 5450
+Wire Wire Line
+	9950 5550 10550 5550
+Wire Wire Line
+	9950 5800 10050 5800
+Wire Wire Line
+	10050 5800 10050 5650
+Wire Wire Line
+	10050 5650 10500 5650
+Wire Wire Line
+	9950 5900 10150 5900
+Wire Wire Line
+	10150 5900 10150 5750
+Wire Wire Line
+	10150 5750 10450 5750
+Wire Wire Line
+	9950 6000 10000 6000
+Wire Wire Line
+	10000 6000 10000 6300
+Wire Wire Line
+	10000 6000 10000 5650
+Wire Wire Line
+	10000 5650 9950 5650
+Connection ~ 10000 6000
+Wire Wire Line
+	10000 5650 10000 5300
+Wire Wire Line
+	10000 5300 9950 5300
+Connection ~ 10000 5650
+Entry Wire Line
+	6100 2950 6200 3050
+Wire Wire Line
+	6100 2950 5150 2950
+Entry Wire Line
+	6100 3050 6200 3150
+Wire Wire Line
+	6100 3050 5150 3050
 Wire Bus Line
 	6200 1900 8400 1900
 Wire Bus Line
 	8400 1900 8400 4600
 Wire Bus Line
 	6200 1900 6200 9200
+Text Label 5700 2950 0    60   ~ 0
+LEFT
+Text Label 5700 3050 0    60   ~ 0
+RIGHT
 $EndSCHEMATC
