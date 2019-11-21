@@ -11,8 +11,8 @@
 
 REQUIRE VECTOR    lib/vector.spf
 
-  08 == BUTTONS_MAX                 \  количество кнопок
-  BUTTONS_PERIOD [F] NEGATE [P] == -BUTTONS_PERIOD
+08 == BUTTONS_MAX                 \  количество кнопок
+BUTTONS_PERIOD [F] NEGATE [P] == -BUTTONS_PERIOD
 
 VARIABLE BUTTONS_TASKS      \  задачи для кнопок - содержит адрес массива во flash
 CVARIABLE BUTTONS_ENABLED    \  маска рабочих кнопок
@@ -33,14 +33,14 @@ CVARIABLE debounced_state
 \ 0 1 кнопку отпустили
 
 : DEBOUNCE ( new_sample -- changes ) \  устраняем дребезг
-    debounced_state C@ XOR  ( delta ) \ changes
-\ Increment the counters
-    clock_A C@ clock_B C@ XOR OVER AND DUP clock_A C! SWAP ( clock_A delta )
-    clock_B C@ INVERT OVER AND DUP clock_B C! ( clock_A delta clock_B )
-\ Reset the counters if no changes
-\ were detected.
-    SWAP INVERT OR OR INVERT ( changes )
-    debounced_state C@ OVER XOR debounced_state C!
+  debounced_state C@ XOR  ( delta ) \ changes
+  \ Increment the counters
+  clock_A C@ clock_B C@ XOR OVER AND DUP clock_A C! SWAP ( clock_A delta )
+  clock_B C@ INVERT OVER AND DUP clock_B C! ( clock_A delta clock_B )
+  \ Reset the counters if no changes
+  \ were detected.
+  SWAP INVERT OR OR INVERT ( changes )
+  debounced_state C@ OVER XOR debounced_state C!
 ;
 
 BUTTONS_MAX VECTOR cnt      \  счетчики для каждой кнопки
@@ -51,58 +51,65 @@ CVARIABLE locked             \  флаг "залипания" кнопок
   CELLS BUTTONS_TASKS @ + @P RTOS_SET_TASK
 ;
 
+: set_and_off ( n -- )
+  DUP set_Nth_task            \ срабатывание
+  cnt_rep OFF             \ опять сбрасываем счетчик повторов при удержании
+;
+
+: +cnt ( n value -- n )
+  OVER cnt +!
+;
+
 : HOLD_BTN ( btn_mask btn -- ) \ удерживается кнопка
-    BUTTONS_PERIOD OVER cnt +!          \ увелич. счетчик
-    DUP cnt @ BUTTONS_REP_DELAY >= IF   \ удерживают дольше rep_delay
-        ( btn_mask btn )
-        OVER locked C@ AND 0= IF
-            DUP set_Nth_task           \ срабатывание первый раз
-        THEN
-        OVER locked C@ OR locked C!       \ кнопку удерживают
-        BUTTONS_PERIOD OVER cnt_rep +!  \ считаем время удерживания
-        DUP cnt_rep @ BUTTONS_REPEAT >= IF   \  время удерживания кратно repeat
-            DUP set_Nth_task            \ срабатывание
-            DUP cnt_rep OFF             \ опять сбрасываем счетчик повторов при удержании
-        THEN
-        -BUTTONS_PERIOD OVER cnt +!  \ уменьшаем главный счетчик, чтоб не переполнился
+  BUTTONS_PERIOD +cnt          \ увелич. счетчик
+  DUP cnt @ BUTTONS_REP_DELAY >= IF   \ удерживают дольше rep_delay
+    ( btn_mask btn )
+    OVER locked C@ AND 0= IF
+      DUP set_Nth_task           \ срабатывание первый раз
     THEN
-    2DROP
+    OVER locked C@ OR locked C!       \ кнопку удерживают
+    BUTTONS_PERIOD OVER cnt_rep +!  \ считаем время удерживания
+    DUP cnt_rep @ BUTTONS_REPEAT >= IF   \  время удерживания кратно repeat
+      DUP set_and_off            \ срабатывание
+    THEN
+    -BUTTONS_PERIOD +cnt         \ уменьшаем главный счетчик, чтоб не переполнился
+  THEN
+  2DROP
 ;
 
 : PROCESS_BTN ( changes btn -- ) \ обработать нажатие кнопки btn, changes - см таблицу к DEBOUNCE
-    DUP EXP2 >R ( changes btn )   \  запомним маску кнопки
-    OVER debounced_state C@ AND R@ AND IF    \  кнопка только что нажата
-        DUP set_Nth_task                    \  срабатывание
-        DUP cnt OFF                         \  сброс счетчика
-        DUP cnt_rep OFF                     \  сбросим счетчик повтора при удержании
-    ELSE ( changes btn )
-        OVER INVERT debounced_state C@ AND BUTTONS_REPEATABLE C@ AND R@ AND IF
-                                            \  кнопку удерживают
-            R@ OVER HOLD_BTN                \  обработаем удержание
-        ELSE                                \  кнопка отжата
-            locked C@ R@ INVERT AND locked C! \  залипания нет
-        THEN
+  DUP EXP2 >R ( changes btn )   \  запомним маску кнопки
+  OVER debounced_state C@ AND R@ AND IF    \  кнопка только что нажата
+    DUP set_and_off                     \  срабатывание
+    DUP cnt OFF                         \  сброс счетчика
+  ELSE ( changes btn )
+    OVER INVERT debounced_state C@ AND BUTTONS_REPEATABLE C@ AND R@ AND IF
+                                      \  кнопку удерживают
+      R@ OVER HOLD_BTN                \  обработаем удержание
+    ELSE                                \  кнопка отжата
+      locked C@ R@ INVERT AND locked C! \  залипания нет
     THEN
-    RDROP 2DROP
+  THEN
+  RDROP 2DROP
 ;
 
 : BUTTONS_TASK ( -- )
-    cli
-    BUTTONS {READ} INVERT DEBOUNCE   \  устраняем дребезг, подразумеваем, что кнопки замыкают вход на землю
-    BUTTONS_ENABLED C@ AND
-    BUTTONS_MAX
-    BEGIN  ( changes button_no )                  \  пройдем каждую кнопку
-        1-
-        2DUP PROCESS_BTN                        \  обработать
-    [UNTIL<>0]
-    2DROP sei
-    ['] BUTTONS_TASK BUTTONS_PERIOD RTOS_SET_TIMER_TASK
-    \  повторяем эту задачу каждые BUTTONS_PERIOD мс
+  cli
+  BUTTONS BUS.READ INVERT DEBOUNCE   \  устраняем дребезг, подразумеваем, что кнопки замыкают вход на землю
+  BUTTONS_ENABLED C@ AND
+  BUTTONS_MAX
+  BEGIN  ( changes button_no )                  \  пройдем каждую кнопку
+    1-
+    2DUP PROCESS_BTN                        \  обработать
+  [UNTIL<>0]
+  2DROP sei
+  ['] BUTTONS_TASK BUTTONS_PERIOD RTOS_SET_TIMER_TASK
+  \  повторяем эту задачу каждые BUTTONS_PERIOD мс
 ;
 
 : BUTTONS_INIT ( -- )             \  инициализация порта с кнопками
-    BUTTONS {INPUT}
-    BUTTONS {PULL_UP}
+  BUTTONS BUS.INPUT
+  BUTTONS BUS.PULL_UP
 ;
 
 BASE!

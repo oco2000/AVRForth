@@ -3,6 +3,7 @@
 REQUIRE MENU ./menu.spf
 
 TREQUIRE (.)
+TREQUIRE NOOP
 
 0x0
 CELL -- IntEditor.setValue
