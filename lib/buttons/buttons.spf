@@ -40,7 +40,7 @@ CVARIABLE debounced_state
   \ Reset the counters if no changes
   \ were detected.
   SWAP INVERT OR OR INVERT ( changes )
-  debounced_state C@ OVER XOR debounced_state C!
+  DUP debounced_state CTOGGLE
 ;
 
 BUTTONS_MAX VECTOR cnt      \  счетчики для каждой кнопки
@@ -67,7 +67,7 @@ CVARIABLE locked             \  флаг "залипания" кнопок
     OVER locked C@ AND 0= IF
       DUP set_Nth_task           \ срабатывание первый раз
     THEN
-    OVER locked C@ OR locked C!       \ кнопку удерживают
+    OVER locked CSET             \ кнопку удерживают
     BUTTONS_PERIOD OVER cnt_rep +!  \ считаем время удерживания
     DUP cnt_rep @ BUTTONS_REPEAT >= IF   \  время удерживания кратно repeat
       DUP set_and_off            \ срабатывание
@@ -87,7 +87,7 @@ CVARIABLE locked             \  флаг "залипания" кнопок
                                       \  кнопку удерживают
       R@ OVER HOLD_BTN                \  обработаем удержание
     ELSE                                \  кнопка отжата
-      locked C@ R@ INVERT AND locked C! \  залипания нет
+      R@ locked CCLEAR \  залипания нет
     THEN
   THEN
   RDROP 2DROP

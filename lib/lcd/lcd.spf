@@ -103,72 +103,54 @@ CVARIABLE ExtByte
   I2C_STOP
 ;
 
-TREQUIRE C!
-TREQUIRE C@
-TREQUIRE @P
-TREQUIRE EXECUTE
-
-:: DoAndWrite
-  PCREATE T,
-  PDOES>
-    ExtByte C@
-    SWAP @P EXECUTE
-    DUP ExtByte C!
-    ExtenderWrite
-  ;
-;;
-
-: _LCD_RS_HIGH ( x -- y )
-  BitRS OR
+: ExtByteWrite
+  ExtByte C@ ExtenderWrite
 ;
 
-: _LCD_RS_LOW ( x -- y )
-  [ BitRS [F] INVERT [P] ] LITERAL AND
+: LCD_RS_HIGH ( -- )
+  BitRS ExtByte CSET ExtByteWrite
 ;
 
-: _LCD_RW_HIGH ( x -- y )
-  BitRW OR
+: LCD_RS_LOW ( -- )
+  BitRS ExtByte CCLEAR ExtByteWrite
 ;
 
-: _LCD_RW_LOW ( x -- y )
-  [ BitRW [F] INVERT [P] ] LITERAL AND
+: LCD_RW_HIGH ( -- )
+  BitRW ExtByte CSET ExtByteWrite
 ;
 
-: _LCD_E_HIGH ( x -- y )
-  BitE OR
+: LCD_RW_LOW ( -- )
+  BitRW ExtByte CCLEAR ExtByteWrite
 ;
 
-: _LCD_E_LOW ( x -- y )
-  [ BitE [F] INVERT [P] ] LITERAL AND
+: LCD_E_HIGH ( -- )
+  BitE ExtByte CSET ExtByteWrite
 ;
 
-: _Backlight_ON ( x -- y )
-  BitBacklight OR
+: LCD_E_LOW ( -- )
+  BitE ExtByte CCLEAR ExtByteWrite
 ;
 
-: _Backlight_OFF ( x -- y )
-  [ BitBacklight [F] INVERT [P] ] LITERAL AND
+: LCD_Backlight_ON ( -- )
+  BitBacklight ExtByte CSET ExtByteWrite
 ;
 
-: _DATA_WRITE ( b existing -- )
+: LCD_Backlight_OFF ( -- )
+  BitBacklight ExtByte CCLEAR ExtByteWrite
+;
+
+: data_write ( b -- )
+  ExtByte C@
   0x0F AND SWAP
-  4 LSHIFT 0xF0 AND
+  4 LSHIFT
   OR
+  ExtByte C!
+  ExtByteWrite
 ;
 
 : data_read ( -- b )
-  ExtenderRead 4 RSHIFT
+  ExtenderRead 4 RSHIFT 0x0F AND
 ;
-
-' _LCD_RS_HIGH    DoAndWrite LCD_RS_HIGH
-' _LCD_RS_LOW     DoAndWrite LCD_RS_LOW
-' _LCD_RW_HIGH    DoAndWrite LCD_RW_HIGH
-' _LCD_RW_LOW     DoAndWrite LCD_RW_LOW
-' _LCD_E_HIGH     DoAndWrite LCD_E_HIGH
-' _LCD_E_LOW      DoAndWrite LCD_E_LOW
-' _Backlight_OFF  DoAndWrite LCD_Backlight_OFF
-' _Backlight_ON   DoAndWrite LCD_Backlight_ON
-' _DATA_WRITE     DoAndWrite data_write
 
 :: set_data_output ;;
 :: set_all_output ;;
