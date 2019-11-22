@@ -119,11 +119,14 @@
 + рефакторинг
 + быстрые/медленные литералы
 
-Version 1.5, november 2019
+Version 1.5, November 2019
 + RC5, LCD I2C libraries
 ! some critical bugfixes
 ! documentation was updated
 
-Version 1.5.1, november 2019
+Version 1.5.1, November 2019
 + libraries refactoring
+
+Version 1.5.2, November 2019
++ memory bit operations
 

@@ -1,0 +1,34 @@
+: (CCLEAR)         ( mask addr -- )                   ( clear masked bits )
+  poptmp
+  [x] tmph ld
+  tmpl com
+  tmpl tmph and
+  tmph [x] st
+  popt
+;
+
+MACRO: CCLEAR    ( -- )
+[F]
+  QLIT2? IF ( addr )
+    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+      DEBUG3" CCLEAR addr+lit"
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      DUP 0xFF <> IF \ очистить все - чтение не нужно
+        OVER ( a m a )
+        zl lds
+      THEN
+      INVERT 0xFF AND zl andi
+      zl SWAP sts
+    ELSE  \ известен адрес
+      DEBUG3" CCLEAR addr" ( addr )
+      DUP tosh lds
+      tosl com
+      tosl tosh and
+      tosh SWAP sts
+      popt
+    THEN
+  ELSE
+    (CCLEAR)
+  THEN
+[P]
+;MACRO

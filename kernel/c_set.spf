@@ -1,0 +1,32 @@
+: (CSET)         ( mask addr -- )                   ( set masked bits )
+  poptmp
+  [x] tmph ld
+  tmpl tmph or
+  tmph [x] st
+  popt
+;
+
+MACRO: CSET    ( -- )
+[F]
+  QLIT2? IF ( addr )
+    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+      DEBUG3" CSET addr+lit"
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      DUP 0xFF <> IF \ установить все - чтение не нужно
+        OVER ( a m a )
+        zl lds
+      THEN
+      zl ori
+      zl SWAP sts
+    ELSE  \ известен адрес
+      DEBUG3" CSET addr" ( addr )
+      DUP tosh lds
+      tosl tosh or
+      tosh SWAP sts
+      popt
+    THEN
+  ELSE
+    (CSET)
+  THEN
+[P]
+;MACRO

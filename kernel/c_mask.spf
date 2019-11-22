@@ -1,0 +1,32 @@
+: (CMASK)         ( mask addr -- )                   ( clear not masked bits )
+  poptmp
+  [x] tmph ld
+  tmpl tmph and
+  tmph [x] st
+  popt
+;
+
+MACRO: CMASK    ( -- )
+[F]
+  QLIT2? IF ( addr )
+    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+      DEBUG3" CMASK addr+lit"
+      0xFF AND DUP 0xFF = IF 2DROP EXIT THEN \ маска = 0xFF - ничего не делать
+      DUP 0x0 <> IF \ очистить все - чтение не нужно
+        OVER ( a m a )
+        zl lds
+      THEN
+      zl andi
+      zl SWAP sts
+    ELSE  \ известен адрес
+      DEBUG3" CMASK addr" ( addr )
+      DUP tosh lds
+      tosl tosh and
+      tosh SWAP sts
+      popt
+    THEN
+  ELSE
+    (CMASK)
+  THEN
+[P]
+;MACRO

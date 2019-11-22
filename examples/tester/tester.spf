@@ -5,6 +5,8 @@
 2000000 == F_CPU
 HEX [P]
 
+SLOWLITS
+
 REQUIRE _USART_INIT   lib/usart/atmega128-usart-config.spf
 REQUIRE USART         lib/usart/usart.spf
 
@@ -50,6 +52,11 @@ TREQUIRE TYPE
 
 VARIABLE ACTUAL-DEPTH                   \ STACK RECORD
 RCREATE ACTUAL-RESULTS 40 ALLOT
+VARIABLE FAILED?
+
+: INIT
+  FALSE FAILED? !
+;
 
 : {             \ ( -- ) SYNTACTIC SUGAR.
    ;
@@ -66,7 +73,7 @@ RCREATE ACTUAL-RESULTS 40 ALLOT
       DEPTH ?DUP IF                     \ IF THERE IS SOMETHING ON THE STACK
          0 DO                           \ FOR EACH STACK ITEM
             ACTUAL-RESULTS I CELLS + @  \ COMPARE ACTUAL WITH EXPECTED
-            <> IF ." INCORRECT RESULT" CR EMPTY-STACK LEAVE THEN
+            <> IF FAILED? ON ." --- INCORRECT RESULT ^" CR EMPTY-STACK LEAVE THEN
          LOOP
       THEN
    ELSE                                 \ DEPTH MISMATCH
@@ -1053,6 +1060,9 @@ VARIABLE #BITS-UD         \ NUMBER OF BITS IN UD
    LOOP
    R> BASE ! ;
 
+: GN2   \ ( -- 16 10 )
+  BASE @ >R  HEX BASE @  DECIMAL BASE @  R> BASE ! ;
+
 : NUMBERS
     ." TESTING <# # #S #> HOLD SIGN BASE >NUMBER HEX DECIMAL" CR
     { GP1 -> <TRUE> }
@@ -1100,12 +1110,10 @@ VARIABLE #BITS-UD         \ NUMBER OF BITS IN UD
     \ ~ { MAX-UINT 0 MAX-BASE GN1 -> MAX-UINT 0 0 }
     \ ~ { MAX-UINT DUP MAX-BASE GN1 -> MAX-UINT DUP 0 }
     \ ~
-    \ ~ : GN2   \ ( -- 16 10 )
-       \ ~ BASE @ >R  HEX BASE @  DECIMAL BASE @  R> BASE ! ;
-    \ ~ { GN2 -> 10 A }
-    \ ~
 
+  { GN2 -> 10 A }
 ;
+
 \ ------------------------------------------------------------------------
 TESTING FILL MOVE CMOVE
 
@@ -1218,6 +1226,52 @@ TESTING OUTPUT: . ." CR EMIT SPACE SPACES TYPE U.
   \ ~ -> 0 }
 \ ~
 
+\ ------------------------------------------------------------------------
+TESTING BIT OPERATIONS
+
+CVARIABLE BBUF
+: BBINIT  0xAA BBUF C! ;
+: BBUF@   BBUF C@ ;
+: BIT_OPS
+  ." TESTING BIT OPERATIONS" CR
+
+  BBINIT
+  { 0 BBUF CSET BBUF@ -> 0xAA }
+  { 1 BBUF CSET BBUF@ -> 0xAB }
+  { 0xFF BBUF CSET BBUF@ -> 0xFF }
+  BBINIT
+  { 0x55 NEW BBUF CSET BBUF@ -> 0xFF }
+  BBINIT
+  { 0x55 BBUF NEW CSET BBUF@ -> 0xFF }
+
+  BBINIT
+  { 0 BBUF CCLEAR BBUF@ -> 0xAA }
+  { 0x22 BBUF CCLEAR BBUF@ -> 0x88 }
+  { 0xFF BBUF CCLEAR BBUF@ -> 0x00 }
+  BBINIT
+  { 0xAA NEW BBUF CCLEAR BBUF@ -> 0x00 }
+  BBINIT
+  { 0xAA BBUF NEW CCLEAR BBUF@ -> 0x00 }
+
+  BBINIT
+  { 0 BBUF CMASK BBUF@ -> 0x0 }
+  BBINIT
+  { 0x22 BBUF CMASK BBUF@ -> 0x22 }
+  { 0xFF BBUF CMASK BBUF@ -> 0x22 }
+  BBINIT
+  { 0x55 NEW BBUF CMASK BBUF@ -> 0x00 }
+  BBINIT
+  { 0x55 BBUF NEW CMASK BBUF@ -> 0x00 }
+
+  BBINIT
+  { 0 BBUF CTOGGLE BBUF@ -> 0xAA }
+  { 0x11 BBUF CTOGGLE BBUF@ -> 0xBB }
+  { 0xFF BBUF CTOGGLE BBUF@ -> 0x44 }
+  BBINIT
+  { 0x55 NEW BBUF CTOGGLE BBUF@ -> 0xFF }
+  BBINIT
+  { 0x55 BBUF NEW CTOGGLE BBUF@ -> 0xFF }
+;
 
 [F] DECIMAL [P]
 
@@ -1227,6 +1281,7 @@ TESTING OUTPUT: . ." CR EMIT SPACE SPACES TYPE U.
   9600 BAUD USART_INIT \ 9600bit/s
 
   ." ANSI words test" CR
+  INIT
   BOOLEANS
   SHIFTS
   COMPARISONS
@@ -1244,5 +1299,11 @@ TESTING OUTPUT: . ." CR EMIT SPACE SPACES TYPE U.
   NUMBERS
   FILL_MOVE
   OUTPUT
-  CR ." Test completed."
+  BIT_OPS
+  CR
+  FAILED? @ IF
+    ." Test FAILED!"
+  ELSE
+    ." Test completed."
+  THEN
 ;

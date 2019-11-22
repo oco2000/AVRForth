@@ -1,0 +1,35 @@
+: (CTOGGLE)         ( mask addr -- )                   ( clear masked bits )
+  poptmp
+  [x] tmph ld
+  tmpl tmph eor
+  tmph [x] st
+  popt
+;
+
+MACRO: CTOGGLE    ( -- )
+[F]
+  QLIT2? IF ( addr )
+    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+      DEBUG3" CTOGGLE addr+lit"
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      OVER ( a m a )
+      zl lds
+      DUP 0xFF = IF
+        DROP zl com
+      ELSE
+        zh ldi
+        zh zl eor
+      THEN
+      zl SWAP sts
+    ELSE  \ известен адрес
+      DEBUG3" CTOGGLE addr" ( addr )
+      DUP tosh lds
+      tosl tosh eor
+      tosh SWAP sts
+      popt
+    THEN
+  ELSE
+    (CTOGGLE)
+  THEN
+[P]
+;MACRO
