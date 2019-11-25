@@ -1,0 +1,155 @@
+\ TDA7313 audio processor functions
+
+REQUIRE I2C_START lib/i2c.spf
+TREQUIRE C!E
+
+0x88 == TDA7313 \ I2C Address
+
+CEVARIABLE Snd.CurrentInput \ Current stereo input (0..2)
+0x0 Snd.CurrentInput C!E
+
+0x0 == Input.flag.muted
+0x1 == Input.flag.loudness
+
+\ Input parameters
+0x0
+0x1  -- Input.volume
+0x1  -- Input.balance
+0x1  -- Input.savedBalance
+0x1  -- Input.bass
+0x1  -- Input.treble
+0x1  -- Input.gain
+0x1  -- Input.flags
+== /InputParams
+
+EHERE == Snd.InputsData
+[F] 0x3 /InputParams * [P] EALLOT
+
+: Snd.startWrite ( -- err )
+  TDA7313 I2C_START DROP
+;
+
+: Snd.sendOne ( data -- ) \  write 1 byte data
+  Snd.startWrite
+  I2C_WRITE_DROP
+  I2C_STOP
+;
+
+: Snd.currentInputData ( -- addr )
+  Snd.CurrentInput C@E /InputParams * Snd.InputsData +
+;
+
+: Snd.setVolume ( volume -- ) \ 0..63
+  Snd.currentInputData Input.volume C!E
+;
+
+: Snd.writeVolume ( volume -- ) \ 0..63
+  0x3F SWAP -
+  Snd.sendOne
+;
+
+: Snd.setBalance ( balance -- ) \ -31..31
+  Snd.currentInputData Input.balance C!E
+;
+
+: Snd.formAttenuation ( balance[0..0x31] -- byte )
+  0x31 SWAP -
+;
+
+: Snd.writeBalance ( balance -- ) \ -31..31
+  0 SWAP DUP 0< IF
+    ABS Snd.formAttenuation SWAP
+  ELSE
+    Snd.formAttenuation
+  THEN
+  0x80 OR Snd.sendOne \ Left
+  0xA0 OR Snd.sendOne \ Right
+;
+
+: Snd.muted? ( -- f )
+  Snd.currentInputData Input.flags C@E Input.flag.muted BIT AND
+;
+
+: Snd.loud? ( -- f )
+  Snd.currentInputData Input.flags C@E Input.flag.loudness BIT AND
+;
+
+: Snd.toggleMute ( -- )
+  Snd.muted? IF
+    Snd.currentInputData Input.savedBalance C@E
+    Snd.currentInputData Input.flags C@E [ Input.flag.muted BIT [F] INVERT [P] ] LITERAL AND
+  ELSE
+    Snd.currentInputData Input.balance C@E
+    Snd.currentInputData Input.flags C@E Input.flag.muted BIT OR
+  THEN
+  Snd.currentInputData Input.flags C!E
+  Snd.currentInputData Input.balance C!E
+;
+
+: Snd.writeMuted ( -- )
+  Snd.muted? IF
+    0x9F Snd.sendOne
+    0xBF Snd.sendOne
+  ELSE
+    Snd.writeBalance
+  THEN
+;
+
+: Snd.setBass ( bass -- ) \ -7..7
+  Snd.currentInputData Input.bass C!E
+;
+
+: Snd.getEqData ( bass/treble -- data )
+  DUP ABS 7 SWAP -
+  SWAP 0< INVERT IF 0x8 OR THEN
+;
+
+: Snd.writeBass ( bass -- ) \ -7..7
+  Snd.getEqData
+  0x60 AND Snd.sendOne
+;
+
+: Snd.setTreble ( treble -- ) \ -7..7
+  Snd.currentInputData Input.treble C!E
+;
+
+: Snd.writeTreble ( treble -- ) \ -7..7
+  Snd.getEqData
+  0x70 AND Snd.sendOne
+;
+
+: Snd.setGain ( gain -- ) \ 0..3
+  Snd.currentInputData Input.gain C!E
+;
+
+: Snd.writeAudioSwitch ( -- )
+  Snd.currentInputData Input.gain C@E   3 LSHIFT
+  Snd.loud? 0= 1 AND   2 LSHIFT  OR
+  Snd.CurrentInput C@E 1+   OR
+  Snd.sendOne
+;
+
+: Snd.toggleLoudness ( -- )
+  Snd.loud? IF
+    Snd.currentInputData Input.flags C@E [ Input.flag.loudness BIT [F] INVERT [P] ] LITERAL AND
+  ELSE
+    Snd.currentInputData Input.flags C@E Input.flag.loudness BIT OR
+  THEN
+  Snd.currentInputData Input.flags C!E
+;
+
+: Snd.setInput ( n -- ) \ 0..2
+  Snd.CurrentInput C!E
+;
+
+: Snd.writeInput ( -- )
+  Snd.writeAudioSwitch
+  Snd.currentInputData Input.treble C@E  Snd.writeTreble
+  Snd.currentInputData Input.bass C@E  Snd.writeBass
+  Snd.writeMuted
+  Snd.currentInputData Input.volume C@E  Snd.writeVolume
+;
+
+: Snd.Init
+
+;

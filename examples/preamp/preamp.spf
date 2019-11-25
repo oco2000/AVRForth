@@ -47,6 +47,7 @@ REQUIRE DS1307           lib/ds1307.spf
 REQUIRE EncInit          lib/encoder.spf
 REQUIRE RC5_Init_Timer   lib/rc5/atmega8-rc5-config.spf
 REQUIRE RC5Init          lib/rc5/rc5.spf
+REQUIRE Snd.Init         tda7313.spf
 
 CVARIABLE DS1307_Present?
 C" DS1307 not found!" == "DS1307_error"
