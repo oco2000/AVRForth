@@ -13,6 +13,7 @@ RAM-TOP RSTACK-SIZE - TO SPTR0
 
 HAS_MOVW                            \ поддерживается инструкция movw
 HAS_MUL  \ есть команда умножения
+HAS_LPMZ
 
 S" src/isr.spf" INCLUDED
 0x0 ORG

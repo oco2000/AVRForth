@@ -231,6 +231,8 @@ HEX
 9588 =OP &.   sleep
 95A8 =OP &.   wdr
 95C8 =OP &.   lpm
+9004 =OP &R   [lpmz]
+9005 =OP &R   [lpmz+]
 9600 =OP &IW  adiw
 9800 =OP &BP  cbi
 9700 =OP &IW  sbiw
@@ -305,10 +307,29 @@ VECT movw
 : HAS_MUL
     TRUE TO HAS_MUL? ;
 
+VECT lpmz
+VECT lpmz+
+: [soft_lpmz] ( reg -- )
+  lpm  r0 swap mov ;
+' [soft_lpmz] TO lpmz
+
+: [soft_lpmz+] ( reg -- )
+  lpm  r0 swap mov   0x1 zl adiw ;
+' [soft_lpmz+] TO lpmz+
+
+0 VALUE HAS_LPMZ?
+: HAS_LPMZ
+  TRUE TO HAS_LPMZ?
+  ['] [lpmz] TO lpmz
+  ['] [lpmz+] TO lpmz+
+;
+
 : pushw DUP push 1+ push ;              \ на стек возвратов пару регистров
 : popw DUP 1+ pop pop ;                 \ со стека возвратов пару регистров
 : ldiw 2DUP SWAP 0xFF AND SWAP ldi      \ загрузить слово в пару регистров
        1+ SWAP 8 RSHIFT 0xFF AND SWAP ldi ;
+: lpmw ( reg_pair -- )
+  DUP lpmz+   1+ lpmz ;
 
 : ?port ( port -- f )
     0x0 0x3F BETWEEN ;

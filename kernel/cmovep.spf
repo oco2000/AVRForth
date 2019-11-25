@@ -4,11 +4,10 @@
   popt
   zl popd
   begin
-    lpm
-    0x1 zl adiw
+    r0 lpmz+
     r0 [x]+ st
     0x1 r16 subi
-    0x0 r17 sbci 
+    0x0 r17 sbci
     r16 tmpl mov
     r17 tmpl or
   until_<>0

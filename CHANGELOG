@@ -130,3 +130,6 @@ Version 1.5.1, November 2019
 Version 1.5.2, November 2019
 + memory bit operations
 
+Version 1.5.3, November 2019
++ optimized lpm instruction
+

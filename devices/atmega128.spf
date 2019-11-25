@@ -14,6 +14,7 @@ RAM-TOP RSTACK-SIZE - 1+ TO SPTR0 \ дно стека данных
 
 HAS_MOVW                            \ поддерживается инструкция movw
 HAS_MUL  \ есть команда умножения
+HAS_LPMZ
 
 0x20 == PINF
 0x21 == PINE

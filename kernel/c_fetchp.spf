@@ -1,7 +1,6 @@
 : C@P         ( addr -- c )                   ( char fetch from program memory)
   [  tosl zl movw
-    lpm
-    r0 tosl mov
-	tosh clr
+    tosl lpmz
+    tosh clr
   ]
-;  
+;

@@ -1,7 +1,7 @@
 \ AVR Forth
 DECIMAL
 
-C" 1.5.2" CONSTANT _VERSION
+C" 1.5.3" CONSTANT _VERSION
 .( AVRForth by Oleg Voronin. Version )
 _VERSION COUNT TYPE CR
 

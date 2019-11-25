@@ -2,6 +2,7 @@
 
 HAS_MOVW \ поддерживается инструкция movw
 HAS_MUL  \ есть команда умножения
+HAS_LPMZ
 
 0x23 == PINB
 0x24 == DDRB
