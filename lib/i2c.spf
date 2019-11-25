@@ -119,7 +119,7 @@ MACRO: I2C_REP_START ( address -- err )
     begin
       TWCR zl _in
       TWSTO BIT zl andi
-    until_=0
+    until_<>0
   ]
 ;
 
