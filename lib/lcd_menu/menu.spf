@@ -74,25 +74,25 @@ CVARIABLE CUR-LINE
 
 : NEXT-MENU ( menu -- next | 0 )
   DUP PARENT-MENU ( menu parent )
-  SWAP OVER SWAP FIND-SUBMENU ( parent item )
-  DUP IF
-    CELL + @P DUP 0= IF \ last item
-      DROP Menu.items @P
-    ELSE NIP THEN
-  ELSE 2DROP 0 THEN
+  SWAP OVER SWAP FIND-SUBMENU
+  ?DUP IF  ( parent item )
+    CELL+ @P ?DUP IF
+      NIP
+    ELSE \ last item
+      Menu.items @P
+    THEN
+  ELSE DROP 0 THEN
 ;
-
-\ ~: H.   DUP 0 <# # # # # #> TYPE SPACE ;
 
 : PREV-MENU ( menu -- next | 0 )
   DUP PARENT-MENU ( menu parent )
   SWAP OVER SWAP FIND-SUBMENU ( parent item_addr )
-  DUP IF
+  ?DUP IF
     OVER Menu.items OVER = IF ( parent item_addr ) \ first item
       DROP 0 FIND-SUBMENU ( found | 0 )
-      ?DUP IF CELL - @P THEN
-    ELSE CELL - @P NIP THEN
-  ELSE 2DROP 0 THEN
+      ?DUP IF CELL- @P THEN
+    ELSE CELL- @P NIP THEN
+  ELSE DROP 0 THEN
 ;
 
 : @EXECUTE ( addr -- x*n )
@@ -123,8 +123,7 @@ VARIABLE CUR-MENU
 ;
 
 : SET-MENU ( menu -- )
-  ?DUP IF CUR-MENU ! DISPLAY-MENU
-  THEN
+  CUR-MENU ! DISPLAY-MENU
 ;
 
 [F]
@@ -151,7 +150,7 @@ VARIABLE CUR-MENU
 [P]
 
 : FORMAT-CHAR ( c -- a 1 )
-  <# HOLD HLD @ 1 ;
+  PAD C! PAD 1 ;
 
 : FORMAT-BOOL ( b -- a 1 )
   IF C_ON ELSE C_OFF THEN FORMAT-CHAR ;

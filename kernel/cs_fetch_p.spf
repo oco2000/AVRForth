@@ -1,0 +1,3 @@
+: CS@P ( addr - n ) \ get byte and extend sign
+  C@P C>S
+;

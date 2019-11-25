@@ -21,7 +21,7 @@ TCREATE EncStates
 : RawEncIncrement ( -- n )
   EncBus BUS.READ 0x3 AND
   EncState C@ OVER EncState C!
-  2* 2* + EncStates + C@P C>S
+  2* 2* + EncStates + CS@P
 ;
 
 : EncIncrement ( -- n )
