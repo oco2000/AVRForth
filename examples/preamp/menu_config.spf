@@ -2,19 +2,17 @@ TREQUIRE (.)
 TREQUIRE C!E
 
 \ ======================== VOLUME ==========================
-CEVARIABLE VOLUME  0x0 VOLUME C!E
  63 == MAX-VOLUME
 0x0 == MIN-VOLUME
-: GET-VOLUME   ( -- value )   VOLUME C@E ;
-: SET-VOLUME   ( value -- )   MIN-VOLUME MAX-VOLUME CLIP   VOLUME C!E ;
+: SET-VOLUME   ( value -- )   MIN-VOLUME MAX-VOLUME CLIP   DUP Snd.setVolume Snd.writeVolume ;
 
 C" Volume" == I_VOLUME_Tttle
-I_VOLUME_Tttle MIN-VOLUME MAX-VOLUME ' GET-VOLUME ' SET-VOLUME INT-EDITOR   VOLUME-EDITOR
+I_VOLUME_Tttle MIN-VOLUME MAX-VOLUME ' Snd.getVolume ' SET-VOLUME INT-EDITOR   VOLUME-EDITOR
 ' PROGRESS-DISPLAY   VOLUME-EDITOR SET-DISPLAY
 TRUE                 VOLUME-EDITOR SET-IMMEDIATE
 
 I_VOLUME_Tttle MENU-ITEM I_Volume
-' GET-VOLUME    I_Volume SET-GET-VALUE
+' Snd.getVolume I_Volume SET-GET-VALUE
 ' (.)           I_Volume SET-FORMAT
 ' VOLUME-EDITOR I_Volume SET-EDIT
 
@@ -31,53 +29,47 @@ C" Mute" MENU-ITEM I_Mute
 ' TOGGLE-MUTE  I_Mute SET-EDIT
 
 \ ======================== BASS ==========================
-CEVARIABLE BASS  0x0 BASS C!E
- 31 == MAX-BASS
-0x0 == MIN-BASS
-: GET-BASS   ( -- value )   BASS C@E ;
-: SET-BASS   ( value -- )   MIN-BASS MAX-BASS CLIP   BASS C!E ;
+ 7  == MAX-BASS
+-7  == MIN-BASS
+: SET-BASS   ( value -- )   MIN-BASS MAX-BASS CLIP  DUP Snd.setBass Snd.writeBass ;
 
 C" Bass" == I_BASS_Title
-I_BASS_Title MIN-BASS MAX-BASS ' GET-BASS ' SET-BASS INT-EDITOR   BASS-EDITOR
+I_BASS_Title MIN-BASS MAX-BASS ' Snd.getBass ' SET-BASS INT-EDITOR   BASS-EDITOR
 ' PROGRESS-DISPLAY  BASS-EDITOR SET-DISPLAY
 TRUE                BASS-EDITOR SET-IMMEDIATE
 
 I_BASS_Title MENU-ITEM I_Bass
-' GET-BASS      I_Bass SET-GET-VALUE
+' Snd.getBass   I_Bass SET-GET-VALUE
 ' (.)           I_Bass SET-FORMAT
 ' BASS-EDITOR   I_Bass SET-EDIT
 
 \ ======================== Treble ==========================
-CEVARIABLE TREBLE  0x0 TREBLE C!E
- 31 == MAX-TREBLE
-0x0 == MIN-TREBLE
-: GET-TREBLE   ( -- value )   TREBLE C@E ;
-: SET-TREBLE   ( value -- )   MIN-TREBLE MAX-TREBLE CLIP   TREBLE C!E ;
+ 7  == MAX-TREBLE
+-7  == MIN-TREBLE
+: SET-TREBLE   ( value -- )   MIN-TREBLE MAX-TREBLE CLIP  DUP Snd.setTreble Snd.writeTreble ;
 
 C" Treble" == I_TREBLE_Title
-I_TREBLE_Title MIN-TREBLE MAX-TREBLE ' GET-TREBLE ' SET-TREBLE INT-EDITOR   TREBLE-EDITOR
+I_TREBLE_Title MIN-TREBLE MAX-TREBLE ' Snd.getTreble ' SET-TREBLE INT-EDITOR   TREBLE-EDITOR
 ' PROGRESS-DISPLAY  TREBLE-EDITOR SET-DISPLAY
 TRUE                TREBLE-EDITOR SET-IMMEDIATE
 
 I_TREBLE_Title MENU-ITEM I_Treble
-' GET-TREBLE      I_Treble SET-GET-VALUE
+' Snd.getTreble   I_Treble SET-GET-VALUE
 ' (.)             I_Treble SET-FORMAT
 ' TREBLE-EDITOR   I_Treble SET-EDIT
 
 \ ======================== Balance ==========================
-CEVARIABLE BALANCE  0x0 BALANCE C!E
  31 == MAX-BALANCE
--30 == MIN-BALANCE
-: GET-BALANCE   ( -- value )   BALANCE C@E C>S ;
-: SET-BALANCE   ( value -- )   MIN-BALANCE MAX-BALANCE CLIP   BALANCE C!E ;
+-31 == MIN-BALANCE
+: SET-BALANCE   ( value -- )   MIN-BALANCE MAX-BALANCE CLIP   DUP Snd.setBalance Snd.writeBalance ;
 
 C" Balance" == I_BALANCE_Title
-I_BALANCE_Title MIN-BALANCE MAX-BALANCE ' GET-BALANCE ' SET-BALANCE INT-EDITOR   BALANCE-EDITOR
+I_BALANCE_Title MIN-BALANCE MAX-BALANCE ' Snd.getBalance ' SET-BALANCE INT-EDITOR   BALANCE-EDITOR
 ' PROGRESS-DISPLAY  BALANCE-EDITOR SET-DISPLAY
 TRUE                BALANCE-EDITOR SET-IMMEDIATE
 
 I_BALANCE_Title MENU-ITEM I_Balance
-' GET-BALANCE      I_Balance SET-GET-VALUE
+' Snd.getBalance   I_Balance SET-GET-VALUE
 ' (.)              I_Balance SET-FORMAT
 ' BALANCE-EDITOR   I_Balance SET-EDIT
 
@@ -279,5 +271,5 @@ I_YEAR_Title MENU-ITEM I_Year
 0x0 M_Time M_Date C" Setup" MENU M_Setup
 
 \ ------------------------ Main menu ----------------------
-0x0 M_Sound M_Setup C" _" MENU M_Main
+0x0 M_Setup M_Sound C" _" MENU M_Main
 M_Main SET-MAIN

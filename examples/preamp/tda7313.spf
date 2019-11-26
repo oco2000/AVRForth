@@ -1,5 +1,7 @@
 \ TDA7313 audio processor functions
 
+@DECIMAL
+
 REQUIRE I2C_START lib/i2c.spf
 TREQUIRE C!E
 
@@ -23,24 +25,35 @@ CEVARIABLE Snd.CurrentInput \ Current stereo input (0..2)
 == /InputParams
 
 EHERE == Snd.InputsData
-[F] 0x3 /InputParams * [P] EALLOT
+[F] 0x3 /InputParams * [P] == /AllInputParams
+/AllInputParams EALLOT
 
 : Snd.startWrite ( -- err )
   TDA7313 I2C_START DROP
 ;
 
 : Snd.sendOne ( data -- ) \  write 1 byte data
+  [IFDEBUG2] cli LCD_GETXY 0x3F AND 10 > IF 0 0 AT THEN HEX DUP . sei [THEN]
+  \ [IFDEBUG2] 0 0 AT DUP . [THEN]
   Snd.startWrite
   I2C_WRITE_DROP
   I2C_STOP
 ;
 
+: Snd.getInput ( -- input )
+  Snd.CurrentInput C@E
+;
+
 : Snd.currentInputData ( -- addr )
-  Snd.CurrentInput C@E /InputParams * Snd.InputsData +
+  Snd.getInput /InputParams * Snd.InputsData +
 ;
 
 : Snd.setVolume ( volume -- ) \ 0..63
   Snd.currentInputData Input.volume C!E
+;
+
+: Snd.getVolume ( -- volume ) \ 0..63
+  Snd.currentInputData Input.volume C@E
 ;
 
 : Snd.writeVolume ( volume -- ) \ 0..63
@@ -52,18 +65,18 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.balance C!E
 ;
 
-: Snd.formAttenuation ( balance[0..0x31] -- byte )
-  0x31 SWAP -
+: Snd.getBalance ( balance -- ) \ -31..31
+  Snd.currentInputData Input.balance C@E C>S
 ;
 
 : Snd.writeBalance ( balance -- ) \ -31..31
   0 SWAP DUP 0< IF
-    ABS Snd.formAttenuation SWAP
-  ELSE
-    Snd.formAttenuation
+    ABS SWAP
   THEN
   0x80 OR Snd.sendOne \ Left
   0xA0 OR Snd.sendOne \ Right
+  0xDF Snd.sendOne \ LR
+  0xFF Snd.sendOne \ RR
 ;
 
 : Snd.muted? ( -- f )
@@ -99,6 +112,10 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.bass C!E
 ;
 
+: Snd.getBass ( bass -- ) \ -7..7
+  Snd.currentInputData Input.bass C@E
+;
+
 : Snd.getEqData ( bass/treble -- data )
   DUP ABS 7 SWAP -
   SWAP 0< INVERT IF 0x8 OR THEN
@@ -113,6 +130,10 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.treble C!E
 ;
 
+: Snd.getTreble ( treble -- ) \ -7..7
+  Snd.currentInputData Input.treble C@E
+;
+
 : Snd.writeTreble ( treble -- ) \ -7..7
   Snd.getEqData
   0x70 AND Snd.sendOne
@@ -122,10 +143,14 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.gain C!E
 ;
 
+: Snd.getGain ( gain -- ) \ 0..3
+  Snd.currentInputData Input.gain C@E
+;
+
 : Snd.writeAudioSwitch ( -- )
-  Snd.currentInputData Input.gain C@E   3 LSHIFT
+  Snd.getGain  3 LSHIFT
   Snd.loud? 0= 1 AND   2 LSHIFT  OR
-  Snd.CurrentInput C@E 1+   OR
+  Snd.getInput 1+   OR
   Snd.sendOne
 ;
 
@@ -144,12 +169,26 @@ EHERE == Snd.InputsData
 
 : Snd.writeInput ( -- )
   Snd.writeAudioSwitch
-  Snd.currentInputData Input.treble C@E  Snd.writeTreble
-  Snd.currentInputData Input.bass C@E  Snd.writeBass
+  Snd.getTreble  Snd.writeTreble
+  Snd.getBass  Snd.writeBass
   Snd.writeMuted
-  Snd.currentInputData Input.volume C@E  Snd.writeVolume
+  Snd.getVolume  Snd.writeVolume
+;
+
+: Snd.setDefault
+  Snd.InputsData /AllInputParams 0 DO
+    0 OVER C!E
+    1+
+  LOOP
+  0 Snd.setInput
 ;
 
 : Snd.Init
-
+  Snd.getInput 0 4 WITHIN INVERT IF
+    \ EEPROM is not initialized
+    Snd.setDefault
+  THEN
+  Snd.writeInput
 ;
+
+BASE!
