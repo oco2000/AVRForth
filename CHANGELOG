@@ -134,3 +134,6 @@ Version 1.5.3, November 2019
 + optimized lpm instruction
 + optimized I2C library
 + LCD menu optimization
+
+Varsion 1.5.4, November 2019
++ new ~AND word
