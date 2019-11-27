@@ -1,10 +1,24 @@
 TREQUIRE (.)
 TREQUIRE C!E
 
+\ ======================== INPUT ==========================
+0x3 == MAX-INPUT
+0x1 == MIN-INPUT
+: SET-INPUT   ( value -- )   Snd.setInput Snd.writeInput ;
+
+C" Input" == I_Input_Title
+I_Input_Title MIN-INPUT MAX-INPUT ' Snd.getInput ' SET-INPUT INT-EDITOR   INPUT-EDITOR
+[IFDEBUG2] TRUE INPUT-EDITOR SET-IMMEDIATE [THEN]
+
+I_Input_Title MENU-ITEM I_Input
+' Snd.getInput  I_Input SET-GET-VALUE
+' (.)           I_Input SET-FORMAT
+' INPUT-EDITOR  I_Input SET-EDIT
+
 \ ======================== VOLUME ==========================
  63 == MAX-VOLUME
 0x0 == MIN-VOLUME
-: SET-VOLUME   ( value -- )   MIN-VOLUME MAX-VOLUME CLIP   DUP Snd.setVolume Snd.writeVolume ;
+: SET-VOLUME   ( value -- )   Snd.setVolume Snd.writeVolume ;
 
 C" Volume" == I_VOLUME_Tttle
 I_VOLUME_Tttle MIN-VOLUME MAX-VOLUME ' Snd.getVolume ' SET-VOLUME INT-EDITOR   VOLUME-EDITOR
@@ -17,21 +31,27 @@ I_VOLUME_Tttle MENU-ITEM I_Volume
 ' VOLUME-EDITOR I_Volume SET-EDIT
 
 \ ======================== MUTE ==========================
-CEVARIABLE MUTED
-: GET-MUTED   ( -- value )   MUTED C@E ;
-: SET-MUTED   MUTED C!E ;
 : TOGGLE-MUTE ( -- )
-  GET-MUTED 0= SET-MUTED TRUE ( redraw ) ;
+  Snd.toggleMute Snd.writeMuted TRUE ( redraw ) ;
 
 C" Mute" MENU-ITEM I_Mute
-' GET-MUTED    I_Mute SET-GET-VALUE
+' Snd.muted?   I_Mute SET-GET-VALUE
 ' FORMAT-BOOL  I_Mute SET-FORMAT
 ' TOGGLE-MUTE  I_Mute SET-EDIT
+
+\ ======================== LOUD ==========================
+: TOGGLE-LOUD ( -- )
+  Snd.toggleLoudness Snd.writeAudioSwitch TRUE ( redraw ) ;
+
+C" Loud" MENU-ITEM I_Loud
+' Snd.loud?    I_Loud SET-GET-VALUE
+' FORMAT-BOOL  I_Loud SET-FORMAT
+' TOGGLE-LOUD  I_Loud SET-EDIT
 
 \ ======================== BASS ==========================
  7  == MAX-BASS
 -7  == MIN-BASS
-: SET-BASS   ( value -- )   MIN-BASS MAX-BASS CLIP  DUP Snd.setBass Snd.writeBass ;
+: SET-BASS   ( value -- )   Snd.setBass Snd.writeBass ;
 
 C" Bass" == I_BASS_Title
 I_BASS_Title MIN-BASS MAX-BASS ' Snd.getBass ' SET-BASS INT-EDITOR   BASS-EDITOR
@@ -46,7 +66,7 @@ I_BASS_Title MENU-ITEM I_Bass
 \ ======================== Treble ==========================
  7  == MAX-TREBLE
 -7  == MIN-TREBLE
-: SET-TREBLE   ( value -- )   MIN-TREBLE MAX-TREBLE CLIP  DUP Snd.setTreble Snd.writeTreble ;
+: SET-TREBLE   ( value -- )   Snd.setTreble Snd.writeTreble ;
 
 C" Treble" == I_TREBLE_Title
 I_TREBLE_Title MIN-TREBLE MAX-TREBLE ' Snd.getTreble ' SET-TREBLE INT-EDITOR   TREBLE-EDITOR
@@ -61,7 +81,7 @@ I_TREBLE_Title MENU-ITEM I_Treble
 \ ======================== Balance ==========================
  31 == MAX-BALANCE
 -31 == MIN-BALANCE
-: SET-BALANCE   ( value -- )   MIN-BALANCE MAX-BALANCE CLIP   DUP Snd.setBalance Snd.writeBalance ;
+: SET-BALANCE   ( value -- )   Snd.muted? IF DROP ELSE Snd.setBalance Snd.writeBalance THEN ;
 
 C" Balance" == I_BALANCE_Title
 I_BALANCE_Title MIN-BALANCE MAX-BALANCE ' Snd.getBalance ' SET-BALANCE INT-EDITOR   BALANCE-EDITOR
@@ -73,8 +93,23 @@ I_BALANCE_Title MENU-ITEM I_Balance
 ' (.)              I_Balance SET-FORMAT
 ' BALANCE-EDITOR   I_Balance SET-EDIT
 
+\ ======================== GAIN ==========================
+0x3 == MAX-GAIN
+0x0 == MIN-GAIN
+: SET-GAIN   ( value -- )   Snd.setGain Snd.writeAudioSwitch ;
+
+C" Gain" == I_Gain_Tttle
+I_Gain_Tttle MIN-GAIN MAX-GAIN ' Snd.getGain ' SET-GAIN INT-EDITOR   GAIN-EDITOR
+' PROGRESS-DISPLAY   GAIN-EDITOR SET-DISPLAY
+TRUE                 GAIN-EDITOR SET-IMMEDIATE
+
+I_Gain_Tttle MENU-ITEM I_Gain
+' Snd.getGain   I_Gain SET-GET-VALUE
+' (.)           I_Gain SET-FORMAT
+' GAIN-EDITOR   I_Gain SET-EDIT
+
 \ ------------------------ Sound menu ----------------------
-0x0 I_Bass I_Treble I_Mute I_Balance I_Volume C" Sound" MENU M_Sound
+0x0 I_Bass I_Treble I_Gain I_Loud I_Mute I_Balance I_Volume I_Input C" Sound" MENU M_Sound
 
 \ DS1307 Utils
 

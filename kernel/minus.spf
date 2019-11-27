@@ -10,13 +10,16 @@ MACRO: -    ( -- )  HAS -
   QLIT1? IF ( lit )
     DEBUG3" -"
     DUP 0x0 = IF DROP EXIT THEN
+
     NEGATE
     DUP 0x0 0x3F BETWEEN IF
       tosl adiw
     EXIT THEN  \ 0 to 63 = ADIW
+
     NEGATE DUP 0x0 0x3F BETWEEN IF
-             tosl sbiw
-           EXIT THEN  \ -1 TO -63 = SBIW
+      tosl sbiw
+    EXIT THEN  \ -1 TO -63 = SBIW
+
     BYTE-SPLIT SWAP
     tosl subi
     tosh sbci     \ otherwise

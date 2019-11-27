@@ -1,5 +1,5 @@
 \ ATmega8
- +DEBUG2
+\ +DEBUG2
 
 [F] DECIMAL [P]
 
@@ -27,7 +27,23 @@ BUS{ BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
 0x1F == ENABLED_MASK
 
 0x4 == ChangesPerClick \ should be a power of two
-BUS{ PD1 PD0 }BUS EncBus
+BUS{ PD5 PD4 }BUS EncBus
+
+[IFDEBUG2]
+  REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
+  REQUIRE USART         lib/usart/usart.spf
+
+  : USART_TYPE ( a u -- )
+    00 ?DO  DUP C@ USART_SEND 1+ LOOP
+    DROP
+  ;
+
+  : DEBUG. ( n -- )
+    BASE @ HEX
+    SWAP (.) USART_TYPE BL USART_SEND
+    BASE !
+  ;
+[THEN]
 
 :: LCD_I2C ;;
 0x4E == LCD_Addr
@@ -123,6 +139,10 @@ TCREATE IDLE_BTN_TASKS
 
 : INIT
   DECIMAL
+  [IFDEBUG2]
+    9600 BAUD USART_INIT
+  [THEN]
+
   LCD_DISP_ON  LCD_INIT
   MENU-INIT
   PROGRESS-INIT

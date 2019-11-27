@@ -10,8 +10,10 @@ TREQUIRE C!E
 CEVARIABLE Snd.CurrentInput \ Current stereo input (0..2)
 0x0 Snd.CurrentInput C!E
 
-0x0 == Input.flag.muted
-0x1 == Input.flag.loudness
+0x0 BIT == Input.flag.muted
+[F] Input.flag.muted INVERT [P] == ~Input.flag.muted
+0x1 BIT == Input.flag.loudness
+[F] Input.flag.loudness INVERT [P] == ~Input.flag.loudness
 
 \ Input parameters
 0x0
@@ -28,24 +30,28 @@ EHERE == Snd.InputsData
 [F] 0x3 /InputParams * [P] == /AllInputParams
 /AllInputParams EALLOT
 
-: Snd.startWrite ( -- err )
-  TDA7313 I2C_START DROP
-;
-
 : Snd.sendOne ( data -- ) \  write 1 byte data
-  [IFDEBUG2] cli LCD_GETXY 0x3F AND 10 > IF 0 0 AT THEN HEX DUP . sei [THEN]
-  \ [IFDEBUG2] 0 0 AT DUP . [THEN]
-  Snd.startWrite
+  [IFDEBUG2] DUP DEBUG. [THEN]
+
+  TDA7313 I2C_START DROP
   I2C_WRITE_DROP
   I2C_STOP
 ;
 
-: Snd.getInput ( -- input )
+: Snd.getInput ( -- input ) \ 1..3
   Snd.CurrentInput C@E
 ;
 
 : Snd.currentInputData ( -- addr )
-  Snd.getInput /InputParams * Snd.InputsData +
+  Snd.getInput 1- /InputParams * Snd.InputsData +
+;
+
+: Snd.getFlags ( -- b )
+  Snd.currentInputData Input.flags C@E
+;
+
+: Snd.setFlags ( b -- )
+  Snd.currentInputData Input.flags C!E
 ;
 
 : Snd.setVolume ( volume -- ) \ 0..63
@@ -56,8 +62,9 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.volume C@E
 ;
 
-: Snd.writeVolume ( volume -- ) \ 0..63
-  0x3F SWAP -
+: Snd.writeVolume ( -- ) \ 0..63
+  Snd.getVolume
+  0x3F SWAP-
   Snd.sendOne
 ;
 
@@ -69,7 +76,8 @@ EHERE == Snd.InputsData
   Snd.currentInputData Input.balance C@E C>S
 ;
 
-: Snd.writeBalance ( balance -- ) \ -31..31
+: Snd.writeBalance ( -- ) \ -31..31
+  Snd.getBalance
   0 SWAP DUP 0< IF
     ABS SWAP
   THEN
@@ -80,23 +88,21 @@ EHERE == Snd.InputsData
 ;
 
 : Snd.muted? ( -- f )
-  Snd.currentInputData Input.flags C@E Input.flag.muted BIT AND
-;
-
-: Snd.loud? ( -- f )
-  Snd.currentInputData Input.flags C@E Input.flag.loudness BIT AND
+  Snd.getFlags Input.flag.muted AND
 ;
 
 : Snd.toggleMute ( -- )
+  Snd.getFlags
   Snd.muted? IF
+    ~Input.flag.muted AND
     Snd.currentInputData Input.savedBalance C@E
-    Snd.currentInputData Input.flags C@E [ Input.flag.muted BIT [F] INVERT [P] ] LITERAL AND
+    Snd.currentInputData Input.balance C!E
   ELSE
+    Input.flag.muted OR
     Snd.currentInputData Input.balance C@E
-    Snd.currentInputData Input.flags C@E Input.flag.muted BIT OR
+    Snd.currentInputData Input.savedBalance C!E
   THEN
-  Snd.currentInputData Input.flags C!E
-  Snd.currentInputData Input.balance C!E
+  Snd.setFlags
 ;
 
 : Snd.writeMuted ( -- )
@@ -104,8 +110,22 @@ EHERE == Snd.InputsData
     0x9F Snd.sendOne
     0xBF Snd.sendOne
   ELSE
-    Snd.writeBalance
+    Snd.getBalance Snd.writeBalance
   THEN
+;
+
+: Snd.loud? ( -- f )
+  Snd.getFlags Input.flag.loudness AND
+;
+
+: Snd.toggleLoudness ( -- )
+  Snd.getFlags
+  Snd.loud? IF
+    ~Input.flag.loudness AND
+  ELSE
+    Input.flag.loudness OR
+  THEN
+  Snd.setFlags
 ;
 
 : Snd.setBass ( bass -- ) \ -7..7
@@ -113,17 +133,17 @@ EHERE == Snd.InputsData
 ;
 
 : Snd.getBass ( bass -- ) \ -7..7
-  Snd.currentInputData Input.bass C@E
+  Snd.currentInputData Input.bass C@E C>S
 ;
 
 : Snd.getEqData ( bass/treble -- data )
-  DUP ABS 7 SWAP -
+  DUP ABS 7 SWAP-
   SWAP 0< INVERT IF 0x8 OR THEN
 ;
 
-: Snd.writeBass ( bass -- ) \ -7..7
-  Snd.getEqData
-  0x60 AND Snd.sendOne
+: Snd.writeBass ( -- )
+  Snd.getBass Snd.getEqData
+  0x60 OR Snd.sendOne
 ;
 
 : Snd.setTreble ( treble -- ) \ -7..7
@@ -131,12 +151,12 @@ EHERE == Snd.InputsData
 ;
 
 : Snd.getTreble ( treble -- ) \ -7..7
-  Snd.currentInputData Input.treble C@E
+  Snd.currentInputData Input.treble C@E C>S
 ;
 
-: Snd.writeTreble ( treble -- ) \ -7..7
-  Snd.getEqData
-  0x70 AND Snd.sendOne
+: Snd.writeTreble ( -- )
+  Snd.getTreble Snd.getEqData
+  0x70 OR Snd.sendOne
 ;
 
 : Snd.setGain ( gain -- ) \ 0..3
@@ -148,22 +168,13 @@ EHERE == Snd.InputsData
 ;
 
 : Snd.writeAudioSwitch ( -- )
-  Snd.getGain  3 LSHIFT
+  Snd.getGain  3 SWAP- 3 LSHIFT
   Snd.loud? 0= 1 AND   2 LSHIFT  OR
-  Snd.getInput 1+   OR
-  Snd.sendOne
+  Snd.getInput 1-   OR
+  0x40 OR Snd.sendOne
 ;
 
-: Snd.toggleLoudness ( -- )
-  Snd.loud? IF
-    Snd.currentInputData Input.flags C@E [ Input.flag.loudness BIT [F] INVERT [P] ] LITERAL AND
-  ELSE
-    Snd.currentInputData Input.flags C@E Input.flag.loudness BIT OR
-  THEN
-  Snd.currentInputData Input.flags C!E
-;
-
-: Snd.setInput ( n -- ) \ 0..2
+: Snd.setInput ( n -- ) \ 1..3
   Snd.CurrentInput C!E
 ;
 
