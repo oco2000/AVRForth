@@ -1,5 +1,4 @@
 EESchema Schematic File Version 4
-LIBS:preamp-cache
 EELAYER 30 0
 EELAYER END
 $Descr A3 16535 11693
@@ -34,9 +33,9 @@ Entry Wire Line
 Entry Wire Line
 	6100 3250 6200 3350
 Entry Wire Line
-	6100 2750 6200 2850
+	6100 3850 6200 3950
 Entry Wire Line
-	6100 2850 6200 2950
+	6100 3950 6200 4050
 Text Label 5700 3650 0    60   ~ 0
 IRint
 Text Label 5700 2050 0    60   ~ 0
@@ -570,9 +569,9 @@ F 3 "~" H 3150 5700 50  0001 C CNN
 	1    3150 5500
 	1    0    0    -1  
 $EndComp
-Text Label 5700 2750 0    60   ~ 0
+Text Label 5700 3850 0    60   ~ 0
 ENC0
-Text Label 5700 2850 0    60   ~ 0
+Text Label 5700 3950 0    60   ~ 0
 ENC1
 Entry Wire Line
 	6200 5600 6300 5500
@@ -1383,9 +1382,9 @@ Wire Wire Line
 Wire Wire Line
 	5150 2550 6100 2550
 Wire Wire Line
-	5150 2750 6100 2750
+	5150 3850 6100 3850
 Wire Wire Line
-	5150 2850 6100 2850
+	5150 3950 6100 3950
 Wire Wire Line
 	5150 3150 6100 3150
 Wire Wire Line
@@ -1488,14 +1487,14 @@ Entry Wire Line
 	6100 3050 6200 3150
 Wire Wire Line
 	6100 3050 5150 3050
+Text Label 5700 2950 0    60   ~ 0
+LEFT
+Text Label 5700 3050 0    60   ~ 0
+RIGHT
 Wire Bus Line
 	6200 1900 8400 1900
 Wire Bus Line
 	8400 1900 8400 4600
 Wire Bus Line
 	6200 1900 6200 9200
-Text Label 5700 2950 0    60   ~ 0
-LEFT
-Text Label 5700 3050 0    60   ~ 0
-RIGHT
 $EndSCHEMATC
