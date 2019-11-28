@@ -1,5 +1,5 @@
 \ ATmega8
- +DEBUG2
+\ +DEBUG2
 
 [F] DECIMAL [P]
 
@@ -31,6 +31,9 @@ BUS{ BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
 0x4 == ChangesPerClick \ should be a power of two
 BUS{ PD5 PD4 }BUS EncBus
 
+0x1C == RC5Address
+0x11 == RC5PowerBtn
+
 [IFDEBUG2]
   REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
   REQUIRE USART         lib/usart/usart.spf
@@ -45,6 +48,8 @@ BUS{ PD5 PD4 }BUS EncBus
     SWAP (.) USART_TYPE BL USART_SEND
     BASE !
   ;
+
+  : CR  0xD USART_SEND ;
 [THEN]
 
 :: LCD_I2C ;;
@@ -87,12 +92,6 @@ C" DS1307 not found!" == "DS1307_error"
 : HEX.  ( n -- ) (H) TYPE SPACE ;
 
 S" ./menu_config.spf" INCLUDED
-
-: RC5_Command ( -- )
-  RC5_Command 2@ RC5_Analyze IF
-    2DROP DROP
-  THEN
-;
 
 4 == C_SOUND_ON
 5 == C_SOUND_OFF
@@ -185,18 +184,22 @@ TCREATE ModeOnBtnTasks
   PAGE
 ;
 
+CVARIABLE PowerOn?
+
 : (PowerOn)
+  1 PowerOn? C!
   LCD_Backlight_ON
   LCD_DISP_ON LCD_COMMAND
   Snd.Init
-  POWER {SET}
+  POWER {CLEAR}
   EnterModeOn
 ;
 ' (PowerOn) [->] PowerOn
 
 : (PowerOff)
+  0 PowerOn? C!
   Snd.mute
-  POWER {CLEAR}
+  POWER {SET}
   ON-EDITOR-CANCEL OFF
   EDITOR-TIMERED OFF
   LCD_Backlight_OFF
@@ -212,6 +215,31 @@ TCREATE ModeOnBtnTasks
   VOLUME-EDITOR DROP
 ;
 ' (ENTER-VOLUME) [->] ENTER-VOLUME
+
+: PowerToggle ( -- )
+  PowerOn? C@ IF PowerOff ELSE PowerOn THEN
+;
+
+PCREATE RC5Commands
+RC5PowerBtn TC,   ' PowerToggle T,
+0 TC, TALIGN
+
+: HandleRC5Command ( command -- )
+  >R RC5Commands BEGIN
+    DUP C@P DUP R@ = IF ( addr com )
+      SWAP CHAR+ DUP @EXECUTE ( com addr+1 )
+    ELSE SWAP CHAR+ THEN
+    CELL+ SWAP ( addr+3 com )
+  0= UNTIL
+  RDROP DROP
+;
+
+: RC5_Command_Received ( -- )
+  RC5_Command 2@ RC5_Analyze IF
+    \ address command toggle
+    DROP SWAP RC5Address = IF HandleRC5Command ELSE DROP THEN
+  THEN
+;
 
 : LCDInit
   LCD_DISP_OFF  LCD_INIT
@@ -240,7 +268,7 @@ TCREATE ModeOnBtnTasks
   BUTTONS_INIT
   RTOS_INIT
   ['] BUTTONS_TASK RTOS_SET_TASK
-  ['] RC5_Command IS RC5_Task
+  ['] RC5_Command_Received IS RC5_Task
 ;
 
 : ProcessEncoder ( increment -- )

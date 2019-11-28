@@ -112,8 +112,9 @@ EHERE == Snd.InputsData
 
 : Snd.writeMuted ( -- )
   Snd.muted? IF
+    Snd.mute
   ELSE
-    Snd.getBalance Snd.writeBalance
+    Snd.writeBalance
   THEN
 ;
 
@@ -183,10 +184,10 @@ EHERE == Snd.InputsData
 
 : Snd.writeInput ( -- )
   Snd.writeAudioSwitch
-  Snd.getTreble  Snd.writeTreble
-  Snd.getBass  Snd.writeBass
+  Snd.writeTreble
+  Snd.writeBass
   Snd.writeMuted
-  Snd.getVolume  Snd.writeVolume
+  Snd.writeVolume
 ;
 
 : Snd.setDefault

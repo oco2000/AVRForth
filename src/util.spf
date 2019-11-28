@@ -70,6 +70,9 @@ VECT (T.)
     BASE @ >R HEX >R
     0 <# R> 0 ?DO # LOOP #> TYPE
     R> BASE ! ;
+: .HEXSTACK
+  BASE @ >R HEX .S CR R> BASE !
+;
 
 : TAB   0x9 EMIT ;
 

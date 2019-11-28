@@ -6,7 +6,7 @@ PD2         WIRE RC5_Signal_Wire
 EXT_INT0      == RC5_Signal_Interrupt
 64            == RC5_Timer_Prescaler
 TIMER1_COMPA  == RC5_Timer_Interrupt
-F_CPU RC5_Timer_Prescaler [F] / 01 1100 */ [P] == RC5_Timer_Divider
+F_CPU RC5_Timer_Prescaler [F] / 01 1125 */ [P] == RC5_Timer_Divider
 
 : RC5_Init_Timer
   BITS{ CS11 CS10 }BITS TCCR1B SET

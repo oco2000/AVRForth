@@ -135,5 +135,9 @@ Version 1.5.3, November 2019
 + optimized I2C library
 + LCD menu optimization
 
-Varsion 1.5.4, November 2019
+Version 1.5.4, November 2019
 + new ~AND word
+
+Version 1.5.5, November 2019
++ Preamp changes
++ LCD Menu fixes

@@ -41,7 +41,9 @@ CVARIABLE CUR-LINE
     THERE >R  T, 0x0 T, MenuFlag.isMenu T, 0x0 T, 0x0 T, 0x0 T, 0x0 T,
     BEGIN \ store items
       DUP T,
-      R@ OVER Menu.parent T! \ set item parent
+      DUP 0<> IF
+        R@ OVER Menu.parent T! \ set item parent
+      THEN
     0= UNTIL
     R> DROP
   [P]
