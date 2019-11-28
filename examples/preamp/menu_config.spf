@@ -291,16 +291,22 @@ I_YEAR_Title MENU-ITEM I_Year
 ' YEAR-EDITOR   I_Year SET-EDIT
 
 \ ------------------------ Date menu ----------------------
-: FORMAT-SHORT-DATE ( -- a u )
+
+: FORMAT-DATE ( long? -- a u )
+  >R
   0 0 <#
-    GET-YEAR 2D SLASH
+    R> IF GET-YEAR 2D SLASH THEN
     GET-MONTH 2D SLASH
     GET-DAY 2D
   #>
 ;
 
+: FORMAT-LONG-DATE
+  TRUE FORMAT-DATE
+;
+
 0x0 I_Year I_Month I_DOW I_Day C" Date" MENU M_Date
-' FORMAT-SHORT-DATE            M_Date SET-FORMAT
+' FORMAT-LONG-DATE            M_Date SET-FORMAT
 
 \ ------------------------ Setup menu ----------------------
 0x0 M_Time M_Date C" Setup" MENU M_Setup

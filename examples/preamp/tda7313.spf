@@ -83,8 +83,6 @@ EHERE == Snd.InputsData
   THEN
   0x80 OR Snd.sendOne \ Left
   0xA0 OR Snd.sendOne \ Right
-  0xDF Snd.sendOne \ LR
-  0xFF Snd.sendOne \ RR
 ;
 
 : Snd.muted? ( -- f )
@@ -105,10 +103,15 @@ EHERE == Snd.InputsData
   Snd.setFlags
 ;
 
+: Snd.mute ( -- )
+  0x9F Snd.sendOne
+  0xBF Snd.sendOne
+  0xDF Snd.sendOne \ LR
+  0xFF Snd.sendOne \ RR
+;
+
 : Snd.writeMuted ( -- )
   Snd.muted? IF
-    0x9F Snd.sendOne
-    0xBF Snd.sendOne
   ELSE
     Snd.getBalance Snd.writeBalance
   THEN
