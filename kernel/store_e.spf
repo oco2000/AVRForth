@@ -1,7 +1,7 @@
 : (!E)    ( word addr -- )    \ EEPROM write word
-    DUP ROT BYTE-SPLIT  ( a a lo hi )
-    ROT 1+ C!E          ( a lo )
-    SWAP C!E
+  DUP ROT BYTE-SPLIT  ( a a lo hi )
+  ROT 1+ C!E          ( a lo )
+  SWAP C!E
 ;
 
 MACRO: !E    ( -- )

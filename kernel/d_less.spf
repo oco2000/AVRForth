@@ -1,14 +1,14 @@
 : D<
-    zl popd
-    tmp1l popd
-    tmpl popd
-    zl tmpl cp
-    zh tmph cpc
-    tosl tmp1l cpc
-    tosh tmp1h cpc
-    [ 0x00 ] tosh ldi
-    if_<
-      [ 0xFF ] tosh ldi
-    then
-    tosh tosl mov
+  zl popd
+  tmp1l popd
+  tmpl popd
+  zl tmpl cp
+  zh tmph cpc
+  tosl tmp1l cpc
+  tosh tmp1h cpc
+  [ 0x00 ] tosh ldi
+  if_<
+    [ 0xFF ] tosh ldi
+  then
+  tosh tosl mov
 ;

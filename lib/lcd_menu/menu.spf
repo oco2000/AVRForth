@@ -76,7 +76,7 @@ CVARIABLE CUR-LINE
 
 : NEXT-MENU ( menu -- next | 0 )
   DUP PARENT-MENU ( menu parent )
-  SWAP OVER SWAP FIND-SUBMENU
+  TUCK SWAP FIND-SUBMENU
   ?DUP IF  ( parent item )
     CELL+ @P ?DUP IF
       NIP
@@ -88,7 +88,7 @@ CVARIABLE CUR-LINE
 
 : PREV-MENU ( menu -- next | 0 )
   DUP PARENT-MENU ( menu parent )
-  SWAP OVER SWAP FIND-SUBMENU ( parent item_addr )
+  TUCK SWAP FIND-SUBMENU ( parent item_addr )
   ?DUP IF
     OVER Menu.items OVER = IF ( parent item_addr ) \ first item
       DROP 0 FIND-SUBMENU ( found | 0 )

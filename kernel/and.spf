@@ -1,23 +1,23 @@
 : (AND)        ( x1 x2 -- x3 )                 \ ( bitwise AND TOS with NOS )
-    poptmp
-    tmpl tosl and
-    tmph tosh and
+  poptmp
+  tmpl tosl and
+  tmph tosh and
 ;
 
-MACRO: AND    ( -- )  
+MACRO: AND    ( -- )
 [F]
-  QLIT1? IF 
+  QLIT1? IF
     DEBUG3" AND"
     BYTE-SPLIT ( LO HI )
     DUP 0xFF <> IF
-      tosh andi 
+      tosh andi
     ELSE DROP THEN
-    DUP 0xFF <> IF 
-      tosl andi 
-    ELSE DROP THEN  
+    DUP 0xFF <> IF
+      tosl andi
+    ELSE DROP THEN
   ELSE
     (AND)
-  THEN 
+  THEN
 [P]
 ;MACRO
 

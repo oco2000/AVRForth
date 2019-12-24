@@ -1,7 +1,7 @@
 : BYTE-SPLIT ( n -- lo hi )                    ( split cell into U and L bytes)
-    tosl tmpl mov
-    tmph clr 
-    tosh tosl mov
-    tosh clr
-    pushtmp
+  tosl tmpl mov
+  tmph clr
+  tosh tosl mov
+  tosh clr
+  pushtmp
 ;

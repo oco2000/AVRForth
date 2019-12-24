@@ -1,4 +1,4 @@
 : (D.)          ( d -- a len )        TUCK DABS <# #S ROT SIGN #> ;
-               ( convert signed double to string)
+                ( convert signed double to string)
 : (.)           ( n -- a len )        S>D  (D.) ;
-               ( convert signed to string)
+                ( convert signed to string)

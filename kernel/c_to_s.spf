@@ -1,9 +1,9 @@
 : C>S        ( c -- x )                      ( sign extend byte --> cell)
   [
-     tosh clr
-     tosl tst
-     if_<0
-       tosh dec
-     then
+    tosh clr
+    tosl tst
+    if_<0
+      tosh dec
+    then
   ]
 ;

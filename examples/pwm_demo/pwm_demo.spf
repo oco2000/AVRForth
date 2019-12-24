@@ -39,7 +39,7 @@ INT: COMPARE
     INIT
     BEGIN
       BUTTON_UP {READ&MASK} IF
-        Counter C@E 1- 0 MAX DUP OCR2 C! Counter C!E
+        Counter C@E 1- 0MAX DUP OCR2 C! Counter C!E
         1 MS
       THEN
       BUTTON_DOWN {READ&MASK} IF

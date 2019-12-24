@@ -3,9 +3,9 @@
   begin
     tosl tst
   while_<>0
-	tosl dec
-	tmph lsr
-	tmpl ror
+    tosl dec
+    tmph lsr
+    tmpl ror
   repeat
   tmpl tosl movw
 ;

@@ -1,10 +1,10 @@
 : ?NEGATE    ( n1 n2 -- n3 )                 ( negate n1 if n2<0, for math stuff)
- [
-  poptmp
-  tmph tst
-  if_<0
-    ' NEGATE (JMP)
-  then
- ]
+  [
+    poptmp
+    tmph tst
+    if_<0
+      ' NEGATE (JMP)
+    then
+  ]
 ;
 

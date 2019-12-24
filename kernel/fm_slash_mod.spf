@@ -1,14 +1,14 @@
 : FM/MOD         ( d n -- r q )  ( floored )     ( signed   d/n --> r q )
-    DUP 0< DUP >R
-    IF
-      NEGATE >R DNEGATE R>
-    THEN
-    >R DUP 0<
-    IF
-        R@ +
-    THEN
-    R> UM/MOD R>
-    IF
-        SWAP NEGATE SWAP
-    THEN
+  DUP 0< DUP >R
+  IF
+    NEGATE >R DNEGATE R>
+  THEN
+  >R DUP 0<
+  IF
+    R@ +
+  THEN
+  R> UM/MOD R>
+  IF
+    SWAP NEGATE SWAP
+  THEN
 ;

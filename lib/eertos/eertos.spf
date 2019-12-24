@@ -49,7 +49,7 @@ CREATE Timers bQueueSize ALLOT
     0 RTOS_TASK_IN_QUEUE DUP -1 = IF  \ ищем пустое место в очереди
       DROP 2DROP \ нет места в очереди
     ELSE ( task time index )
-      SWAP OVER ( task index time index )
+      TUCK ( task index time index )
       Timers [] ! Tasks [] !
     THEN
   ELSE    ( task time index )     \ есть такая задача в очереди

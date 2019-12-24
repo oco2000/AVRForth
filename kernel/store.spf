@@ -1,6 +1,6 @@
 : !          ( x addr -- )                 \  c( cell store )
-    poptmp
-    tmpl [x]+ st
-    tmph [x]+ st
-    popt
+  poptmp
+  tmpl [x]+ st
+  tmph [x]+ st
+  popt
 ;

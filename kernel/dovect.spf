@@ -1,25 +1,27 @@
 TREQUIRE !
 
 : (DOVECT)
-    [z]+ tmpl ld
-    [z]  zh ld
-    tmpl zl mov
-    zh lsr
-    zl ror
-    ijmp
+  [z]+ tmpl ld
+  [z]  zh ld
+  tmpl zl mov
+  zh lsr
+  zl ror
+  ijmp
 ;
 
 [F]
 : VECT                \ определяющее слово с параметрами во flash
-    CREATE
-        T-HERE @ , INLISTING ,
-        D-HERE @ DUP , TCELL [T] ALLOT [P] ( d-here )
-        zl ldiw
-        ['] (DOVECT) >BODY @ (JMP)
-  DOES> ?TCOMP @ TCOMPILE, ;
+  CREATE
+    T-HERE @ , INLISTING ,
+    D-HERE @ DUP , TCELL [T] ALLOT [P] ( d-here )
+    zl ldiw
+    ['] (DOVECT) >BODY @ (JMP)
+  DOES>
+    ?TCOMP @ TCOMPILE,
+;
 
 : IS ( xt -- )
-    ' >BODY CELL+ CELL+ @ ( ram_addr )
-    (LIT) [T] ! [P]
+  ' >BODY CELL+ CELL+ @ ( ram_addr )
+  (LIT) [T] ! [P]
 ;
 [P]

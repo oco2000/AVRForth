@@ -1,8 +1,8 @@
 : TYPEP ( a n -- )
-    00 ?DO
-        DUP C@P EMIT
-        1+
-    LOOP
-    DROP
+  00 ?DO
+    DUP C@P EMIT
+    1+
+  LOOP
+  DROP
 ;
 

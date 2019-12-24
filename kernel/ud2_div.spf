@@ -1,8 +1,8 @@
 : UD2/       ( d1 -- d2 )                    ( logical right shift double)
-	poptmp
-	tosh lsr
-	tosl ror
-	tmph ror
-	tmpl ror
-	pushtmp
+  poptmp
+  tosh lsr
+  tosl ror
+  tmph ror
+  tmpl ror
+  pushtmp
 ;

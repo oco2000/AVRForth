@@ -1,14 +1,14 @@
 : .SN ( n --)
 \ Распечатать n верхних элементов стека
-   >R BEGIN
-         R@
-      WHILE
-        SP@ R@ 1- CELLS + @
-        tosl tmpl mov
-        tosh tosl mov
-        tmpl tosh mov
-        .
-        R> 1- >R
-      REPEAT RDROP
+  >R
+  BEGIN
+    R@
+  WHILE
+    SP@ R@ 1- CELLS + @
+    tosl tmpl mov
+    tosh tosl mov
+    tmpl tosh mov
+    .
+    R> 1- >R
+  REPEAT RDROP
 ;
-

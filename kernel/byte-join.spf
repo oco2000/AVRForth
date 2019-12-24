@@ -1,5 +1,5 @@
 : BYTE-JOIN  ( lo hi -- n )                    ( join U and L bytes)
-    poptmp
-    tosl tosh mov
-    tmpl tosl mov
+  poptmp
+  tosl tosh mov
+  tmpl tosl mov
 ;

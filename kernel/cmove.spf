@@ -5,14 +5,14 @@
   r16 tmpl mov
   r17 tmpl or
   if_<>0
-      begin
-        [z]+ tmpl ld
-        tmpl [x]+ st
-        0x1 r16 subi
-        0x0 r17 sbci 
-        r16 tmpl mov
-        r17 tmpl or
-      until_<>0
+    begin
+      [z]+ tmpl ld
+      tmpl [x]+ st
+      0x1 r16 subi
+      0x0 r17 sbci
+      r16 tmpl mov
+      r17 tmpl or
+    until_<>0
   then
   popt
 ] ;

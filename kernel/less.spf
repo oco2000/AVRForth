@@ -1,11 +1,11 @@
 : <          ( n1 n2 -- f )
   [
-	poptmp
-	tosl tmpl cp
-	tosh tmph cpc
-	0x0 tosl ldi
-	if_<
-        0xFF tosl ldi
+    poptmp
+    tosl tmpl cp
+    tosh tmph cpc
+    0x0 tosl ldi
+    if_<
+      0xFF tosl ldi
     then
     tosl tosh mov
   ]

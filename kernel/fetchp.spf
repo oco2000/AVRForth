@@ -1,5 +1,6 @@
 : @P         ( addr -- x )                   ( fetch from program memory)
-  [ tosl zl movw
+  [
+    tosl zl movw
     tosl lpmw
   ]
 ;

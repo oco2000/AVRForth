@@ -13,7 +13,7 @@
     \ ~ swap    tmp2             ;tmp2= 0gf00cb0
     \ ~ andi    tmp,  0b10011001 ;tmp=  h00ed00a
     \ ~ add     tmp,  tmp2       ;tmp=  hgfedcba
-[
+  [
     tosl zl mov
     tosl asr
     zl ror
@@ -27,6 +27,6 @@
     zl swap
     0x99 tosl andi
     zl tosl add
-]
+  ]
 ;
 

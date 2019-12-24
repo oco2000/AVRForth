@@ -1,2 +1,2 @@
 : S>D           ( n -- d )                      ( signed single --> signed double )
-    DUP 0< ;
+  DUP 0< ;

@@ -1,8 +1,8 @@
 : D2/       ( d1 -- d2 )                    ( arithmetic right shift double)
-	poptmp
-	tosh asr
-	tosl ror
-	tmph ror
-	tmpl ror
-	pushtmp
+  poptmp
+  tosh asr
+  tosl ror
+  tmph ror
+  tmpl ror
+  pushtmp
 ;

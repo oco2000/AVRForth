@@ -1,10 +1,10 @@
 : MAX        ( n1 n2 -- n3 )                 ( MAX of two cells)
- [ 
-  poptmp
-  tmpl tosl cp
-  tmph tosh cpc
-  if_<
-    tmpl tosl movw
-  then
- ]
+  [
+    poptmp
+    tmpl tosl cp
+    tmph tosh cpc
+    if_<
+      tmpl tosl movw
+    then
+  ]
 ;

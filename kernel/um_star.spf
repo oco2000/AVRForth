@@ -1,51 +1,51 @@
 HAS_MUL? [IF]   \ hardware multiplier available?
 : UM*        ( u1 u2 -- ud )                 ( unsigned 16*16 --> 32 multiply)
-	r18 pushw
-	r16 pushw
-	zl popd
-	tosl zl mul
-	r0 r18 movw
-    tosh zh mul
-    r0 r16 movw  \ R17r16r19r18 = H*H+L*L
-	tosh zl mul
-	r0 r19 add
-	r1 r16 adc
-	r0 clr
-	r0 r17 adc
-	tosl zh mul
-	r0 r19 add
-	r1 r16 adc
-	r0 clr
-	r0 r17 adc
-	r16 tosl movw
-	r18 pushd
-	r16 popw
-	r18 popw
+  r18 pushw
+  r16 pushw
+  zl popd
+  tosl zl mul
+  r0 r18 movw
+  tosh zh mul
+  r0 r16 movw  \ R17r16r19r18 = H*H+L*L
+  tosh zl mul
+  r0 r19 add
+  r1 r16 adc
+  r0 clr
+  r0 r17 adc
+  tosl zh mul
+  r0 r19 add
+  r1 r16 adc
+  r0 clr
+  r0 r17 adc
+  r16 tosl movw
+  r18 pushd
+  r16 popw
+  r18 popw
 ;
 [ELSE]
 : UM*        ( u1 u2 -- ud )                 ( unsigned 16*16 --> 32 multiply)
-	r16 pushw
-	r18 pushw
-	tosl r16 movw
-	popt
-  [	0x10 ] r18 ldi
-	r19 clr
-	tmpl clr
-	tmph clr
-	for
-		tmpl lsl
-		tmph rol
-		tosl rol
-		tosh rol
-		if_c
-			r16 tmpl add
-			r17 tmph adc
-			r19 tosl adc
-			r19 tosh adc 
-		then
-	r18 next
-	pushtmp
-	r18 popw
-	r16 popw
+  r16 pushw
+  r18 pushw
+  tosl r16 movw
+  popt
+  [ 0x10 ] r18 ldi
+  r19 clr
+  tmpl clr
+  tmph clr
+  for
+    tmpl lsl
+    tmph rol
+    tosl rol
+    tosh rol
+    if_c
+      r16 tmpl add
+      r17 tmph adc
+      r19 tosl adc
+      r19 tosh adc
+    then
+  r18 next
+  pushtmp
+  r18 popw
+  r16 popw
 ;
 [THEN]

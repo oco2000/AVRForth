@@ -1,8 +1,8 @@
 : ON         ( addr -- )                     ( store true to addr)
   [
-  	0xFF zl ldi
-	zl [x]+ st
-	zl [x]+ st
-	popt
+    0xFF zl ldi
+    zl [x]+ st
+    zl [x]+ st
+    popt
   ]
 ;

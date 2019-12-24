@@ -1,11 +1,11 @@
 : +!         ( x addr -- )                   ( add to memory cell )
   [x]+ tmpl ld
-  [x] tmph ld		\ tmp := [addr]
+  [x] tmph ld   \ tmp := [addr]
   [y]+ zh ld
-  [y]+ zl ld		\ z := x
-  zl tmpl add		
-  zh tmph adc		\ tmp := [addr]+x
+  [y]+ zl ld    \ z := x
+  zl tmpl add
+  zh tmph adc   \ tmp := [addr]+x
   tmph [x] st
-  tmpl -[x] st		\ [addr] := tmp
+  tmpl -[x] st   \ [addr] := tmp
   popt
-;  
+;

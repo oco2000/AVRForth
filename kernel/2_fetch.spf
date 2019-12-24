@@ -1,2 +1,2 @@
 : 2@            ( a -- x1 x2 )      ( double-cell fetch)
-    DUP CELL+ @ SWAP @ ;
+  DUP CELL+ @ SWAP @ ;

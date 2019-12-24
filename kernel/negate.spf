@@ -1,2 +1,7 @@
 : NEGATE        ( x -- -x )     ( negate TOS )
-  INVERT 1+ ;
+  [
+    tosl com
+    tosh com
+    0x1 tosl adiw
+  ]
+;

@@ -1,7 +1,7 @@
 : (.RJ)         ( a sublength fieldwidth -- a ) ( right justify numeric data)
 \ keep data in tn the conversion area
-    SWAP - 0MAX       ( a w-n )
-    SWAP OVER - ( w-n a' )
-    DUP ROT    ( a'a'm )
-    BL FILL
+  SWAP - 0MAX       ( a w-n )
+  TUCK - ( w-n a' )
+  DUP ROT    ( a'a'm )
+  BL FILL
 ;

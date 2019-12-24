@@ -1,11 +1,11 @@
 : =             ( x1 x2 -- f )            ( true if NOS = TOS)
   [
-	poptmp
-	tosl tmpl cp
-	tosh tmph cpc
-	0x0 tosl ldi
-	if_z
-        0xFF tosl ldi
+    poptmp
+    tosl tmpl cp
+    tosh tmph cpc
+    0x0 tosl ldi
+    if_z
+      0xFF tosl ldi
     then
     tosl tosh mov
   ]

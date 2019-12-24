@@ -1,7 +1,7 @@
 : ROT        ( a b c -- b c a )              ( rotate third stack item to top)
-	tosl zl movw
-	poptmp
-	popt
-	pushtmp
-	zl pushd 
+  tosl zl movw
+  poptmp
+  popt
+  pushtmp
+  zl pushd
 ;

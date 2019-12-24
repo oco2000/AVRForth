@@ -1,9 +1,9 @@
-: J         ( -- j )   
- [
-  pusht
-  SPH zh _in
-  SPL zl _in
-  04 [z] tosl ldd
-  03 [z] tosh ldd
- ]
+: J         ( -- j )
+  [
+    pusht
+    SPH zh _in
+    SPL zl _in
+    04 [z] tosl ldd
+    03 [z] tosh ldd
+  ]
 ;

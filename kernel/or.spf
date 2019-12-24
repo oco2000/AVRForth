@@ -1,22 +1,22 @@
 : (OR)        ( x1 x2 -- x3 )                 \ ( bitwise OR TOS with NOS )
-    poptmp
-    tmpl tosl or
-    tmph tosh or
+  poptmp
+  tmpl tosl or
+  tmph tosh or
 ;
 
-MACRO: OR    ( -- )  
+MACRO: OR    ( -- )
 [F]
-  QLIT1? IF 
+  QLIT1? IF
     DEBUG3" OR"
     BYTE-SPLIT ( LO HI )
     ?DUP IF
-      tosh ori 
+      tosh ori
     THEN
-    ?DUP IF 
-      tosl ori 
-    THEN  
+    ?DUP IF
+      tosl ori
+    THEN
   ELSE
     (OR)
-  THEN 
+  THEN
 [P]
 ;MACRO

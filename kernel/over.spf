@@ -1,7 +1,9 @@
-: OVER [
-  [y]+ tmph ld
-  [y] tmpl ld
-  0x1 yl sbiw
-  pusht
-  tmpl tosl movw ]
+: OVER
+  [
+    [y]+ tmph ld
+    [y] tmpl ld
+    0x1 yl sbiw
+    pusht
+    tmpl tosl movw
+  ]
 ;

@@ -1,2 +1,2 @@
 : 2!            ( x1 x2 a -- )      ( double-cell store)
-    SWAP OVER ! CELL+ ! ;
+  TUCK ! CELL+ ! ;
