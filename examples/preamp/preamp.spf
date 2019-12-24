@@ -21,17 +21,25 @@ PB1 WIRE BTN_UP
 PB2 WIRE BTN_SELECT
 PB3 WIRE BTN_EXIT
 PB4 WIRE BTN_POWER
+PB5 WIRE BTN_INPUT1
+PB6 WIRE BTN_INPUT2
+PB7 WIRE BTN_INPUT3
 
 PD0 WIRE STANDBY
 PD6 WIRE POWER
 GROUP{ STANDBY POWER }GROUP OUTPUTS
 
-BUS{ BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
+BUS{ BTN_INPUT3 BTN_INPUT2 BTN_INPUT1 BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
 0x3 == REPEATABLE_MASK
-0x1F == ENABLED_MASK
+0xFF == ENABLED_MASK
 
 0x4 == ChangesPerClick \ should be a power of two
 BUS{ PD5 PD4 }BUS EncBus
+
+PC0 WIRE Input1LED
+PC1 WIRE Input2LED
+PD7 WIRE Input3LED
+BUS{ Input3LED Input2LED Input1LED }BUS InputLEDBus
 
 0x1C == RC5Address
 0x11 == RC5PowerBtn
@@ -93,8 +101,36 @@ C" DS1307 not found!" == "DS1307_error"
 : 2D. ( n -- )  (2D) TYPE ;
 : HEX.  ( n -- ) (H) TYPE SPACE ;
 
+: INPUT-LED ( -- )
+  Snd.getInput 1- EXP2 InputLEDBus INVERT BUS.WRITE
+;
+
+: INPUT-LEDS-OFF
+  InputLEDBus BUS.SET
+;
+
+: SET-INPUT   ( value -- )
+  Snd.setInput Snd.writeInput
+  INPUT-LED
+;
+
+[VECT] Info
+
+:: INPUT ( n -- )
+  PCREATE T,
+  PDOES>
+    @P SET-INPUT
+    Info
+  ;
+;;
+
+1 INPUT Input1!
+2 INPUT Input2!
+3 INPUT Input3!
+
 S" ./menu_config.spf" INCLUDED
 
+\\ LCD Custom chars
 4 == C_SOUND_ON
 5 == C_SOUND_OFF
 6 == C_INPUT
@@ -136,7 +172,7 @@ LCD_CHAR SET_C_INPUT
 
 BASE!
 
-: ModeOnTask
+: _Info
   2 0 AT
   FORMAT-LONG-DATE TYPE SPACE
   GET-DOW (.DOW) TYPE
@@ -144,12 +180,17 @@ BASE!
   11 1 AT
   FORMAT-SHORT-TIME TYPE SPACE
 
-  ['] ModeOnTask 1000 RTOS_SET_TIMER_TASK
-
   0 1 AT
   C_INPUT EMIT Snd.getInput .
   Snd.muted? IF C_SOUND_OFF ELSE C_SOUND_ON THEN EMIT
   Snd.getVolume .
+;
+
+' _Info [->] Info
+
+: ModeOnTask
+  Info
+  ['] ModeOnTask 1000 RTOS_SET_TIMER_TASK
 ;
 
 [VECT] ENTER-VOLUME
@@ -157,10 +198,10 @@ BASE!
 [VECT] PowerOff
 
 TCREATE ModeOffBtnTasks
-' NOOP T,   ' NOOP T,   ' NOOP T,   ' NOOP T,   ' PowerOn T,
+' NOOP T,   ' NOOP T,   ' NOOP T,   ' NOOP T,   ' PowerOn T,   ' NOOP T,   ' NOOP T,   ' NOOP T,
 
 TCREATE ModeMenuBtnTasks
-' DOWN-MENU T,   ' UP-MENU T,   ' ENTER-MENU T,   ' EXIT-MENU T,   ' PowerOff T,
+' DOWN-MENU T,   ' UP-MENU T,   ' ENTER-MENU T,   ' EXIT-MENU T,   ' PowerOff T,  ' NOOP T,   ' NOOP T,   ' NOOP T,
 
 : EnterModeMenu
   ['] ModeOnTask RTOS_REMOVE_TASK
@@ -170,7 +211,7 @@ TCREATE ModeMenuBtnTasks
 ;
 
 TCREATE ModeOnBtnTasks
-' ENTER-VOLUME T,   ' ENTER-VOLUME T,   ' EnterModeMenu T,   ' NOOP T,   ' PowerOff T,
+' ENTER-VOLUME T,   ' ENTER-VOLUME T,   ' EnterModeMenu T,   ' NOOP T,   ' PowerOff T,   ' Input1! T,   ' Input2! T,   ' Input3! T,
 
 : EnterModeOn
   ON-EDITOR-CANCEL OFF
@@ -193,8 +234,9 @@ CVARIABLE PowerOn?
   LCD_Backlight_ON
   LCD_DISP_ON LCD_COMMAND
   Snd.Init
+  INPUT-LED
   POWER {SET}
-  STANDBY {CLEAR}
+  STANDBY {SET}
   EnterModeOn
 ;
 ' (PowerOn) [->] PowerOn
@@ -202,8 +244,9 @@ CVARIABLE PowerOn?
 : (PowerOff)
   0 PowerOn? C!
   Snd.mute
-  STANDBY {SET}
+  STANDBY {CLEAR}
   POWER {CLEAR}
+  INPUT-LEDS-OFF
   ON-EDITOR-CANCEL OFF
   EDITOR-TIMERED OFF
   LCD_Backlight_OFF
@@ -259,6 +302,8 @@ RC5PowerBtn TC,   ' PowerToggle T,
   [THEN]
 
   OUTPUTS {OUTPUT}
+  InputLEDBus BUS.OUTPUT
+  INPUT-LEDS-OFF
   LCDInit
   MENU-INIT
   PROGRESS-INIT

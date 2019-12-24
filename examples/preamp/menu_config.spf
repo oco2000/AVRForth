@@ -4,7 +4,6 @@ TREQUIRE C!E
 \ ======================== INPUT ==========================
 0x3 == MAX-INPUT
 0x1 == MIN-INPUT
-: SET-INPUT   ( value -- )   Snd.setInput Snd.writeInput ;
 
 C" Input" == I_Input_Title
 I_Input_Title MIN-INPUT MAX-INPUT ' Snd.getInput ' SET-INPUT INT-EDITOR   INPUT-EDITOR
