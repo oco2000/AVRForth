@@ -1,4 +1,4 @@
-: DUP>R      ( x -- x ) ( R: -- x )          ( copy cell to return stack)
+CALL-ONLY: DUP>R      ( x -- x ) ( R: -- x )          ( copy cell to return stack)
   zl popw
   tosl pushw
   ijmp

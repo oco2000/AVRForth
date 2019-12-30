@@ -63,7 +63,7 @@ BASE!
   AT SWAP >R ( min max position )
   >R 2DUP R> -ROT CLIP ( min max position )
   SCALE ( newmax newposition )
-  R@ 5 * ROT */ 5 /MOD DUP >R ( rest full )
+  R@ 5 * ROT */ 5 /MOD DUP>R ( rest full )
   0xFF .CHARS
   ?DUP IF 1- EMIT R> 1+ >R THEN
   R> R> SWAP - [CHAR] - .CHARS

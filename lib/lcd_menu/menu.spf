@@ -105,7 +105,7 @@ CVARIABLE CUR-LINE
   ?DUP IF
     1 CUR-LINE C@ AT
     DUP Menu.title @P COUNTP TYPEP
-    DUP >R Menu.getValue @EXECUTE
+    DUP>R Menu.getValue @EXECUTE
     R> Menu.format @P ?DUP IF
       EXECUTE ( addr u )
       WIDTH OVER - CUR-LINE C@ AT   TYPE

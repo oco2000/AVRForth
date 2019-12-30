@@ -1,3 +1,3 @@
 
 : UD*           ( ud1 u -- ud2 )                ( unsigned 32*16 -> 32 multiply)
-  DUP >R UM* DROP  SWAP R> UM* ROT + ;
+  DUP>R UM* DROP  SWAP R> UM* ROT + ;
