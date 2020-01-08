@@ -128,12 +128,12 @@ Entry Wire Line
 Entry Wire Line
 	7300 1900 7400 1800
 $Comp
-L Device:R R4
+L Device:R R11
 U 1 1 5A02D99E
 P 7400 1500
-F 0 "R4" V 7480 1500 50  0000 C CNN
+F 0 "R11" V 7480 1500 50  0000 C CNN
 F 1 "10k" V 7400 1500 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 7330 1500 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 7330 1500 50  0001 C CNN
 F 3 "~" H 7400 1500 50  0001 C CNN
 	1    7400 1500
 	1    0    0    -1  
@@ -369,23 +369,23 @@ F 3 "~" H 13550 7500 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:R R6
+L Device:R R13
 U 1 1 5A032F99
 P 13850 6900
-F 0 "R6" V 13930 6900 50  0000 C CNN
+F 0 "R13" V 13930 6900 50  0000 C CNN
 F 1 "5.6k" V 13850 6900 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 13780 6900 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 13780 6900 50  0001 C CNN
 F 3 "~" H 13850 6900 50  0001 C CNN
 	1    13850 6900
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:R R7
+L Device:R R14
 U 1 1 5A03302C
 P 13850 7200
-F 0 "R7" V 13930 7200 50  0000 C CNN
+F 0 "R14" V 13930 7200 50  0000 C CNN
 F 1 "5.6k" V 13850 7200 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 13780 7200 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 13780 7200 50  0001 C CNN
 F 3 "~" H 13850 7200 50  0001 C CNN
 	1    13850 7200
 	0    1    1    0   
@@ -479,12 +479,12 @@ F 3 "" H 13400 5600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R5
+L Device:R R12
 U 1 1 5A030773
 P 7900 950
-F 0 "R5" V 7980 950 50  0000 C CNN
+F 0 "R12" V 7980 950 50  0000 C CNN
 F 1 "10k" V 7900 950 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 7830 950 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 7830 950 50  0001 C CNN
 F 3 "~" H 7900 950 50  0001 C CNN
 	1    7900 950 
 	1    0    0    -1  
@@ -555,12 +555,12 @@ BTN2
 Entry Wire Line
 	6200 7200 6300 7100
 $Comp
-L Device:R R1
+L Device:R R8
 U 1 1 5A0995ED
 P 6700 7100
-F 0 "R1" V 6780 7100 50  0000 C CNN
+F 0 "R8" V 6780 7100 50  0000 C CNN
 F 1 "10k" V 6700 7100 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 6630 7100 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 6630 7100 50  0001 C CNN
 F 3 "~" H 6700 7100 50  0001 C CNN
 	1    6700 7100
 	0    1    1    0   
@@ -852,8 +852,6 @@ Wire Wire Line
 Wire Wire Line
 	7650 5900 7650 6100
 Wire Wire Line
-	5600 6675 6100 6675
-Wire Wire Line
 	5600 5700 6100 5700
 Wire Wire Line
 	6850 7100 6950 7100
@@ -930,12 +928,12 @@ Wire Wire Line
 Wire Wire Line
 	11000 4350 11200 4350
 $Comp
-L Device:R R3
+L Device:R R10
 U 1 1 5A02D967
 P 7200 1500
-F 0 "R3" V 7280 1500 50  0000 C CNN
+F 0 "R10" V 7280 1500 50  0000 C CNN
 F 1 "10k" V 7200 1500 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 7130 1500 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 7130 1500 50  0001 C CNN
 F 3 "~" H 7200 1500 50  0001 C CNN
 	1    7200 1500
 	1    0    0    -1  
@@ -1237,10 +1235,10 @@ Power&Relay
 Text Label 7350 7200 0    50   ~ 0
 C945
 $Comp
-L Connector_Generic:Conn_01x04 J1
+L Connector_Generic:Conn_01x04 J8
 U 1 1 5E195823
 P 5400 5700
-F 0 "J1" H 5480 5692 50  0000 L CNN
+F 0 "J8" H 5480 5692 50  0000 L CNN
 F 1 "Conn_01x04" H 5480 5601 50  0000 L CNN
 F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 5700 50  0001 C CNN
 F 3 "~" H 5400 5700 50  0001 C CNN
@@ -1287,8 +1285,6 @@ Entry Wire Line
 	6200 8325 6300 8225
 Wire Wire Line
 	7250 8350 7250 8225
-Text Label 6325 8200 0    50   ~ 0
-PowerLEDGND
 Wire Wire Line
 	6300 8225 7250 8225
 Wire Wire Line
@@ -1329,20 +1325,18 @@ F 3 "" H 7250 8900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R R2
+L Device:R R9
 U 1 1 5E30FEF6
 P 6700 8550
-F 0 "R2" V 6780 8550 50  0000 C CNN
+F 0 "R9" V 6780 8550 50  0000 C CNN
 F 1 "10k" V 6700 8550 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal" V 6630 8550 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 6630 8550 50  0001 C CNN
 F 3 "~" H 6700 8550 50  0001 C CNN
 	1    6700 8550
 	0    1    1    0   
 $EndComp
 Wire Wire Line
 	5600 8175 6100 8175
-Wire Wire Line
-	5600 8275 6100 8275
 Entry Wire Line
 	6100 8175 6200 8275
 Entry Wire Line
@@ -1351,8 +1345,6 @@ Text Label 5750 8175 0    50   ~ 0
 Input1Led
 Text Label 5750 8275 0    50   ~ 0
 Input1BTN_SCK
-Wire Wire Line
-	5600 7150 6100 7150
 Text Label 5900 7150 0    60   ~ 0
 BTN1
 Entry Wire Line
@@ -1363,17 +1355,15 @@ Text Label 5750 7700 0    50   ~ 0
 PowerLEDGND
 Entry Wire Line
 	6100 7700 6200 7800
-Wire Wire Line
-	5600 7600 6100 7600
 Entry Wire Line
 	6100 7600 6200 7700
 Wire Wire Line
 	5600 6775 5675 6775
-Text Label 4925 7675 0    50   ~ 0
+Text Label 4475 7675 0    50   ~ 0
 DownBtn
-Text Label 5025 7200 0    50   ~ 0
+Text Label 4575 7200 0    50   ~ 0
 UpBtn
-Text Label 4850 6750 0    50   ~ 0
+Text Label 4400 6750 0    50   ~ 0
 CancelBtn
 Wire Wire Line
 	5675 5800 5600 5800
@@ -1406,21 +1396,19 @@ F 3 "" H 5600 6000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector_Generic:Conn_01x04 J2
+L Connector_Generic:Conn_01x04 J1
 U 1 1 5E11A176
-P 5400 6250
-F 0 "J2" H 5480 6242 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 6151 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 6250 50  0001 C CNN
-F 3 "~" H 5400 6250 50  0001 C CNN
-	1    5400 6250
+P 4950 6250
+F 0 "J1" H 5030 6242 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 6151 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 6250 50  0001 C CNN
+F 3 "~" H 4950 6250 50  0001 C CNN
+	1    4950 6250
 	-1   0    0    1   
 $EndComp
-Text Label 4875 6325 0    50   ~ 0
+Text Label 4425 6325 0    50   ~ 0
 PowerBtn
 Connection ~ 5675 6350
-Wire Wire Line
-	5600 6350 5675 6350
 Wire Wire Line
 	5600 10125 5600 10175
 $Comp
@@ -1438,10 +1426,6 @@ Text Label 5800 6150 0    50   ~ 0
 StandBy
 Entry Wire Line
 	6100 6150 6200 6250
-Wire Wire Line
-	5600 6150 6100 6150
-Wire Wire Line
-	5600 6250 6100 6250
 Text Label 5650 6250 0    60   ~ 0
 PowerBTN_MISO
 Entry Wire Line
@@ -1455,8 +1439,6 @@ Entry Wire Line
 Entry Wire Line
 	6100 9925 6200 10025
 Wire Wire Line
-	5600 10025 6100 10025
-Wire Wire Line
 	5600 9925 6100 9925
 Text Label 5750 9125 0    50   ~ 0
 Input2Btn
@@ -1466,8 +1448,6 @@ Entry Wire Line
 	6100 9125 6200 9225
 Entry Wire Line
 	6100 9025 6200 9125
-Wire Wire Line
-	5600 9125 6100 9125
 Wire Wire Line
 	5600 9025 6100 9025
 Wire Wire Line
@@ -1523,69 +1503,69 @@ F 3 "" H 5600 8425 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector_Generic:Conn_01x04 J8
-U 1 1 5E26A071
-P 5400 10025
-F 0 "J8" H 5480 10017 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 9926 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 10025 50  0001 C CNN
-F 3 "~" H 5400 10025 50  0001 C CNN
-	1    5400 10025
-	-1   0    0    1   
-$EndComp
-$Comp
 L Connector_Generic:Conn_01x04 J7
-U 1 1 5E259DE1
-P 5400 9125
-F 0 "J7" H 5480 9117 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 9026 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 9125 50  0001 C CNN
-F 3 "~" H 5400 9125 50  0001 C CNN
-	1    5400 9125
+U 1 1 5E26A071
+P 4950 10025
+F 0 "J7" H 5030 10017 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 9926 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 10025 50  0001 C CNN
+F 3 "~" H 4950 10025 50  0001 C CNN
+	1    4950 10025
 	-1   0    0    1   
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x04 J6
-U 1 1 5E233861
-P 5400 8275
-F 0 "J6" H 5480 8267 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 8176 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 8275 50  0001 C CNN
-F 3 "~" H 5400 8275 50  0001 C CNN
-	1    5400 8275
-	-1   0    0    1   
-$EndComp
-$Comp
-L Connector_Generic:Conn_01x04 J3
-U 1 1 5E4F2352
-P 5400 6775
-F 0 "J3" H 5480 6767 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 6676 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 6775 50  0001 C CNN
-F 3 "~" H 5400 6775 50  0001 C CNN
-	1    5400 6775
+U 1 1 5E259DE1
+P 4950 9125
+F 0 "J6" H 5030 9117 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 9026 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 9125 50  0001 C CNN
+F 3 "~" H 4950 9125 50  0001 C CNN
+	1    4950 9125
 	-1   0    0    1   
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x04 J5
-U 1 1 5E507A4D
-P 5400 7700
-F 0 "J5" H 5480 7692 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 7601 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 7700 50  0001 C CNN
-F 3 "~" H 5400 7700 50  0001 C CNN
-	1    5400 7700
+U 1 1 5E233861
+P 4950 8275
+F 0 "J5" H 5030 8267 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 8176 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 8275 50  0001 C CNN
+F 3 "~" H 4950 8275 50  0001 C CNN
+	1    4950 8275
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x04 J2
+U 1 1 5E4F2352
+P 4950 6775
+F 0 "J2" H 5030 6767 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 6676 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 6775 50  0001 C CNN
+F 3 "~" H 4950 6775 50  0001 C CNN
+	1    4950 6775
 	-1   0    0    1   
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x04 J4
+U 1 1 5E507A4D
+P 4950 7700
+F 0 "J4" H 5030 7692 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 7601 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 7700 50  0001 C CNN
+F 3 "~" H 4950 7700 50  0001 C CNN
+	1    4950 7700
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector_Generic:Conn_01x04 J3
 U 1 1 5E52D312
-P 5400 7250
-F 0 "J4" H 5480 7242 50  0000 L CNN
-F 1 "Conn_01x04" H 5480 7151 50  0000 L CNN
-F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 5400 7250 50  0001 C CNN
-F 3 "~" H 5400 7250 50  0001 C CNN
-	1    5400 7250
+P 4950 7250
+F 0 "J3" H 5030 7242 50  0000 L CNN
+F 1 "Conn_01x04" H 5030 7151 50  0000 L CNN
+F 2 "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical" H 4950 7250 50  0001 C CNN
+F 3 "~" H 4950 7250 50  0001 C CNN
+	1    4950 7250
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
@@ -1625,29 +1605,17 @@ F 3 "" H 5700 6525 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5600 6575 5700 6575
-Wire Wire Line
 	5700 6575 5700 6525
 Wire Wire Line
 	5700 6575 5700 7050
-Wire Wire Line
-	5700 7050 5600 7050
 Connection ~ 5700 6575
 Wire Wire Line
 	5700 7050 5700 7500
-Wire Wire Line
-	5700 7500 5600 7500
 Connection ~ 5700 7050
-Wire Wire Line
-	5600 6875 5775 6875
 Wire Wire Line
 	5775 6875 5775 7350
 Wire Wire Line
-	5775 7350 5600 7350
-Wire Wire Line
 	5775 7350 5775 7800
-Wire Wire Line
-	5775 7800 5600 7800
 Connection ~ 5775 7350
 $Comp
 L Connector:AVR-ISP-10 CON1
@@ -1679,12 +1647,149 @@ Text Label 3450 2250 0    50   ~ 0
 Input2Btn
 Text Label 3450 2450 0    50   ~ 0
 Input3Btn
+Text Label 5700 3450 0    50   ~ 0
+StandBy
+Wire Wire Line
+	5600 6150 6100 6150
+$Comp
+L Device:R R1
+U 1 1 5E187654
+P 5450 6150
+F 0 "R1" V 5530 6150 50  0000 C CNN
+F 1 "1k" V 5450 6150 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 6150 50  0001 C CNN
+F 3 "~" H 5450 6150 50  0001 C CNN
+	1    5450 6150
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5600 6050 5150 6050
+Wire Wire Line
+	5150 6150 5300 6150
+Wire Wire Line
+	5150 6250 6100 6250
+Wire Wire Line
+	5150 6350 5675 6350
+$Comp
+L Device:R R2
+U 1 1 5E20AAAD
+P 5450 6775
+F 0 "R2" V 5530 6775 50  0000 C CNN
+F 1 "1k" V 5450 6775 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 6775 50  0001 C CNN
+F 3 "~" H 5450 6775 50  0001 C CNN
+	1    5450 6775
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R3
+U 1 1 5E20B164
+P 5450 7250
+F 0 "R3" V 5530 7250 50  0000 C CNN
+F 1 "1k" V 5450 7250 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 7250 50  0001 C CNN
+F 3 "~" H 5450 7250 50  0001 C CNN
+	1    5450 7250
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R4
+U 1 1 5E20B536
+P 5450 7700
+F 0 "R4" V 5530 7700 50  0000 C CNN
+F 1 "1k" V 5450 7700 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 7700 50  0001 C CNN
+F 3 "~" H 5450 7700 50  0001 C CNN
+	1    5450 7700
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R5
+U 1 1 5E20C4C8
+P 5450 8175
+F 0 "R5" V 5530 8175 50  0000 C CNN
+F 1 "1k" V 5450 8175 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 8175 50  0001 C CNN
+F 3 "~" H 5450 8175 50  0001 C CNN
+	1    5450 8175
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R6
+U 1 1 5E20C82C
+P 5450 9025
+F 0 "R6" V 5530 9025 50  0000 C CNN
+F 1 "1k" V 5450 9025 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 9025 50  0001 C CNN
+F 3 "~" H 5450 9025 50  0001 C CNN
+	1    5450 9025
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R7
+U 1 1 5E20D551
+P 5450 9925
+F 0 "R7" V 5530 9925 50  0000 C CNN
+F 1 "1k" V 5450 9925 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal" V 5380 9925 50  0001 C CNN
+F 3 "~" H 5450 9925 50  0001 C CNN
+	1    5450 9925
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5150 6575 5700 6575
+Wire Wire Line
+	5150 6675 6100 6675
+Wire Wire Line
+	5150 6875 5775 6875
+Wire Wire Line
+	5150 6775 5300 6775
+Wire Wire Line
+	5150 7050 5700 7050
+Wire Wire Line
+	5150 7150 6100 7150
+Wire Wire Line
+	5150 7250 5300 7250
+Wire Wire Line
+	5150 7350 5775 7350
+Wire Wire Line
+	5150 7500 5700 7500
+Wire Wire Line
+	5150 7600 6100 7600
+Wire Wire Line
+	5300 7700 5150 7700
+Wire Wire Line
+	5150 7800 5775 7800
+Wire Wire Line
+	5600 8075 5150 8075
+Wire Wire Line
+	5150 8175 5300 8175
+Wire Wire Line
+	5150 8275 6100 8275
+Wire Wire Line
+	5150 8375 5600 8375
+Wire Wire Line
+	5150 8925 5600 8925
+Wire Wire Line
+	5300 9025 5150 9025
+Wire Wire Line
+	5150 9125 6100 9125
+Wire Wire Line
+	5600 9225 5150 9225
+Wire Wire Line
+	5600 9825 5150 9825
+Wire Wire Line
+	5150 9925 5300 9925
+Wire Wire Line
+	5150 10025 6100 10025
+Wire Wire Line
+	5600 10125 5150 10125
 Wire Bus Line
 	6200 1900 8400 1900
 Wire Bus Line
 	8400 1900 8400 4600
 Wire Bus Line
 	6200 1900 6200 10150
-Text Label 5700 3450 0    50   ~ 0
-StandBy
+Text Label 6325 8225 0    50   ~ 0
+PowerLEDGND
 $EndSCHEMATC
