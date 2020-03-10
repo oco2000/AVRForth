@@ -7,8 +7,8 @@ TREQUIRE C!E
 
 0x88 == TDA7313 \ I2C Address
 
-CEVARIABLE Snd.CurrentInput \ Current stereo input (0..2)
-0x0 Snd.CurrentInput C!E
+CEVARIABLE Snd.CurrentInput \ Current stereo input (1..3)
+0x1 Snd.CurrentInput C!E
 
 0x0 BIT == Input.flag.muted
 [F] Input.flag.muted INVERT [P] == ~Input.flag.muted
@@ -199,7 +199,7 @@ EHERE == Snd.InputsData
 ;
 
 : Snd.Init
-  Snd.getInput 0 4 WITHIN INVERT IF
+  Snd.getInput 1 4 WITHIN INVERT IF
     \ EEPROM is not initialized
     Snd.setDefault
   THEN

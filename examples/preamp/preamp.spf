@@ -41,8 +41,24 @@ PC1 WIRE Input2LED
 PD7 WIRE Input3LED
 BUS{ Input3LED Input2LED Input1LED }BUS InputLEDBus
 
-0x1C == RC5Address
-0x11 == RC5PowerBtn
+\ Proteus
+\ ~0x1C == RC5Address
+\ ~0x11 == RC5PowerBtn
+
+\ Real HW
+0x05 == RC5Address
+0x0C == RC5PowerBtn
+
+0x0D == RC5MuteBtn
+0x20 == RC5ProgUpBtn
+0x21 == RC5ProgDownBtn
+0x10 == RC5VolUpBtn
+0x11 == RC5VolDownBtn
+0x29 == RC5UpBtn
+0x25 == RC5DownBtn
+0x2E == RC5RightBtn
+0x2C == RC5LeftBtn
+
 
 [IFDEBUG2]
   REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
@@ -177,8 +193,8 @@ BASE!
   FORMAT-LONG-DATE TYPE SPACE
   GET-DOW (.DOW) TYPE
 
-  11 1 AT
-  FORMAT-SHORT-TIME TYPE SPACE
+  8 1 AT
+  TRUE FORMAT-TIME TYPE SPACE
 
   0 1 AT
   C_INPUT EMIT Snd.getInput .
@@ -263,6 +279,7 @@ CVARIABLE PowerOn?
 ;
 ' (ENTER-VOLUME) [->] ENTER-VOLUME
 
+\ TODO replace with simple buttons emulation
 : PowerToggle ( -- )
   PowerOn? C@ IF PowerOff ELSE PowerOn THEN
 ;
@@ -284,6 +301,7 @@ RC5PowerBtn TC,   ' PowerToggle T,
 : RC5_Command_Received ( -- )
   RC5_Command 2@ RC5_Analyze IF
     \ address command toggle
+    \ TODO handle toggle
     DROP SWAP RC5Address = IF HandleRC5Command ELSE DROP THEN
   THEN
 ;
