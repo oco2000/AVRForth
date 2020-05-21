@@ -7,15 +7,12 @@ SLOWLITS
 
 8000000 == F_CPU
 
-0x0 == MODE_SUSPEND
-0x1 == MODE_ON
-0x2 == MODE_MENU
-
 REQUIRE {SET}           lib/ports.spf
 REQUIRE BUS.WRITE       lib/bus.spf
 
 TREQUIRE NOOP
 
+\ Input buttons configuration
 PB0 WIRE BTN_DOWN
 PB1 WIRE BTN_UP
 PB2 WIRE BTN_SELECT
@@ -25,22 +22,28 @@ PB5 WIRE BTN_INPUT1
 PB6 WIRE BTN_INPUT2
 PB7 WIRE BTN_INPUT3
 
+\ Standby LED
 PD0 WIRE STANDBY
+\ Power relay switch
 PD6 WIRE POWER
 GROUP{ STANDBY POWER }GROUP OUTPUTS
 
-BUS{ BTN_INPUT3 BTN_INPUT2 BTN_INPUT1 BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
-0x3 == REPEATABLE_MASK
-0xFF == ENABLED_MASK
-
-0x4 == ChangesPerClick \ should be a power of two
-BUS{ PD5 PD4 }BUS EncBus
-
+\ Input buttons LEDs
 PC0 WIRE Input1LED
 PC1 WIRE Input2LED
 PD7 WIRE Input3LED
 BUS{ Input3LED Input2LED Input1LED }BUS InputLEDBus
 
+\ Buttons library configuration
+BUS{ BTN_INPUT3 BTN_INPUT2 BTN_INPUT1 BTN_POWER BTN_EXIT BTN_SELECT BTN_UP BTN_DOWN }BUS BUTTONS
+0x3 == REPEATABLE_MASK
+0xFF == ENABLED_MASK
+
+\ Encoder configuration
+0x4 == ChangesPerClick \ should be a power of two
+BUS{ PD5 PD4 }BUS EncBus
+
+\ RC5 configuration
 \ Proteus
 \ ~0x1C == RC5Address
 \ ~0x11 == RC5PowerBtn
@@ -59,7 +62,7 @@ BUS{ Input3LED Input2LED Input1LED }BUS InputLEDBus
 0x2E == RC5RightBtn
 0x2C == RC5LeftBtn
 
-
+\ Debugging tools
 [IFDEBUG2]
   REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
   REQUIRE USART         lib/usart/usart.spf
@@ -78,6 +81,7 @@ BUS{ Input3LED Input2LED Input1LED }BUS InputLEDBus
   : CR  0xD USART_SEND ;
 [THEN]
 
+\ Include libraries
 :: LCD_I2C ;;
 0x4E == LCD_Addr
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
@@ -103,6 +107,8 @@ C" DS1307 not found!" == "DS1307_error"
 
 [F] DECIMAL [P]
 
+\ Tools
+
 : BCD> ( bcd -- value )
   NIBBLE-SPLIT 0x0A * +
 ;
@@ -117,7 +123,9 @@ C" DS1307 not found!" == "DS1307_error"
 : 2D. ( n -- )  (2D) TYPE ;
 : HEX.  ( n -- ) (H) TYPE SPACE ;
 
-: INPUT-LED ( -- )
+\ Handle input LEDs
+
+: INPUT-LED ( -- ) \ Turn on current input LED
   Snd.getInput 1- EXP2 InputLEDBus INVERT BUS.WRITE
 ;
 
@@ -125,12 +133,12 @@ C" DS1307 not found!" == "DS1307_error"
   InputLEDBus BUS.SET
 ;
 
-: SET-INPUT   ( value -- )
+: SET-INPUT   ( input -- ) \ select input
   Snd.setInput Snd.writeInput
   INPUT-LED
 ;
 
-[VECT] Info
+[VECT] Info \ Show the info screen
 
 :: INPUT ( n -- )
   PCREATE T,
@@ -188,7 +196,7 @@ LCD_CHAR SET_C_INPUT
 
 BASE!
 
-: _Info
+: (Info) \ Show the info screen
   2 0 AT
   FORMAT-LONG-DATE TYPE SPACE
   GET-DOW (.DOW) TYPE
@@ -202,12 +210,17 @@ BASE!
   Snd.getVolume .
 ;
 
-' _Info [->] Info
+' (Info) [->] Info
+
+\ Executes in On Mode
 
 : ModeOnTask
   Info
   ['] ModeOnTask 1000 RTOS_SET_TIMER_TASK
 ;
+
+\ Buttons tasks configuration in different modes
+\ Modes configuration
 
 [VECT] ENTER-VOLUME
 [VECT] PowerOn
@@ -219,8 +232,8 @@ TCREATE ModeOffBtnTasks
 TCREATE ModeMenuBtnTasks
 ' DOWN-MENU T,   ' UP-MENU T,   ' ENTER-MENU T,   ' EXIT-MENU T,   ' PowerOff T,  ' NOOP T,   ' NOOP T,   ' NOOP T,
 
-: EnterModeMenu
-  ['] ModeOnTask RTOS_REMOVE_TASK
+: EnterModeMenu \ Enter main menu and set corresponding tasks
+  ['] ModeOnTask RTOS_REMOVE_TASK \ stop showing the info
   M_Main SET-MENU
   ENTER-MENU
   ModeMenuBtnTasks BUTTONS_TASKS !
@@ -229,23 +242,34 @@ TCREATE ModeMenuBtnTasks
 TCREATE ModeOnBtnTasks
 ' ENTER-VOLUME T,   ' ENTER-VOLUME T,   ' EnterModeMenu T,   ' NOOP T,   ' PowerOff T,   ' Input1! T,   ' Input2! T,   ' Input3! T,
 
-: EnterModeOn
+: EnterModeOn \ Exit menu and enter On Mode
   ON-EDITOR-CANCEL OFF
   EDITOR-TIMERED OFF
   ModeOnBtnTasks BUTTONS_TASKS !
-  PAGE ModeOnTask
+  PAGE
+  ModeOnTask \ Continue showing the info
 ;
 ' EnterModeOn M_Main SET-CANCEL
 
-: EnterModeOff
+: EnterModeOff \ Enter Off Mode
   ['] ModeOnTask RTOS_REMOVE_TASK
   ModeOffBtnTasks BUTTONS_TASKS !
   PAGE
 ;
 
+\ Auto enter Volume menu on Volume buttons press
+: (ENTER-VOLUME) ( -- )
+  ['] ModeOnTask RTOS_REMOVE_TASK
+  ['] EnterModeOn ON-EDITOR-CANCEL !
+  EDITOR-TIMERED ON
+  VOLUME-EDITOR DROP
+;
+' (ENTER-VOLUME) [->] ENTER-VOLUME
+
+\ Power handling
 CVARIABLE PowerOn?
 
-: (PowerOn)
+: (PowerOn) \ Turn on the power
   1 PowerOn? C!
   LCD_Backlight_ON
   LCD_DISP_ON LCD_COMMAND
@@ -271,29 +295,42 @@ CVARIABLE PowerOn?
 ;
 ' (PowerOff) [->] PowerOff
 
-: (ENTER-VOLUME) ( -- )
-  ['] ModeOnTask RTOS_REMOVE_TASK
-  ['] EnterModeOn ON-EDITOR-CANCEL !
-  EDITOR-TIMERED ON
-  VOLUME-EDITOR DROP
-;
-' (ENTER-VOLUME) [->] ENTER-VOLUME
+\ RC5 recognition
 
-\ TODO replace with simple buttons emulation
-: PowerToggle ( -- )
-  PowerOn? C@ IF PowerOff ELSE PowerOn THEN
-;
+:: EmulatedButton \ create RC5 words that emulate buttons
+  PCREATE T,
+  PDOES> @P set_Nth_task ;
+;;
+
+0x4 EmulatedButton PowerToggle
+0x0 EmulatedButton Down
+0x1 EmulatedButton Up
+0x2 EmulatedButton Enter
+0x3 EmulatedButton Cancel
+
+: MuteToggle
+  Snd.toggleMute Snd.writeMuted ;
 
 PCREATE RC5Commands
-RC5PowerBtn TC,   ' PowerToggle T,
+RC5PowerBtn    TC,   ' PowerToggle T,
+RC5ProgUpBtn   TC,   ' Up T,
+RC5ProgDownBtn TC,   ' Down T,
+RC5VolUpBtn    TC,   ' Up T,
+RC5VolDownBtn  TC,   ' Down T,
+RC5UpBtn       TC,   ' Up T,
+RC5DownBtn     TC,   ' Down T,
+RC5RightBtn    TC,   ' Enter T,
+RC5LeftBtn     TC,   ' Cancel T,
+RC5MuteBtn     TC,   ' MuteToggle T,
 0 TC, TALIGN
 
-: HandleRC5Command ( command -- )
+: HandleRC5Command ( command -- ) \ Search the command and execute as a task if found
   >R RC5Commands BEGIN
     DUP C@P DUP R@ = IF ( addr com )
-      SWAP CHAR+ DUP @EXECUTE ( com addr+1 )
-    ELSE SWAP CHAR+ THEN
-    CELL+ SWAP ( addr+3 com )
+      DROP CHAR+ @P RTOS_SET_TASK
+      RDROP EXIT
+    THEN
+    SWAP CHAR+ CELL+ SWAP ( addr+3 com )
   0= UNTIL
   RDROP DROP
 ;
@@ -301,12 +338,12 @@ RC5PowerBtn TC,   ' PowerToggle T,
 : RC5_Command_Received ( -- )
   RC5_Command 2@ RC5_Analyze IF
     \ address command toggle
-    \ TODO handle toggle
+    \ TODO handle toggle bit to skip repetitions for some buttons
     DROP SWAP RC5Address = IF HandleRC5Command ELSE DROP THEN
   THEN
 ;
 
-: LCDInit
+: LCDInit \ Init the LCD and load custom chars
   LCD_DISP_OFF  LCD_INIT
   C_SOUND_OFF SET_C_SOUND_OFF
   C_SOUND_ON SET_C_SOUND_ON
@@ -338,14 +375,15 @@ RC5PowerBtn TC,   ' PowerToggle T,
   ['] RC5_Command_Received IS RC5_Task
 ;
 
+\ Encoder emulates 0 and 1 buttons
 : ProcessEncoder ( increment -- )
-  BUTTONS_TASKS @
-  SWAP 0< IF CELL+ THEN
-  @P RTOS_SET_TASK
+  Editing C@ IFNOT NEGATE THEN \ reverse direction in editing mode
+  0< IF 1 ELSE 0 THEN
+  set_Nth_task
 ;
 
 : CheckEncoder
-  EncIncrement ?DUP IF
+  EncIncrement ?DUP IF \ is turning
     ProcessEncoder
   THEN
 ;

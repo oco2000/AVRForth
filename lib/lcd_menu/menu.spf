@@ -26,6 +26,7 @@ CELL -- Menu.cancel   \ callback ( -- )
 == /MENU
 
 CVARIABLE CUR-LINE
+CVARIABLE Editing
 
 :: MENU-ITEM ( name -- )
   PCREATE
@@ -196,4 +197,5 @@ BASE!
 
 : MENU-INIT ( -- )
   C_ON SET_C_ON
+  0 Editing C!
 ;
