@@ -74,6 +74,7 @@ CREATE Timers bQueueSize ALLOT
 \ Диспетчер задач ОС. Выбирает из очереди задачи и отправляет на выполнение.
 
 : RTOS_TASK_MANAGER ( -- )
+  SREG C@
   cli  \ комментирование этой инструкции может привести к трудновыявляемым конфликтам,
        \ но повышает стабильность временных интервалов
   -1
@@ -81,14 +82,15 @@ CREATE Timers bQueueSize ALLOT
     I Tasks [] @ IF \ есть задача в очереди
       I Timers [] @ 0= IF \ и у нее выщелкал таймер
         I Tasks [] DUP @ SWAP OFF \ ставим на ее место 0
-        sei
+        \ sei
         EXECUTE \ и выполняем задачу
         DROP 00 LEAVE
       THEN
     THEN
   LOOP
-  sei
+  \ sei
   IF IDLE THEN
+  SREG C!
 ;
 
 \ Служба таймеров ядра. Должна вызываться из прерывания раз в 1мс.
