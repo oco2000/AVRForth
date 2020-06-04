@@ -43,7 +43,7 @@ CREATE Timers bQueueSize ALLOT
 \ Функция установки задачи по таймеру. Передаваемые параметры - указатель на функцию,
 \ Время выдержки в тиках системного таймера.
 : RTOS_SET_TIMER_TASK ( task time -- )
-  SREG C@ cli >R
+  SREG@ cli >R
   OVER RTOS_TASK_IN_QUEUE DUP -1 = IF  \ нет такой задачи
     DROP ( task time ) \ поставим в очередь
     0 RTOS_TASK_IN_QUEUE DUP -1 = IF  \ ищем пустое место в очереди
@@ -55,7 +55,7 @@ CREATE Timers bQueueSize ALLOT
   ELSE    ( task time index )     \ есть такая задача в очереди
     Timers [] ! DROP            \ Перезаписываем ей выдержку
   THEN
-  R> SREG C!
+  R> SREG!
 ;
 
 : RTOS_SET_TASK ( task -- )          \ Поставить задачу в очередь для немедленного выполнения
@@ -74,23 +74,20 @@ CREATE Timers bQueueSize ALLOT
 \ Диспетчер задач ОС. Выбирает из очереди задачи и отправляет на выполнение.
 
 : RTOS_TASK_MANAGER ( -- )
-  SREG C@
-  cli  \ комментирование этой инструкции может привести к трудновыявляемым конфликтам,
-       \ но повышает стабильность временных интервалов
+  SREG@ cli
   -1
   QueueSize 00 DO ( flag )
     I Tasks [] @ IF \ есть задача в очереди
       I Timers [] @ 0= IF \ и у нее выщелкал таймер
         I Tasks [] DUP @ SWAP OFF \ ставим на ее место 0
-        \ sei
+        sei
         EXECUTE \ и выполняем задачу
         DROP 00 LEAVE
       THEN
     THEN
   LOOP
-  \ sei
   IF IDLE THEN
-  SREG C!
+  SREG!
 ;
 
 \ Служба таймеров ядра. Должна вызываться из прерывания раз в 1мс.

@@ -7,9 +7,13 @@ REQUIRE INT-EDITOR ./int_editor.spf
   INT-EDITOR-FORMAT
   WIDTH OVER - 1- 0 AT SPACE TYPE
 
-  CUR-EDITOR@ IntEditor.min CS@P
-  CUR-EDITOR@ IntEditor.max CS@P
-  16 GET-INT-VALUE 0 1 PROGRESSBAR
+  SREG@ cli \ dirty hack
+    \ we get strange results in PROGRESSBAR when encoder is in use
+    \ TODO: what's the reason? some registers are not saved in the interrupt?
+    CUR-EDITOR@ IntEditor.min CS@P
+    CUR-EDITOR@ IntEditor.max CS@P
+    16 GET-INT-VALUE 0 1 PROGRESSBAR
+  SREG!
 ;
 
 BASE!

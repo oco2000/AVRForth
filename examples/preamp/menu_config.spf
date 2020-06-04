@@ -108,7 +108,7 @@ I_Gain_Tttle MENU-ITEM I_Gain
 ' GAIN-EDITOR   I_Gain SET-EDIT
 
 \ ------------------------ Sound menu ----------------------
-0x0 I_Bass I_Treble I_Gain I_Loud I_Mute I_Balance I_Volume I_Input C" Sound" MENU M_Sound
+0x0 I_Gain I_Loud I_Mute I_Bass I_Treble I_Balance I_Volume I_Input C" Sound" MENU M_Sound
 
 \ DS1307 Utils
 

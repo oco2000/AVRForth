@@ -9,6 +9,7 @@ $(project).spf.hex: $(project).spf tda7313.spf menu_config.spf
 
 flash: $(project).spf.hex
 	avrdude -c $(avrdude_programmer) -p $(avrdude_device) -U flash:w:$^
+	make eeprom
 
 eeprom: $(project).spf.eep.hex
 	avrdude -c $(avrdude_programmer) -p $(avrdude_device) -U eeprom:w:$^

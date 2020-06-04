@@ -382,7 +382,7 @@ RC5MuteBtn     TC,   ' MuteToggle T,
   set_Nth_task
 ;
 
-: CheckEncoder
+: CheckEncoder ( -- )
   EncIncrement ?DUP IF \ is turning
     ProcessEncoder
   THEN

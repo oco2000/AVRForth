@@ -1,3 +1,5 @@
 : SWAP-
-  SWAP -
+  poptmp
+  tmpl tosl sub
+  tmph tosh sbc
 ;

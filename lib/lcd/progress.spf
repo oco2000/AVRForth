@@ -45,28 +45,35 @@ LCD_CHAR PRG4
 BASE!
 
 : .CHARS ( n char -- )
-  SWAP 0 ?DO
-    DUP EMIT
-  LOOP DROP
+  SWAP
+  ( ABS 0x10 MIN )
+  DUP IF
+    BEGIN ( char n )
+      OVER EMIT 1-
+    [UNTIL<>0]
+  THEN 2DROP
 ;
 
 : SCALE ( min max position -- newmax newposition )
-  >R OVER -
-  SWAP R> SWAP -
+  >R OVER - ( min len \ r: position )
+  SWAP R> SWAP- ( max-min pos-min )
 ;
 
 : CLIP ( value min max -- newvalue )
   ROT MIN MAX
 ;
 
+\ Draw progressbar of length at x,y
+\ Position is clipped between min and max
 : PROGRESSBAR ( min max length position x y -- )
-  AT SWAP >R ( min max position )
-  >R 2DUP R> -ROT CLIP ( min max position )
-  SCALE ( newmax newposition )
-  R@ 5 * ROT */ 5 /MOD DUP>R ( rest full )
+  AT SWAP >R ( min max position \ r: length )
+  >R 2DUP R> -ROT CLIP ( min max clipped_position \ r: length )
+  SCALE ( newmax newposition \ r: length )
+  R@ 5 * ROT */ ( scaled_position \ r: length )
+  5 /MOD DUP>R ( rest full \ r: length full )
   0xFF .CHARS
-  ?DUP IF 1- EMIT R> 1+ >R THEN
-  R> R> SWAP - [CHAR] - .CHARS
+  ?DUP IF 1- EMIT R> 1+ >R ( increment number of full chars printed) THEN
+  R> R> SWAP- [CHAR] - .CHARS
 ;
 
 : PROGRESS-INIT

@@ -1,0 +1,3 @@
+: SREG@ ( -- SREG )
+  SREG C@
+;
