@@ -244,7 +244,7 @@ VECT {.NAME}
                         04 IF[ RD ." [Z] lpm"   ]]THEN
                         05 IF[ RD ." [Z]+ lpm"   ]]THEN
                         06 IF[ RD ." [Z] elpm"  ]]THEN
-                        07 IF[ RD ." [Z]+ elpm"  ]THEN
+                        07 IF[ RD ." [Z]+ elpm"  ]]THEN
                         09 IF[ ." [Y]+ " RD ." ld"    ]]THEN
                         0A IF[ ." -[Y]  " RD ." ld"    ]]THEN
                         0C IF[ RD ." [X] ld"    ]]THEN

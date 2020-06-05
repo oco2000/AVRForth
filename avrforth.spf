@@ -77,8 +77,7 @@ FILENAME COUNT E-SAVE-BIN
 \ создание листинга
 FNAME 2@ FILENAME  PLACE
 S" .lst" FILENAME +PLACE
-FILENAME COUNT [P] LIST-SAVE
-[F]
+FILENAME COUNT [P] LIST-SAVE [F]
 
 COMMENTS FREE THROW \ освободить память комментариев
 AIStack FreeStack \ освободить стек автоподключения слов

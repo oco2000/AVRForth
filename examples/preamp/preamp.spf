@@ -49,18 +49,22 @@ BUS{ PD5 PD4 }BUS EncBus
 \ ~0x11 == RC5PowerBtn
 
 \ Real HW
-0x05 == RC5Address
-0x0C == RC5PowerBtn
+\ UET-606 AUX code 0552
+0x14 == RC5Address
 
+0x0C == RC5PowerBtn
 0x0D == RC5MuteBtn
-0x20 == RC5ProgUpBtn
-0x21 == RC5ProgDownBtn
 0x10 == RC5VolUpBtn
 0x11 == RC5VolDownBtn
-0x29 == RC5UpBtn
-0x25 == RC5DownBtn
-0x2E == RC5RightBtn
-0x2C == RC5LeftBtn
+0x20 == RC5UpBtn
+0x21 == RC5DownBtn
+0x1E == RC5RightBtn
+0x1F == RC5LeftBtn
+0x29 == RC5OKBtn
+0x3A == RC5ClearBtn
+0x01 == RC51Btn
+0x02 == RC52Btn
+0x03 == RC53Btn
 
 \ Debugging tools
 [IFDEBUG2]
@@ -307,21 +311,27 @@ CVARIABLE PowerOn?
 0x1 EmulatedButton Up
 0x2 EmulatedButton Enter
 0x3 EmulatedButton Cancel
+0x5 EmulatedButton Input1
+0x6 EmulatedButton Input2
+0x7 EmulatedButton Input3
 
 : MuteToggle
-  Snd.toggleMute Snd.writeMuted ;
+  Snd.toggleMute Snd.writeMuted Info ;
 
 PCREATE RC5Commands
 RC5PowerBtn    TC,   ' PowerToggle T,
-RC5ProgUpBtn   TC,   ' Up T,
-RC5ProgDownBtn TC,   ' Down T,
 RC5VolUpBtn    TC,   ' Up T,
 RC5VolDownBtn  TC,   ' Down T,
 RC5UpBtn       TC,   ' Up T,
 RC5DownBtn     TC,   ' Down T,
-RC5RightBtn    TC,   ' Enter T,
-RC5LeftBtn     TC,   ' Cancel T,
+RC5RightBtn    TC,   ' Up T,
+RC5LeftBtn     TC,   ' Down T,
 RC5MuteBtn     TC,   ' MuteToggle T,
+RC5OKBtn       TC,   ' Enter T,
+RC5ClearBtn    TC,   ' Cancel T,
+RC51Btn        TC,   ' Input1 T,
+RC52Btn        TC,   ' Input2 T,
+RC53Btn        TC,   ' Input3 T,
 0 TC, TALIGN
 
 : HandleRC5Command ( command -- ) \ Search the command and execute as a task if found
