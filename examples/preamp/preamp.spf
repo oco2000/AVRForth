@@ -315,8 +315,12 @@ CVARIABLE PowerOn?
 0x6 EmulatedButton Input2
 0x7 EmulatedButton Input3
 
+: IsOnMode ( - t/f )
+  BUTTONS_TASKS @ ModeOnBtnTasks =
+;
+
 : MuteToggle
-  Snd.toggleMute Snd.writeMuted Info ;
+  IsOnMode IF Snd.toggleMute Snd.writeMuted Info THEN ;
 
 PCREATE RC5Commands
 RC5PowerBtn    TC,   ' PowerToggle T,
