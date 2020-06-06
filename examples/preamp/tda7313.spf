@@ -195,7 +195,7 @@ EHERE == Snd.InputsData
     0 OVER C!E
     1+
   LOOP
-  0 Snd.setInput
+  1 Snd.setInput
 ;
 
 : Snd.Init

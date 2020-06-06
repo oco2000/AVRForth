@@ -26,8 +26,16 @@ VARIABLE EDITOR-TIMERED
 
 : CUR-EDITOR@   CUR-EDITOR @ ;
 
+: GET-MIN-VALUE ( -- value )
+  CUR-EDITOR@ IntEditor.min CS@P
+;
+
+: GET-MAX-VALUE ( -- value )
+  CUR-EDITOR@ IntEditor.max CS@P
+;
+
 : GET-INT-VALUE ( -- value )
-  CUR-VALUE @
+  CUR-VALUE @   GET-MIN-VALUE GET-MAX-VALUE CLIP
 ;
 
 : ACTUALLY-SET-VALUE ( value -- )
@@ -64,8 +72,8 @@ VARIABLE EDITOR-TIMERED
 : INT-EDITOR-CHANGE ( increment -- )
   INT-EDITOR-TIMER
   GET-INT-VALUE + ( new value )
-  DUP CUR-EDITOR@ IntEditor.max CS@P 1+ < IF
-    DUP CUR-EDITOR@ IntEditor.min CS@P >= IF
+  DUP GET-MAX-VALUE 1+ < IF
+    DUP GET-MIN-VALUE >= IF
       SET-INT-VALUE
       INT-EDITOR-DISPLAY
     ELSE DROP THEN
