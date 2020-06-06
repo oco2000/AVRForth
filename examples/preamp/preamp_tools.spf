@@ -1,0 +1,35 @@
+\ Debugging tools
+[IFDEBUG2]
+  REQUIRE _USART_INIT   lib/usart/atmega8-usart-config.spf
+  REQUIRE USART         lib/usart/usart.spf
+
+  : USART_TYPE ( a u -- )
+    00 ?DO  DUP C@ USART_SEND 1+ LOOP
+    DROP
+  ;
+
+  : DEBUG. ( n -- )
+    BASE @ HEX
+    SWAP (.) USART_TYPE BL USART_SEND
+    BASE !
+  ;
+
+  : CR  0xD USART_SEND ;
+[THEN]
+
+\ Tools
+
+: BCD> ( bcd -- value )
+  NIBBLE-SPLIT 0x0A * +
+;
+
+: >BCD  ( value -- bcd )
+  0x0A /MOD ( hi lo )
+  NIBBLE-JOIN
+;
+
+: (H) ( n -- addr u )  0 <# # # # # #> ;
+: (2D) ( n -- a u ) 0 <# # # #> ;
+: 2D. ( n -- )  (2D) TYPE ;
+: HEX.  ( n -- ) (H) TYPE SPACE ;
+
