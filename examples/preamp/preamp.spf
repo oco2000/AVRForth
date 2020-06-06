@@ -322,38 +322,61 @@ CVARIABLE PowerOn?
 : MuteToggle
   IsOnMode IF Snd.toggleMute Snd.writeMuted Info THEN ;
 
-PCREATE RC5Commands
-RC5PowerBtn    TC,   ' PowerToggle T,
-RC5VolUpBtn    TC,   ' Up T,
-RC5VolDownBtn  TC,   ' Down T,
-RC5UpBtn       TC,   ' Up T,
-RC5DownBtn     TC,   ' Down T,
-RC5RightBtn    TC,   ' Up T,
-RC5LeftBtn     TC,   ' Down T,
-RC5MuteBtn     TC,   ' MuteToggle T,
-RC5OKBtn       TC,   ' Enter T,
-RC5ClearBtn    TC,   ' Cancel T,
-RC51Btn        TC,   ' Input1 T,
-RC52Btn        TC,   ' Input2 T,
-RC53Btn        TC,   ' Input3 T,
+0x8000 == IsRepeatable
+:: REPEATABLE ( addr - addr || 0x8000 )
+  [F] IsRepeatable OR [P]
+;;
+
+TCREATE RC5Commands
+RC5PowerBtn    TC,   ' PowerToggle      T,
+RC5VolUpBtn    TC,   ' Up   REPEATABLE  T,
+RC5VolDownBtn  TC,   ' Down REPEATABLE  T,
+RC5UpBtn       TC,   ' Up               T,
+RC5DownBtn     TC,   ' Down             T,
+RC5RightBtn    TC,   ' Up   REPEATABLE  T,
+RC5LeftBtn     TC,   ' Down REPEATABLE  T,
+RC5MuteBtn     TC,   ' MuteToggle       T,
+RC5OKBtn       TC,   ' Enter            T,
+RC5ClearBtn    TC,   ' Cancel           T,
+RC51Btn        TC,   ' Input1           T,
+RC52Btn        TC,   ' Input2           T,
+RC53Btn        TC,   ' Input3           T,
 0 TC, TALIGN
 
-: HandleRC5Command ( command -- ) \ Search the command and execute as a task if found
+CVARIABLE RC5Toggle
+
+: SearchRC5Command ( command -- addr | 0 )
   >R RC5Commands BEGIN
     DUP C@P DUP R@ = IF ( addr com )
-      DROP CHAR+ @P RTOS_SET_TASK
+      DROP CHAR+ @P
       RDROP EXIT
     THEN
     SWAP CHAR+ CELL+ SWAP ( addr+3 com )
   0= UNTIL
-  RDROP DROP
+  RDROP DROP 0
+;
+
+: ExecuteRC5Command ( addr -- )  \ Search the command and execute as a task if found
+  ?DUP IF
+    IsRepeatable INVERT AND RTOS_SET_TASK
+  THEN
+;
+
+: HandleRC5Command ( command toggle -- )
+  DUP RC5Toggle C@ =
+  SWAP RC5Toggle C! ( command flag )
+  >R SearchRC5Command R>
+  IF \ repeated ( addr )
+    DUP 0< IFNOT DROP EXIT THEN
+  THEN
+  ExecuteRC5Command
 ;
 
 : RC5_Command_Received ( -- )
   RC5_Command 2@ RC5_Analyze IF
     \ address command toggle
     \ TODO handle toggle bit to skip repetitions for some buttons
-    DROP SWAP RC5Address = IF HandleRC5Command ELSE DROP THEN
+    ROT RC5Address = IF HandleRC5Command ELSE 2DROP THEN
   THEN
 ;
 
