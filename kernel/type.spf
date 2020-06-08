@@ -1,8 +1,11 @@
 : TYPE ( a n -- )
-  00 ?DO
-    DUP C@ EMIT
-    1+
-  LOOP
+  ?DUP IF
+    BEGIN
+      OVER C@ EMIT
+      1- SWAP 1+ SWAP
+    [UNTIL<>0]
+    DROP
+  THEN
   DROP
 ;
 

@@ -105,7 +105,7 @@ CVARIABLE Editing
 : .MENU ( menu -- )
   ?DUP IF
     1 CUR-LINE C@ AT
-    DUP Menu.title @P COUNTP TYPEP
+    DUP Menu.title @P PRINTP
     DUP>R Menu.getValue @EXECUTE
     R> Menu.format @P ?DUP IF
       EXECUTE ( addr u )

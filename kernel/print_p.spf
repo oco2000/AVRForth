@@ -1,0 +1,3 @@
+: PRINTP ( addr u -- )
+  COUNTP TYPEP
+;
