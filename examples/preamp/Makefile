@@ -4,7 +4,7 @@ compiler = ../../spf4
 avrdude_programmer = usbasp
 avrdude_device = m8
 
-$(project).spf.hex: $(project).spf tda7313.spf menu_config.spf
+$(project).spf.hex: $(project).spf *.spf
 	$(compiler) S\" $(project).spf\" S\" $(device)\" avrforth.spf BYE
 
 flash: $(project).spf.hex

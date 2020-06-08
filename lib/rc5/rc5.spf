@@ -28,16 +28,18 @@ VECT RC5_Task
 
 : RC5_Analyze ( 2*bits -- address command toggle -1 | 0 )
   0 ( 2*bits buf )
-  14 00 DO \ 14 bits in a packet
+  14 BEGIN \ 14 bits in a packet
+    >R
     1 RSHIFT
     2 PICK 03 AND ( 2*bits buf pair )
     DUP DUP 3 = SWAP 0= OR IF \ check manchester code
-      2DROP 2DROP UNLOOP 0 EXIT
+      2DROP 2DROP RDROP 0 EXIT
     THEN
     0x2 AND \ take bit #1
     IF 0x8000 OR THEN \ set rightmost bit?
     >R D2/ D2/ R>
-  LOOP
+  R> 1- [UNTIL<>0]
+  DROP
 
   NIP NIP 2 RSHIFT   ( packet )
 
