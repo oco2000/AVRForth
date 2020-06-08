@@ -49,19 +49,29 @@ BUS{ PD5 PD4 }BUS EncBus
 REQUIRE LCD_CLRSCR       lib/lcd/lcd.spf
 REQUIRE LCD_CHAR         lib/lcd/definechar.spf
 REQUIRE PROGRESSBAR      lib/lcd/progress.spf
+
+:: !RTOS_CUSTOM_INT ;; \ we have a custom RTOS interrupt, no need to include standard one
 REQUIRE RTOS_INIT_TIMER  lib/eertos/atmega8-eertos-config.spf
 REQUIRE RTOS_RUN         lib/eertos/eertos.spf
+
 REQUIRE BUTTONS_PERIOD   lib/buttons/buttons-std-config.spf
 REQUIRE DEBOUNCE         lib/buttons/buttons.spf
+
 REQUIRE MENU             lib/lcd_menu/menu.spf
 REQUIRE INT-EDITOR       lib/lcd_menu/int_editor.spf
 REQUIRE PROGRESS-DISPLAY lib/lcd_menu/progress_editor.spf
+
 REQUIRE SUPERSTRING      lib/superstring.spf
+
 REQUIRE DS1307           lib/ds1307.spf
+
 REQUIRE EncInit          lib/encoder.spf
+
 REQUIRE RC5_Init_Timer   lib/rc5/atmega8-rc5-config.spf
 REQUIRE RC5Init          lib/rc5/rc5.spf
+
 S" tda7313.spf" INCLUDED
+
 S" preamp_tools.spf" INCLUDED
 
 CVARIABLE DS1307_Present?
