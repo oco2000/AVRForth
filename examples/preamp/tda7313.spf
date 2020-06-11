@@ -10,10 +10,9 @@ TREQUIRE C!E
 CEVARIABLE Snd.CurrentInput \ Current stereo input (1..3)
 0x1 Snd.CurrentInput C!E
 
+\ Input flags
 0x0 BIT == Input.flag.muted
-[F] Input.flag.muted INVERT [P] == ~Input.flag.muted
 0x1 BIT == Input.flag.loudness
-[F] Input.flag.loudness INVERT [P] == ~Input.flag.loudness
 
 \ Input parameters
 0x0
@@ -26,7 +25,7 @@ CEVARIABLE Snd.CurrentInput \ Current stereo input (1..3)
 0x1  -- Input.flags
 == /InputParams
 
-EHERE == Snd.InputsData
+EHERE == Snd.InputsData \ Data for all inputs
 [F] 0x3 /InputParams * [P] == /AllInputParams
 /AllInputParams EALLOT
 
@@ -42,9 +41,11 @@ EHERE == Snd.InputsData
   Snd.CurrentInput C@E
 ;
 
-: Snd.currentInputData ( -- addr )
+: Snd.currentInputData ( -- addr ) \ Parameters for current input
   Snd.getInput 1- /InputParams * Snd.InputsData +
 ;
+
+\ flags
 
 : Snd.getFlags ( -- b )
   Snd.currentInputData Input.flags C@E
@@ -53,6 +54,8 @@ EHERE == Snd.InputsData
 : Snd.setFlags ( b -- )
   Snd.currentInputData Input.flags C!E
 ;
+
+\ volume
 
 : Snd.setVolume ( volume -- ) \ 0..63
   Snd.currentInputData Input.volume C!E
@@ -67,6 +70,8 @@ EHERE == Snd.InputsData
   0x3F SWAP-
   Snd.sendOne
 ;
+
+\ balance
 
 : Snd.setBalance ( balance -- ) \ -31..31
   Snd.currentInputData Input.balance C!E
@@ -85,21 +90,24 @@ EHERE == Snd.InputsData
   0xA0 OR Snd.sendOne \ Right
 ;
 
+\ mute
+
 : Snd.muted? ( -- f )
   Snd.getFlags Input.flag.muted AND
 ;
 
 : Snd.toggleMute ( -- )
   Snd.getFlags
+
   Snd.muted? IF
-    ~Input.flag.muted AND
     Snd.currentInputData Input.savedBalance C@E
     Snd.currentInputData Input.balance C!E
   ELSE
-    Input.flag.muted OR
     Snd.currentInputData Input.balance C@E
     Snd.currentInputData Input.savedBalance C!E
   THEN
+
+  Input.flag.muted XOR
   Snd.setFlags
 ;
 
@@ -118,19 +126,19 @@ EHERE == Snd.InputsData
   THEN
 ;
 
+\ loudness
+
 : Snd.loud? ( -- f )
   Snd.getFlags Input.flag.loudness AND
 ;
 
 : Snd.toggleLoudness ( -- )
   Snd.getFlags
-  Snd.loud? IF
-    ~Input.flag.loudness AND
-  ELSE
-    Input.flag.loudness OR
-  THEN
+  Input.flag.loudness XOR
   Snd.setFlags
 ;
+
+\ bass
 
 : Snd.setBass ( bass -- ) \ -7..7
   Snd.currentInputData Input.bass C!E
@@ -150,11 +158,13 @@ EHERE == Snd.InputsData
   0x60 OR Snd.sendOne
 ;
 
+\ treble
+
 : Snd.setTreble ( treble -- ) \ -7..7
   Snd.currentInputData Input.treble C!E
 ;
 
-: Snd.getTreble ( treble -- ) \ -7..7
+: Snd.getTreble ( -- treble ) \ -7..7
   Snd.currentInputData Input.treble C@E C>S
 ;
 
@@ -163,13 +173,17 @@ EHERE == Snd.InputsData
   0x70 OR Snd.sendOne
 ;
 
+\ gain
+
 : Snd.setGain ( gain -- ) \ 0..3
   Snd.currentInputData Input.gain C!E
 ;
 
-: Snd.getGain ( gain -- ) \ 0..3
+: Snd.getGain ( -- gain ) \ 0..3
   Snd.currentInputData Input.gain C@E
 ;
+
+\ input switching
 
 : Snd.writeAudioSwitch ( -- )
   Snd.getGain  3 SWAP- 3 LSHIFT
@@ -190,13 +204,18 @@ EHERE == Snd.InputsData
   Snd.writeVolume
 ;
 
+\ set default values for all inputs and set 1st input
+
 : Snd.setDefault
-  Snd.InputsData /AllInputParams 0 DO
+  Snd.InputsData /AllInputParams BEGIN
+    1- >R
     0 OVER C!E
     1+
-  LOOP
-  1 Snd.setInput
+  R> [UNTIL<>0]
+  DROP 1 Snd.setInput
 ;
+
+\ initialize and write stored data to the chip
 
 : Snd.Init
   Snd.getInput 1 4 WITHIN INVERT IF

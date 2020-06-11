@@ -185,10 +185,8 @@ TCREATE ModeOnBtnTasks
 ' (ENTER-VOLUME) [->] ENTER-VOLUME
 
 \ Power handling
-CVARIABLE PowerOn?
 
 : (PowerOn) \ Turn on the power
-  1 PowerOn? C!
   LCD_Backlight_ON
   LCD_DISP_ON LCD_COMMAND
   Snd.Init
@@ -200,7 +198,6 @@ CVARIABLE PowerOn?
 ' (PowerOn) [->] PowerOn
 
 : (PowerOff)
-  0 PowerOn? C!
   Snd.mute
   STANDBY {CLEAR}
   POWER {CLEAR}
