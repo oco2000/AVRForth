@@ -1,13 +1,13 @@
 \ RC5 configuration
 \ Proteus
-0x1C == RC5Address
-0x11 == RC5PowerBtn
+\ ~0x1C == RC5Address
+\ ~0x11 == RC5PowerBtn
 
 \ Real HW
 \ UET-606 AUX code 0552
-\ ~0x14 == RC5Address
+0x14 == RC5Address
 
-\ ~0x0C == RC5PowerBtn
+0x0C == RC5PowerBtn
 0x0D == RC5MuteBtn
 0x10 == RC5VolUpBtn
 0x11 == RC5VolDownBtn

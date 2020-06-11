@@ -30,14 +30,13 @@ CREATE Timers bQueueSize ALLOT
 ;
 
 : RTOS_TASK_IN_QUEUE ( task -- -1 | index )
-  -1 SWAP           ( flag task )
-  QueueSize 00 DO
-    DUP I Tasks [] @ =
-    IF  ( flag task )
-      NIP I SWAP LEAVE  ( index task )
+  QueueSize BEGIN \ task index+1
+    1- 2DUP Tasks [] @ =
+    IF  ( task index )
+      NIP EXIT  ( index )
     THEN
-  LOOP
-  DROP
+  [UNTIL<>0]
+  NIP 1-
 ;
 
 \ Функция установки задачи по таймеру. Передаваемые параметры - указатель на функцию,
@@ -75,18 +74,17 @@ CREATE Timers bQueueSize ALLOT
 
 : RTOS_TASK_MANAGER ( -- )
   SREG@ cli
-  -1
-  QueueSize 00 DO ( flag )
-    I Tasks [] @ IF \ есть задача в очереди
-      I Timers [] @ 0= IF \ и у нее выщелкал таймер
-        I Tasks [] DUP @ SWAP OFF \ ставим на ее место 0
+  QueueSize BEGIN \ index+1
+    1- DUP Tasks [] @ IF \ есть задача в очереди
+      DUP Timers [] @ IFNOT \ и у нее выщелкал таймер
+        DUP Tasks [] DUP @ SWAP OFF \ ставим на ее место 0
         sei
         EXECUTE \ и выполняем задачу
-        DROP 00 LEAVE
+        DROP SREG! EXIT
       THEN
     THEN
-  LOOP
-  IF IDLE THEN
+  [UNTIL<>0]
+  DROP IDLE
   SREG!
 ;
 
