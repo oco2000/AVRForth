@@ -25,7 +25,9 @@ VARIABLE (SLOWLIT)  (SLOWLIT) 0! \ slow literal
 
 2 CONSTANT TCELL
 VARIABLE T-HERE     \ текущий адрес в целевой памяти
-: ORG T-HERE ! ;    ( addr -- ) \ указать компиляцию по конкретному адресу
+: ORG     ( addr -- ) \ указать компиляцию по конкретному адресу
+  DUP ROM-SIZE > ABORT" Program is too large to fit to the flash ROM"
+  T-HERE ! ;
 
 : THERE  T-HERE @ ;     ( -- addr ) \ текущий адрес
 : T-ADDR T-MEM + ;    ( addr -- 'addr ) \ адрес в таблице T-MEM
@@ -34,13 +36,13 @@ VARIABLE T-HERE     \ текущий адрес в целевой памяти
 : T@    T-ADDR W@ ;   ( addr -- w )     \ взять слово из целевой памяти
 : TC@    T-ADDR C@ ;  ( addr -- c )     \ взять слово из целевой памяти
 : TALLOT                ( n -- )          \ зарезервировать в целевой памяти n байт
-    T-HERE +! ;
+    THERE + ORG ;
 : T,  THERE T!  TCELL TALLOT NEW ;  ( w -- )  \ скомпилировать слово в целевую память по тек.адресу
 : TC, THERE TC! 1 TALLOT NEW ;  ( c -- )  \ скомпилировать байт в целевую память по тек.адресу
 : TALIGNED              ( addr -- addr' ) \ выровнять addr по четному адресу
     1+ 1 INVERT AND ;
 : TALIGN                ( -- )            \ выровнять
-    THERE TALIGNED T-HERE ! ;
+    THERE TALIGNED ORG ;
 
 : T.   THERE 4 H.N ;
 ' T. TO (T.)
@@ -49,7 +51,7 @@ VARIABLE T-HERE     \ текущий адрес в целевой памяти
   THERE >R        \ сохр. тек. адрес
   SWAP ORG        \ установить addr как новый адрес в целевой памяти
   EXECUTE     \ выполнить компилирующее слово token
-  R> T-HERE !   \ восст. тек. адрес
+  R> ORG      \ восст. тек. адрес
 ;
 DECIMAL
 : COMPILE-TO ( addr -- ) \ Компилирует следующее слово по заданному адресу
@@ -64,9 +66,13 @@ DECIMAL
 VARIABLE D-HERE         \ тек. адрес в области данных, RAM
 
 VARIABLE E-HERE         \ тек. адрес в области EEPROM
-0x2000 CONSTANT E-MEM-SIZE     \ 128k
-CREATE E-MEM E-MEM-SIZE ALLOT \ целевая память (ROM)
+0x2000 CONSTANT E-MEM-SIZE     \ 8k max EEPROM
+CREATE E-MEM E-MEM-SIZE ALLOT \ EEPROM
 E-MEM E-MEM-SIZE ERASE
+
+: EORG     ( addr -- )
+  DUP EEPROM-SIZE > ABORT" Data is too large to fit to the EEPROM"
+  E-HERE ! ;
 
 : EHERE  E-HERE @ ;     ( -- addr )
 : E-ADDR E-MEM + ;    ( addr -- 'addr )
@@ -75,26 +81,26 @@ E-MEM E-MEM-SIZE ERASE
 : E@    E-ADDR W@ ;   ( addr -- w )
 : EC@    E-ADDR C@ ;  ( addr -- c )
 : EALLOT              ( n -- )
-    E-HERE +! ;
+    EHERE + EORG ;
 : E,  EHERE E!  TCELL EALLOT ;
 : EC, EHERE EC! 1 EALLOT ;
 
 : T-SAVE ( 2FILENAME ) \ в формате intel.hex
-  T-MEM T-HERE @ 2SWAP
+  T-MEM THERE 2SWAP
   SAVE
 ;
 
 : E-SAVE ( 2FILENAME )
-  E-MEM E-HERE @ 2SWAP
+  E-MEM EHERE 2SWAP
   SAVE
 ;
 
 : T-SAVE-BIN ( 2FILENAME ) \ в формате bin
-  T-MEM T-HERE @ 2SWAP
+  T-MEM THERE 2SWAP
   BSAVE
 ;
 
 : E-SAVE-BIN ( 2FILENAME ) \ в формате bin
-  E-MEM E-HERE @ 2SWAP
+  E-MEM EHERE 2SWAP
   BSAVE
 ;

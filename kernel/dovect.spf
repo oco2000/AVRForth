@@ -12,8 +12,8 @@ TREQUIRE !
 [F]
 : VECT                \ определяющее слово с параметрами во flash
   CREATE
-    T-HERE @ , INLISTING ,
-    D-HERE @ DUP , TCELL [T] ALLOT [P] ( d-here )
+    THERE , INLISTING ,
+    DHERE DUP , TCELL [T] ALLOT [P] ( d-here )
     zl ldiw
     ['] (DOVECT) >BODY @ (JMP)
   DOES>

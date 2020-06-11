@@ -35,6 +35,8 @@ ALSO FORTH
 \ ================= контроллер
 S" devices/devices.spf" INCLUDED \ файл с константами типов контроллеров
 INCLUDED \ включить файл с определением контроллера, переданный в командной строке
+S" src/init.spf" INCLUDED
+
 \ слова, определенные до этого слова, не попадут в листинг
 ' RESET  'marker !
 
@@ -43,8 +45,8 @@ PREVIOUS
 \ Current: TARGET
 \ внимание, слова :, ;, CREATE, DOES> переопределены
 
-RAM-BOTTOM D-HERE ! \ начало RАМ
-0 E-HERE !      \ начало EEPROM
+RAM-BOTTOM DORG \ начало RАМ
+0 EORG      \ начало EEPROM
 
 [F] 2VARIABLE FNAME [P] \ имя файла программы
 
@@ -85,5 +87,5 @@ AIStack FreeStack \ освободить стек автоподключения
 ?EMPTY
 DECIMAL
 .( Image  size: ) THERE . .( bytes) CR
-.( RAM    size: ) D-HERE @ RAM-BOTTOM - . .( bytes) CR
-.( EEPROM size: ) E-HERE @ . .( bytes) CR
+.( RAM    size: ) DHERE RAM-BOTTOM - . .( bytes) CR
+.( EEPROM size: ) EHERE . .( bytes) CR

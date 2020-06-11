@@ -88,13 +88,18 @@ ALSO FORTH
   (CALL)          \ скомпилировать вызов по CALL
 ;
 
-: ALLOT D-HERE +! ;
+: DORG     ( addr -- )
+  DUP RAM-TOP RSTACK-SIZE - > ABORT" Data is too large to fit in RAM"
+  D-HERE ! ;
+
+: DHERE D-HERE @ ;
+: ALLOT DHERE + DORG ;
 
 200 NewStack VALUE AIStack
 
 : SAVE-INPUT ( -- )
   DEPTH SAVE-INPUT >R
-  T-STATE @ T-HERE @ D-HERE @ E-HERE @
+  T-STATE @ THERE DHERE EHERE
   R> 4 +
   AIStack Array>Stack
   AIStack >Stack
@@ -104,7 +109,7 @@ ALSO FORTH
   AIStack Stack> >R
   AIStack ArrayStack>
   >R
-  E-HERE ! D-HERE ! T-HERE ! T-STATE !
+  EORG DORG ORG T-STATE !
   R> 4 - RESTORE-INPUT
   0 >IN ! \ на начало строки
   R>
@@ -115,7 +120,7 @@ ALSO FORTH
 ;
 
 : COLON-WORD ( -- )
-  CREATE T-HERE @ , INLISTING , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
+  CREATE THERE , INLISTING , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
 ;
 
 \ Если компилируемое слово встречается в режиме
@@ -128,7 +133,7 @@ ALSO FORTH
 \ двоеточечное определение при выполнении компилирует свой вызов в целевую память
 
 : CALL-ONLY:                        \ не оптимизировать хвостовую рекурсию
-  [T] SAVE-INPUT [F]
+  [T] SAVE-INPUT [P]
   COLON-WORD
   DOES> ?TCOMP @ TCOMPILE, NEW  \ компилируем
 ;
@@ -180,8 +185,8 @@ TCELL       == CELL
 
 \ =========================
 : TCREATE    THERE [T] == [P] ; \ адрес в области flash как литерал
-: RCREATE    D-HERE @ [T] LCONST [P] ; \ RAM address as a constant (only for compilation time)
-: ECREATE    E-HERE @ [T] == [P] ;  \ ложим на стек тек. адрес в EEPROM как литерал
+: RCREATE    DHERE [T] LCONST [P] ; \ RAM address as a constant (only for compilation time)
+: ECREATE    EHERE [T] == [P] ;  \ ложим на стек тек. адрес в EEPROM как литерал
 : VARIABLE   [T] RCREATE CELL ALLOT [P] ;    \ резервируем 2 байта в области данных
                                           \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
 : EVARIABLE  [T] ECREATE CELL EALLOT [P] ;   \ резервируем 2 байта в EEPROM
@@ -213,7 +218,7 @@ VARIABLE @DOVECT
 : PCREATE                               \ определяющее слово с параметрами во flash
     ?DOVAR
     CREATE
-      T-HERE @ ,                      \ запомним текущий адрес
+      THERE ,                      \ запомним текущий адрес
       ]T (PROLOG) @DOVAR @ (CALL) T[  \ компилируем вызов DOVAR
     DOES> @
       T-STATE @ IF
@@ -230,7 +235,7 @@ VARIABLE @DOVECT
 : PDOES>
     [T] SAVE-INPUT [P]
     POSTPONE (PDOES>)   \ компилируем (PDOES>)
-    T-HERE @ ,          \ и за ним текущий адрес
+    THERE ,          \ и за ним текущий адрес
     POSTPONE [[         \ режим исполнения
     ]T (PROLOG)         \ целевая компиляция
       pusht
@@ -242,8 +247,8 @@ VARIABLE @DOVECT
 
 : CREATE                \ определяющее слово с параметрами в RAM
     CREATE
-        T-HERE @ ,                      \ запомним текущий адрес
-        D-HERE @ [T] (LIT) ret [P]
+        THERE ,                      \ запомним текущий адрес
+        DHERE [T] (LIT) ret [P]
     DOES> ?TCOMP @ TCOMPILE, ;          \ компилируем
 
 : (DOES>)
@@ -256,7 +261,7 @@ VARIABLE @DOVECT
 : DOES>
     [T] SAVE-INPUT [P]
     POSTPONE (DOES>)    \ компилируем (DOES>)
-    T-HERE @ ,          \ и за ним текущий адрес
+    THERE ,          \ и за ним текущий адрес
     POSTPONE [[         \ режим исполнения
     ]T (PROLOG)         \ целевая компиляция
 
@@ -301,7 +306,7 @@ VARIABLE @DOVECT
 
 : [VECT] ( a -- ) \ вектор
   CREATE
-    T-HERE @ , INLISTING ,
+    THERE , INLISTING ,
     (UJMP)
     ROM-SIZE 8192 > IF
       nop      \ зарезервируем еще 2 байта, вдруг будет длинный jmp

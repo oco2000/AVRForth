@@ -14,7 +14,7 @@
           reti
 ;
 
-: ASMINT: CREATE T-HERE @ , INLISTING , ]T (ASMINTPROLOG)   \ создать обработчик прерываний
+: ASMINT: CREATE THERE , INLISTING , ]T (ASMINTPROLOG)   \ создать обработчик прерываний
      DOES> @ T-STATE @ IF (CALL) THEN  ;
 : ;ASMINT (ASMINTEPILOG) T[ ;           \ завершить
 
@@ -46,7 +46,7 @@
 
 : INT:
   [T] SAVE-INPUT [P]
-  CREATE T-HERE @ , INLISTING , ]T (INTPROLOG)   \ создать обработчик прерываний
+  CREATE THERE , INLISTING , ]T (INTPROLOG)   \ создать обработчик прерываний
   DOES> @ T-STATE @ IF (CALL) THEN  ;
 
 : ;INT
@@ -55,7 +55,7 @@
 
 : INTERRUPT         \ вектор прерывания по тек. адресу
   CREATE
-    T-HERE @ , INLISTING ,
+    THERE , INLISTING ,
     reti          \ неинициализированный - возврат из прерывания
     VECTOR-SIZE 4 = IF      \ вектор 4-байтовый
         0x0 T,              \ добавим 2 байта

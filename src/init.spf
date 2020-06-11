@@ -9,5 +9,4 @@ tosl SPL _out
 tosh SPH _out
 SPTR0 yl    ldiw    \ уст. указатель стека данных
 [T] ' {MAIN} [P]    (CALL)    \ вызов главной процедуры
-T<MARK          \ зацикливаем
-' (JMP) T<RESOLVE
+begin again

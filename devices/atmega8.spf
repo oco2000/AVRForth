@@ -3,9 +3,10 @@
 ( atmega8 )
 mega8 CONSTANT DEVICE
 
-0x1000 TO ROM-SIZE          \ FLASH
+0x2000 TO ROM-SIZE          \ FLASH
 0x0060 TO RAM-BOTTOM        \ начало RAM
 0x0400 TO RAM-SIZE          \ размер RAM
+0x0200 TO EEPROM-SIZE          \ размер EEPROM
 RAM-BOTTOM RAM-SIZE + 1- TO RAM-TOP \ конец  RAM, дно стека возвратов
 
 0x0080 TO RSTACK-SIZE       \ размер стека возвратов
@@ -263,5 +264,3 @@ INTERRUPT  EEPROM_READY
 INTERRUPT  ANALOG_COMP
 INTERRUPT  TWI
 INTERRUPT  SPM_READY
-
-S" src/init.spf" INCLUDED

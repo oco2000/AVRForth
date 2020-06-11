@@ -6,6 +6,7 @@ mega128 CONSTANT DEVICE
 0x20000 TO ROM-SIZE         \ FLASH
 0x0100 TO RAM-BOTTOM        \ начало RAM
 0x1000 TO RAM-SIZE          \ размер RAM
+0x1000 TO EEPROM-SIZE          \ размер EEPROM
 RAM-BOTTOM RAM-SIZE + 1- TO RAM-TOP \ конец  RAM, дно стека возвратов
 
 0x0100 TO RSTACK-SIZE       \ размер стека возвратов
@@ -388,6 +389,4 @@ INTERRUPT UART1_UDRE
 INTERRUPT UART1_TXC
 INTERRUPT TWI
 INTERRUPT SPM_READY
-
-S" src/init.spf" INCLUDED
 
