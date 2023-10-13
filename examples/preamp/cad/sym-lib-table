@@ -1,3 +1,4 @@
 (sym_lib_table
-  (lib (name preamp)(type Legacy)(uri /home/oleg/program/avr/avrforth/avrforth/examples/preamp/cad/preamp.lib)(options "")(descr ""))
+  (lib (name "preamp")(type "Legacy")(uri "/home/oleg/program/avr/avrforth/avrforth/examples/preamp/cad/preamp.lib")(options "")(descr ""))
+  (lib (name "preamp-rescue")(type "Legacy")(uri "${KIPRJMOD}/preamp-rescue.lib")(options "")(descr ""))
 )
