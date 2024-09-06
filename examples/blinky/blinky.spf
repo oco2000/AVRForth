@@ -1,0 +1,22 @@
+@DECIMAL
+
+16000000 == F_CPU
+
+PORTB == LED_PORT
+DDRB  == LED_DDR
+0x5 == LED
+LED BIT LED_PORT 2== {LED}
+
+REQUIRE MS lib/delay.spf
+
+: MAIN
+  LED BIT  LED_DDR SET    \ на выход
+  BEGIN
+    {LED} SET
+    250 MS
+    {LED} CLEAR
+    250 MS
+  AGAIN
+;
+
+BASE!

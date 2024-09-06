@@ -3,11 +3,12 @@
 : device
     DUP CONSTANT 1+ ;
 
-0    
+0
 device mega8515
 device mega168
 device mega88
 device mega48
 device mega8
 device mega128
+device mega328p
 DROP

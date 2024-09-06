@@ -141,3 +141,8 @@ Version 1.5.4, November 2019
 Version 1.5.5, November 2019
 + Preamp changes
 + LCD Menu fixes
+
+Version 1.5.6, September 2024
++ new device ATMega328p
++ new example - blinky for Arduino Nano 3.0 (atmega328p)
++ sp-forth is working for Ubuntu 24.04
