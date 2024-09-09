@@ -15,8 +15,12 @@ TREQUIRE EMIT
 : USART_SEND ( c -- )
 [
 \ wait for empty transmit buffer
-  UDRE UCSR0A sbis
-  ' USART_SEND rjmp
+  begin
+    UCSR0A zl _in
+    UDRE BIT zl andi
+  until_=0
+  \ ~UDRE UCSR0A sbis
+  \ ~' USART_SEND rjmp
 \ Put data into buffer, sends the data
   tosl UDR0 _out
   popt

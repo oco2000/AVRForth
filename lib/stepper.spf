@@ -1,0 +1,88 @@
+@DECIMAL
+
+REQUIRE -- lib/struct.spf
+
+@BINARY
+TCREATE STEPS
+0001 TC,
+0011 TC,
+0010 TC,
+0110 TC,
+0100 TC,
+1100 TC,
+1000 TC,
+1001 TC,
+BASE!
+8 == #STEPS
+
+00
+01    -- step   \ current step
+TCELL -- delay
+== /props
+
+00
+TCELL  -- props \ stepper data in RAM
+TCELL  -- write \ bus write procedure
+TCELL  -- #steps/rot
+DROP
+
+:: STEPPER
+  PCREATE
+  DHERE /props ALLOT T,
+  T, T,
+  PDOES> ;
+;;
+
+: US  ( us -- )
+  6 RSHIFT 00 ?DO 64 (US) LOOP
+;
+
+: STEPPER.SPEED ( rpm stepper -- )
+  DUP>R
+  #steps/rot @P 6000 10000 ROT */ SWAP /
+  R> props @P delay !
+;
+
+: STEPPER.DELAY ( stepper -- )
+  props @P delay @ US
+;
+
+: STEPPER.WRITE ( n stepper -- )
+  write @P EXECUTE
+;
+
+: STEPPER.STEP ( direction stepper -- ) \ move one step
+  DUP>R \ dir stepper ' stepper
+  props @P DUP   \ dir props props ' stepper
+  step C@ STEPS + C@P R> STEPPER.WRITE \ dir props
+
+  DUP>R step C@ SWAP
+    IF 1- ELSE 1+ THEN
+    [ [F] #STEPS 1- [P] ] LITERAL AND
+  R> step C!
+;
+
+: STEPPER.STEPS ( steps stepper -- )
+  SWAP DUP 0< SWAP \ stepper dir steps
+  ABS 00 ?DO  \ stepper dir
+    2DUP SWAP STEPPER.STEP
+    OVER STEPPER.DELAY
+  LOOP
+  2DROP
+;
+
+: STEPPER.ROTATE ( degrees stepper -- )
+  DUP #steps/rot @P ROT 360 */ SWAP
+  STEPPER.STEPS
+;
+
+: STEPPER.RELEASE ( stepper -- )
+  00 SWAP STEPPER.WRITE
+;
+
+: STEPPER.INIT ( stepper -- )
+  props @P
+  /props ERASE
+;
+
+BASE!

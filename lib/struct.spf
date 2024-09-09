@@ -1,0 +1,8 @@
+TREQUIRE C@P
+TREQUIRE +
+
+:: --
+  PCREATE ( offset length -- new_offset )
+    [F] OVER T, + [P]
+  PDOES> ( addr -- addr+offset ) C@P + ;
+;;
