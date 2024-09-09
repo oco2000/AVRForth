@@ -1,0 +1,35 @@
+\ ATmega8
+\ +DEBUG3
+
+@DECIMAL
+
+16000000 == F_CPU
+
+REQUIRE _USART_INIT   lib/usart/atmegax8-usart-config.spf
+REQUIRE USART         lib/usart/usart.spf
+REQUIRE I2C_START     lib/i2c.spf
+
+: 7BITADDR? ( a -- f )  0x7 0x78 WITHIN ;
+
+: DETECT   ( -- )
+  BASE @ HEX
+  ." Scanning..." CR
+
+  0x80 0 DO
+    I 7BITADDR? IF
+      I 2* I2C_START 0= IF \ DOES DEVICE RESPOND?
+        I 2* .
+      THEN
+    THEN
+  LOOP
+  BASE !
+  ."  Finished"
+;
+
+: MAIN
+  9600 BAUD USART_INIT
+  I2C_INIT
+  DETECT
+;
+
+BASE!
