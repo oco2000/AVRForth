@@ -146,3 +146,8 @@ Version 1.5.6, September 2024
 + new device ATMega328p
 + new example - blinky for Arduino Nano 3.0 (atmega328p)
 + sp-forth is working for Ubuntu 24.04
+
+Version 1.5.7, September 2024
++ new library for stepper motor + exapmles
++ new rtc+uart example
++ new hall sensor example
