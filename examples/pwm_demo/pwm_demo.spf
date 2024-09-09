@@ -38,11 +38,11 @@ INT: COMPARE
 : MAIN
     INIT
     BEGIN
-      BUTTON_UP {READ&MASK} IF
+      BUTTON_UP {GET} IF
         Counter C@E 1- 0MAX DUP OCR2 C! Counter C!E
         1 MS
       THEN
-      BUTTON_DOWN {READ&MASK} IF
+      BUTTON_DOWN {GET} IF
         Counter C@E 1+ 0xFF MIN DUP OCR2 C! Counter C!E
         1 MS
       THEN

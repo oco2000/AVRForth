@@ -1,0 +1,24 @@
+@DECIMAL
+
+16000000 == F_CPU
+
+REQUIRE MS lib/delay.spf
+REQUIRE {SET} lib/ports.spf
+
+PB5 WIRE LED
+PD7 WIRE SENSOR
+
+: MAIN
+  LED {OUTPUT}
+  SENSOR {INPUT}
+
+  BEGIN
+    SENSOR {GET} 0= IF
+      LED {SET}
+    ELSE
+      LED {CLEAR}
+    THEN
+  AGAIN
+;
+
+BASE!

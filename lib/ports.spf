@@ -224,7 +224,7 @@ DROP
 ;;
 
 \ прочитать значение из порта группы и маскировать
-:: {READ&MASK} ( mask port -- )
+:: {GET} ( mask port -- )
               ( T: -- c )
   ?TCOMP {PIN} LITERAL C@ LITERAL AND
 ;;

@@ -70,7 +70,7 @@ INT: RC5_Timer_Interrupt_Handler
     TimerCount INCR
   [THEN]
 
-  RC5_Signal_Wire {READ&MASK} 0= INVERT 0x1 AND >R
+  RC5_Signal_Wire {GET} 0= INVERT 0x1 AND >R
   RC5_Bits 2@ D2* SWAP R> + SWAP RC5_Bits 2!
 
   RC5_Bitcount C@ 1+ DUP RC5_Bitcount C!

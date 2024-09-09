@@ -33,8 +33,8 @@ DROP
   PDOES> ;
 ;;
 
-: US  ( us -- )
-  6 RSHIFT 00 ?DO 64 (US) LOOP
+: /US  ( us -- )
+  6 RSHIFT 00 ?DO 64 US LOOP
 ;
 
 : STEPPER.SPEED ( rpm stepper -- )
@@ -44,7 +44,7 @@ DROP
 ;
 
 : STEPPER.DELAY ( stepper -- )
-  props @P delay @ US
+  props @P delay @ /US
 ;
 
 : STEPPER.WRITE ( n stepper -- )
