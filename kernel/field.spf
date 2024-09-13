@@ -1,3 +1,5 @@
+TREQUIRE +
+
 [F]
 : -- ( offset width -- offset+width | addr -- addr+offset ) \ STRUCT FIELD
   CREATE OVER , + DOES> @

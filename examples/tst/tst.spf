@@ -257,3 +257,13 @@ PD3 WIRE LED
 [P]
 ;;
 
+TREQUIRE --
+
+00
+TCELL -- field1
+TCELL -- field2
+== /fields
+
+: FIELD-TEST
+  field1 @P field2 !
+;

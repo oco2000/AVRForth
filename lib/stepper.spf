@@ -1,6 +1,7 @@
 @DECIMAL
 
-REQUIRE -- lib/struct.spf
+REQUIRE MS lib/delay.spf
+TREQUIRE --
 
 @BINARY
 TCREATE STEPS
@@ -16,14 +17,14 @@ BASE!
 8 == #STEPS
 
 00
-01    -- step   \ current step
-TCELL -- delay
+01 CHARS  -- step   \ current step
+CELL      -- delay
 == /props
 
 00
-TCELL  -- props \ stepper data in RAM
-TCELL  -- write \ bus write procedure
-TCELL  -- #steps/rot
+CELL  -- props \ stepper data in RAM
+CELL  -- write \ bus write procedure
+CELL  -- #steps/rot
 DROP
 
 :: STEPPER
