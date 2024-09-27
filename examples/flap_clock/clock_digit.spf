@@ -1,0 +1,72 @@
+\ digit data
+00
+CELL      -- DIGIT.STATE      \ address of current digit in RAM
+01 CHARS  -- DIGIT.ROTATION   \ degrees per digit
+01 CHARS  -- DIGIT.CORRECTION \ degrees correction after set to 0
+CELL      -- DIGIT.STEPPER    \ stepper for the digit
+CELL      -- DIGIT.SENSOR     \ word to get the sensor value
+DROP
+
+\\ DIGIT - create a digit
+:: DIGIT ( sensor stepper correction rotation max -- )
+  PCREATE
+  DHERE 01 ALLOT T, \ state
+  TC, \ rotation
+  TC, \ correction
+  T,  \ stepper
+  T,  \ sensor
+  TALIGN
+  PDOES> ;
+;;
+
+: DIGIT.STEPPER@ ( digit -- x ) \ get the stepper for the digit
+  DIGIT.STEPPER @P EXECUTE
+;
+
+: DIGIT.STATE@ ( digit -- addr ) \ get the state var address in RAM
+  DIGIT.STATE @P
+;
+
+: DIGIT.INIT ( digit -- ) \ init the digit - stepper, set speed, set current state
+  DUP>R
+  DIGIT.STEPPER@ STEPPER.INIT
+  10 R@ DIGIT.STEPPER@ STEPPER.SPEED
+  255 R@ DIGIT.STATE@ C!
+  RDROP
+;
+
+: DIGIT.ROTATE-UNTIL ( f digit -- ) \ rotate the motor by 1 degree until sensor is f, not more than 360 degrees
+  >R
+  360 \ sensor angle
+  BEGIN
+    OVER R@ DIGIT.SENSOR @P EXECUTE 0= = \ sensor has desired value
+    SWAP 1- SWAP OVER 00 <> AND \ if full rotation was done
+  WHILE
+    R@ DIGIT.ROTATION C@P C>S 0< IF -1 ELSE 1 THEN \ rotate 1 degree
+    R@ DIGIT.STEPPER@ STEPPER.ROTATE
+  REPEAT
+  2DROP RDROP
+;
+
+: DIGIT.SET0 ( digit -- ) \ set digit to 0 by sensor data
+  >R
+  TRUE  R@ DIGIT.ROTATE-UNTIL \ rotate until sensor is off
+  FALSE R@ DIGIT.ROTATE-UNTIL \ rotate until sensor is on
+  R@ DIGIT.CORRECTION C@P C>S R@ DIGIT.STEPPER@ STEPPER.ROTATE \ correction after sensor detection
+  0 R@ DIGIT.STATE@ C! \ set the current digit to 0
+  R> DIGIT.STEPPER@ STEPPER.RELEASE \ release the stepper
+;
+
+: DIGIT.DISPLAY ( 0..max-1 digit -- ) \ display any digit
+  >R
+  R@ DIGIT.STATE@ C@ OVER = IF DROP RDROP EXIT THEN \ already displaying this digit
+  R@ DIGIT.STATE@ C@ OVER < IF \ can rotate to the new digit directly
+    R@ DIGIT.STATE@ C@ OVER R@ DIGIT.STATE@ C! \ store new digit
+    - R@ DIGIT.ROTATION C@P C>S * \ calculate rotation in degrees
+    R@ DIGIT.STEPPER@ STEPPER.ROTATE
+  ELSE \ should rotate through zero
+    R@ DIGIT.SET0 \ set to zero
+    R@ DIGIT.DISPLAY \ display recursively
+  THEN
+  R> DIGIT.STEPPER@ STEPPER.RELEASE \ release the stepper
+;

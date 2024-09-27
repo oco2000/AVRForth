@@ -27,6 +27,27 @@ TREQUIRE EMIT
 ]
 ;
 
+: ?USART_RECEIVED ( -- f )
+[
+  pusht
+  UCSR0A zl _in
+  RXC BIT zl andi
+  0x0 tosh ldi
+  if_<>0
+    tosh dec
+  then
+  tosh tosl mov
+]
+;
+
+: USART_RECEIVE ( -- b ) \ read data from receive buffer, need to check with ?USART_RECEIVED first
+  [
+    pusht
+    UDR0 tosl _in
+    0x0 tosh ldi
+  ]
+;
+
 : USART ( -- )
   ['] USART_SEND IS EMIT
 ;

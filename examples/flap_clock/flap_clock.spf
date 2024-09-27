@@ -2,32 +2,143 @@
 
 16000000 == F_CPU
 
-REQUIRE BUS.WRITE lib/bus.spf
-REQUIRE STEPPER lib/stepper.spf
+REQUIRE BUS.WRITE     lib/bus.spf
+REQUIRE STEPPER       lib/stepper.spf
+REQUIRE DIGIT.DISPLAY clock_digit.spf
+REQUIRE I2C_START     lib/i2c.spf
+REQUIRE DS1307        lib/ds1307.spf
+REQUIRE _USART_INIT   lib/usart/atmegax8-usart-config.spf
+REQUIRE USART         lib/usart/usart.spf
 
 4200 == #STEPS/ROT
+\ Stepper motors
+BUS{ PD5 PD4 PD3 PD2 }BUS MINUTES.MOTOR.BUS \ D2-D5
+BUS{ PB1 PB0 PD7 PD6 }BUS MINTENS.MOTOR.BUS \ D6-D9
+BUS{ PB5 PB4 PB3 PB2 }BUS HOURS.MOTOR.BUS \ D10-D13
 
-BUS{ PB3 PB2 PB1 PB0 }BUS MOTOR.BUS \ D8-D11
-
-: MOTOR.WRITE ( n -- )
-  MOTOR.BUS BUS.WRITE
+: MINUTES.MOTOR.WRITE ( n -- )
+  MINUTES.MOTOR.BUS BUS.WRITE
 ;
 
-#STEPS/ROT  ' MOTOR.WRITE   STEPPER MOTOR
+: MINTENS.MOTOR.WRITE ( n -- )
+  MINTENS.MOTOR.BUS BUS.WRITE
+;
+
+: HOURS.MOTOR.WRITE ( n -- )
+  HOURS.MOTOR.BUS BUS.WRITE
+;
+
+\\ MINUTES stepper motor
+#STEPS/ROT  ' MINUTES.MOTOR.WRITE   STEPPER MINUTES.MOTOR
+\\ MINTENS stepper motor
+#STEPS/ROT  ' MINTENS.MOTOR.WRITE   STEPPER MINTENS.MOTOR
+\\ HOURS stepper motor
+#STEPS/ROT  ' HOURS.MOTOR.WRITE     STEPPER HOURS.MOTOR
+
+\ sensors
+PC0 WIRE MINUTES.SENSOR
+PC1 WIRE MINTENS.SENSOR
+PC2 WIRE HOURS.SENSOR
+
+: MINUTES.SENSOR.GET ( -- value )
+  MINUTES.SENSOR {GET}
+;
+
+: MINTENS.SENSOR.GET ( -- value )
+  MINTENS.SENSOR {GET}
+;
+
+: HOURS.SENSOR.GET ( -- value )
+  HOURS.SENSOR {GET}
+;
+
+\ Digits
+\             sensor          stepper   correction  deg/digit
+\\ Minutes
+' MINUTES.SENSOR.GET  ' MINUTES.MOTOR     18        36        DIGIT MINUTES
+\\ Tens of minutes
+' MINTENS.SENSOR.GET  ' MINTENS.MOTOR    -20       -60        DIGIT MINTENS
+\\ Hours
+' HOURS.SENSOR.GET    ' HOURS.MOTOR       -5       -30        DIGIT HOURS
 
 : INIT ( -- )
-  MOTOR.BUS BUS.OUTPUT
-  MOTOR STEPPER.INIT
-  10 MOTOR STEPPER.SPEED
+  MINUTES.SENSOR {INPUT}
+  MINTENS.SENSOR {INPUT}
+  HOURS.SENSOR {INPUT}
+
+  MINUTES.MOTOR.BUS BUS.OUTPUT
+  MINTENS.MOTOR.BUS BUS.OUTPUT
+  HOURS.MOTOR.BUS BUS.OUTPUT
+
+  MINUTES DIGIT.INIT
+  MINTENS DIGIT.INIT
+  HOURS   DIGIT.INIT
+
+  9600 BAUD USART_INIT
+  I2C_INIT
+  DS1307_INIT DROP
+  HEX
 ;
 
+: BCD> ( bcd -- value ) \ convert BCD to value
+  NIBBLE-SPLIT 0x0A * +
+;
+
+: >BCD  ( value -- bcd ) \ convert value to BCD
+  0x0A /MOD ( hi lo )
+  NIBBLE-JOIN
+;
+
+: BCD+1 ( bcd max -- bcd+1 ) \ increment BCD value
+  SWAP BCD> 1+ SWAP MOD >BCD
+;
+
+: DS1307_REG++ ( max reg -- ) \ increment DS1307 register value (0..max-1)
+  DUP>R DS1307_GET
+  SWAP BCD+1
+  R> DS1307_SET
+;
+
+: .COLON  ( -- )   [ CHAR : ] LITERAL EMIT ;
+
+: ## ( n -- a 2 ) \ convert number to 2 digit string
+  0 <# # # #>
+;
+
+: PRINT-TIME   ( -- ) \ print time in hh:mm:ss format
+  DS1307_GET_TIME ## TYPE .COLON ## TYPE .COLON ## TYPE CR
+;
+
+: PARSE-TIME   ( -- hours mintens minutes ) \ parse current time to display (hours: 0..11, mintens: 0..5, minutes: 0..9)
+  DS1307_GET_TIME \ s m h
+  BCD> 11 + 12 MOD >R \ s m
+  NIP R> SWAP \ hours m
+  BCD> 10 /MOD SWAP
+;
 
 : MAIN
   INIT
+
+  MINUTES DIGIT.SET0
+  MINTENS DIGIT.SET0
+  HOURS   DIGIT.SET0
+
   BEGIN
-    -36 MOTOR STEPPER.ROTATE
-    MOTOR STEPPER.RELEASE
     1000 MS
+    ?USART_RECEIVED IF \ handle UART instructions
+      USART_RECEIVE
+      DUP [CHAR] h = IF \ 'h' pressed - increment hours
+        DROP 24 DS1307_Hours DS1307_REG++
+      ELSE [CHAR] m = IF \ 'm' pressed - increment minutes and reset seconds
+        60 DS1307_Minutes DS1307_REG++
+        0 DS1307_Seconds DS1307_SET
+      THEN THEN
+    THEN
+    PRINT-TIME \ to UART
+    PARSE-TIME
+    MINUTES DIGIT.DISPLAY
+    MINTENS DIGIT.DISPLAY
+    HOURS   DIGIT.DISPLAY
   AGAIN
 ;
 

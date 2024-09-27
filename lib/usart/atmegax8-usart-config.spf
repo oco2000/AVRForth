@@ -1,4 +1,4 @@
 : _USART_INIT
-  TXEN BIT UCSR0B C!    \ enable transmitter
+  BITS{ TXEN RXEN }BITS UCSR0B C!   \ enable transmitter and receiver
   BITS{ UCSZ1 UCSZ0 }BITS UCSR0C C! \ 8bit 1stop
 ;

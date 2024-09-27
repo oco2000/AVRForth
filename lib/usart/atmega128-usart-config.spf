@@ -1,6 +1,6 @@
 REQUIRE _USART_INIT lib/usart/atmegax8-usart-config.spf
 
 : _USART1_INIT
-  TXEN BIT UCSR1B C!    \ enable transmitter
+  BITS{ TXEN RXEN }BITS UCSR1B C!   \ enable transmitter and receiver
   BITS{ UCSZ1 UCSZ0 }BITS UCSR1C C! \ 8bit 1stop
 ;
