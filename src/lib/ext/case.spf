@@ -1,27 +1,25 @@
-\ Конструкция выбора CASE
-\ с учетом возможной вложенности операторов CASE
-
+\ CASE
 
 DECIMAL
-VARIABLE   CSP    \ Указатель стека контроля
-6 CONSTANT L-CAS# \ Допустимый уровень вложенности
-CREATE     S-CSP   L-CAS# CELLS ALLOT \ Стек контроля
+VARIABLE   CSP    \ Control stack pointer
+6 CONSTANT L-CAS# \ Maximum nesting level
+CREATE     S-CSP   L-CAS# CELLS ALLOT \ Control stack
 S-CSP CSP !
 
-: +CSP ( -> P)    \ Добавить уровень
+: +CSP ( -> P)    \ Next level
   CSP @ DUP CELL+ CSP !
 ;
-: -CSP ( -> )     \ Убрать уровень
+: -CSP ( -> )     \ Previous level
   CSP @ 1 CELLS - CSP !
 ;
-: !CSP ( -> )     \ Инициализировать уровень
+: !CSP ( -> )     \ Initialize level
   SP@ +CSP !
 ;
 : CSP@ ( -> A)
   CSP @ 1 CELLS - @
 ;
-: ?CSP ( -> )     \ Проверить выдержанность стека
-  SP@ CSP@ <> 37 ?ERROR ( ABORT" Сбой стека по CSP !")
+: ?CSP ( -> )     \ Check nesting
+  SP@ CSP@ <> 37 ?ERROR ( ABORT" CSP error!")
   -CSP
 ;
 : CASE ( -> )

@@ -1,17 +1,15 @@
-\ Управление регистрами 74HC595 по интерфейсу SPI
-\ для ATMega168
-\ см. spi_test.dsn
+\ 74HC595 shift registers via SPI
+\ for ATMega168
+\ see spi_test.dsn
 
 [F] DECIMAL [P]
 
-\ необходимые слова
 REQUIRE {WRITE} lib/ports.spf
 
 8000000 == F_CPU
 
-\ определения портов
-PC3 WIRE CLK   \ фронт сигнала - запись данных из внутреннего регистра НС595 в выходной
-PD1 WIRE LED   \ светодиод
+PC3 WIRE CLK   \ clock
+PD1 WIRE LED
 
 PB2 WIRE SS
 PB3 WIRE MOSI
@@ -20,56 +18,55 @@ PB5 WIRE SCK
 
 GROUP{ MOSI SCK SS }GROUP SPI_OUT
 
-REQUIRE MS     lib/delay.spf   \ задержка
+REQUIRE MS     lib/delay.spf
 
-:: LED_TOGGLE    \ переключить светодиод
+:: LED_TOGGLE
   LED {TOGGLE}
 ;;
 
-: SPI-INIT      \ инициализация в режиме master
-  \ MOSI, SCK и SS как выходы, остальные - входы !!!
+: SPI-INIT      \ init SPI in Master mode
+  \ MOSI, SCK and SS are outputs
   SPI_OUT {OUTPUT}
-  \ Включить SPI, Master, set clock rate fck/4
+  \ Turn on SPI, Master, set clock rate fck/4
   BITS{ SPE MSTR }BITS  SPCR C!
 ;
 
-: CLK_TICK      \ вывести сигналы на все светодиоды
+: CLK_TICK      \ strobe
   CLK {SET}
   CLK {CLEAR}
 ;
 
-: SPI-TRANSMIT ( c -- ) \ записать один байт в регистры
-  \ начать передачу
+: SPI-TRANSMIT ( c -- ) \ write 1 byte to the registers
+  \ start
   SPDR C!
-  \ ожидать готовности
+  \ wait for ready
   BEGIN
      SPSR C@
      SPIF BIT AND
-  UNTIL \ пока не установится бит SPIF
+  UNTIL \ until SPIF is not set
 ;
 
-: LEDS ( word -- )  \ записать слово в регистры и вывести
+: LEDS ( word -- )  \ write a word to the registers
   BYTE-SPLIT   SPI-TRANSMIT   SPI-TRANSMIT
   CLK_TICK
 ;
 
 : INIT
-    CLK {OUTPUT}  \  выход
-    LED {OUTPUT}  \  выход
-    LED {CLEAR}   \  погасить светодиод
-    SPI-INIT
+  CLK {OUTPUT}
+  LED {OUTPUT}
+  LED {CLEAR}   \  turn off the LED
+  SPI-INIT
 ;
 
 : MAIN
-    INIT
-    0x8000
-    BEGIN
-        2* DUP 0= IF    \ сдвигаем влево
-          DROP 1
-        THEN
-        LED_TOGGLE
-        DUP LEDS        \ выведем на светодиоды
-        150 MS          \ задержка
-    AGAIN
+  INIT
+  0x8000
+  BEGIN
+      2* DUP 0= IF    \ left shift
+        DROP 1
+      THEN
+      LED_TOGGLE
+      DUP LEDS        \ output
+      150 MS          \ delay
+  AGAIN
 ;
-

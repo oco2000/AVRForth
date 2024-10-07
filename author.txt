@@ -1,4 +1,4 @@
 Skeleton:
   Vovanius <vovanius@xakep.ru>
 Rest of the code:
-  Oleg Voronin <oco2000@gmail.com>
+  OCo <oco2000@gmail.com>

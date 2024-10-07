@@ -1,8 +1,8 @@
 \ AVR Forth
 DECIMAL
 
-C" 1.5.7" CONSTANT _VERSION
-.( AVRForth by Oleg Voronin. Version )
+C" 1.6.0" CONSTANT _VERSION
+.( AVRForth by OCo. Version )
 _VERSION COUNT TYPE CR
 
 WARNING 0!
@@ -11,78 +11,81 @@ S" src/lib/include/tools.spf" INCLUDED \ [IF] [THEN]
 S" src/lib/include/core-ext.spf" INCLUDED \ [IF] [THEN]
 S" src/lib/ext/case.spf"    INCLUDED \ CASE
 S" src/lib/ext/testcase.spf"  INCLUDED
-S" src/util.spf"      INCLUDED \ разные определения
-S" src/lib/stack.spf"      INCLUDED \ стеки
+S" src/util.spf"      INCLUDED
+S" src/lib/stack.spf"      INCLUDED
 S" src/lib/place.spf" INCLUDED
 S" src/hex.spf"      INCLUDED \ Intel hex saving
 
-VOCABULARY TARGET   \ словарь для целевого компилятора
-FORTH ONLY   ALSO TARGET   DEFINITIONS  \ новые определения в TARGET
+VOCABULARY TARGET
+FORTH ONLY   ALSO TARGET   DEFINITIONS  \ new definitions go to TARGET vocabulary
 \ Context: TARGET FORTH
 \ Current: TARGET
 
 S" src/flash.spf"      INCLUDED \ flash
-S" src/avrasm.spf"      INCLUDED \ ассемблер
-S" src/avrdisasm.spf"      INCLUDED \ дизассемблер
-S" src/avrlist.spf"       INCLUDED \ создание листинга
-S" src/require.spf"     INCLUDED \ полуавтоматическое включение необходимых слов
-S" src/xfbase.spf"      INCLUDED \ определяющие слова и управляющие конструкции
+S" src/avrasm.spf"      INCLUDED \ assembly language
+S" src/avrdisasm.spf"      INCLUDED \ disassembly
+S" src/avrlist.spf"       INCLUDED \ listing creation
+S" src/require.spf"     INCLUDED \ words autoinclusion
+S" src/xfbase.spf"      INCLUDED \ defining words and control flow words
 
 ALSO FORTH
 \ Context: FORTH TARGET FORTH
 \ Current: TARGET
 
-\ ================= контроллер
-S" devices/devices.spf" INCLUDED \ файл с константами типов контроллеров
-INCLUDED \ включить файл с определением контроллера, переданный в командной строке
+\ ================= device
+S" devices/devices.spf" INCLUDED \ devices constants
+INCLUDED \ include device file that comes from the command line
 S" src/init.spf" INCLUDED
 
-\ слова, определенные до этого слова, не попадут в листинг
+\ words, defined before this will not go to the listing file
 ' RESET  'marker !
 
 PREVIOUS
 \ Context: TARGET FORTH
 \ Current: TARGET
-\ внимание, слова :, ;, CREATE, DOES> переопределены
+\ attention! words :, ;, CREATE, DOES> are redefined
 
-RAM-BOTTOM DORG \ начало RАМ
-0 EORG      \ начало EEPROM
+RAM-BOTTOM DORG \ RАМ start address
+0 EORG      \ EEPROM start address
 
-[F] 2VARIABLE FNAME [P] \ имя файла программы
+[F] 2VARIABLE FNAME [P] \ current file name
 
-2DUP FNAME 2!  \ запомним имя файла
-ONLY TARGET \ только TARGET
+2DUP FNAME 2!  \ store it
+ONLY TARGET
 
-INCLUDED  \ включить файл с программой, переданный в командной строке
-' MAIN [->] {MAIN} \ set main word
+INCLUDED  \ include the program file from the command line
+' MAIN [->] {MAIN} \ set the main word
 
 [F]
-CREATE FILENAME 256 ALLOT \ буфер для добавления расширений к файлу
+CREATE FILENAME 256 ALLOT \ buffer for file extensions
 
-\ создание файла прошивки
+\ create the hex file
 FNAME 2@ FILENAME  PLACE
 S" .hex" FILENAME +PLACE
 FILENAME COUNT T-SAVE
 
+\ create the bin file
 FNAME 2@ FILENAME  PLACE
 S" .bin" FILENAME +PLACE
 FILENAME COUNT T-SAVE-BIN
 
+\ create the eeprom hex file
 FNAME 2@ FILENAME  PLACE
 S" .eep.hex" FILENAME +PLACE
 FILENAME COUNT E-SAVE
 
+\ create the eeprom bin file
 FNAME 2@ FILENAME  PLACE
 S" .eep.bin" FILENAME +PLACE
 FILENAME COUNT E-SAVE-BIN
 
-\ создание листинга
+\ create the listing
 FNAME 2@ FILENAME  PLACE
 S" .lst" FILENAME +PLACE
 FILENAME COUNT [P] LIST-SAVE [F]
 
-COMMENTS FREE THROW \ освободить память комментариев
-AIStack FreeStack \ освободить стек автоподключения слов
+COMMENTS FREE THROW \ free the memory for comments
+AIStack FreeStack \ free the autoinclusion stack
 
 ?EMPTY
 DECIMAL

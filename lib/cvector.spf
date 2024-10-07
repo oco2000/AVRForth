@@ -1,9 +1,9 @@
-\ одномерный массив байт
+\ byte array
 
 TREQUIRE +
 
-:: CVECTOR  \ массив байт
-   CREATE ALLOT
-   DOES> + ;
-;;  \ обязательно в конце ; ;;
+:: CVECTOR  \ byte array
+  CREATE ALLOT
+  DOES> + ; \ don't forget this semicolon
+;;
 

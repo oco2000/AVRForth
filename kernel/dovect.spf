@@ -10,7 +10,7 @@ TREQUIRE !
 ;
 
 [F]
-: VECT                \ определяющее слово с параметрами во flash
+: VECT
   CREATE
     THERE , INLISTING ,
     DHERE DUP , TCELL [T] ALLOT [P] ( d-here )

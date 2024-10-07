@@ -9,16 +9,16 @@
 MACRO: CSET    ( -- )
 [F]
   QLIT2? IF ( addr )
-    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+    QLIT1? IF   ( addr mask )  \ addr and mask are literals
       DEBUG3" CSET addr+lit"
-      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
-      DUP 0xFF <> IF \ установить все - чтение не нужно
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask = 0 - do nothing
+      DUP 0xFF <> IF \ if mask = 0xff, don't fetch
         OVER ( a m a )
         zl lds
       THEN
       zl ori
       zl SWAP sts
-    ELSE  \ известен адрес
+    ELSE  \ addr is a literal
       DEBUG3" CSET addr" ( addr )
       DUP tosh lds
       tosl tosh or

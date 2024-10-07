@@ -1,35 +1,34 @@
 \ ========== EERTOS based on DiHalt's routines (easyelectronics.ru)
-\ Минимальная F_CPU = 1MHz
+\ Minimal F_CPU = 1MHz
 
 @DECIMAL
 
-0x8 == QueueSize            \ очередь на 8 задач
+0x8 == QueueSize            \ 8 task queue
 QueueSize CELLS == bQueueSize
-\ Очередь задач
+\ Task queue
 CREATE Tasks bQueueSize ALLOT
-\ Счетчики
+\ counters
 CREATE Timers bQueueSize ALLOT
 
 : [] ( i addr1 -- addr2 )
   SWAP CELLS +
 ;
 
-\ RTOS Запуск системного таймера
+\ RTOS run the system timer
 : RTOS_RUN ( -- )
   RTOS_INIT_TIMER
   sei
 ;
 
-\ Пустая процедура - простой ядра.
 : IDLE ( -- )   ;
 
-\  RTOS Подготовка. Очистка очередей
+\ RTOS init - clear the queues
 : RTOS_INIT ( -- )
   Tasks bQueueSize ERASE
   Timers bQueueSize ERASE
 ;
 
-: RTOS_TASK_IN_QUEUE ( task -- -1 | index )
+: RTOS_TASK_IN_QUEUE ( task -- -1 | index ) \ if the task is in the queue - return its index, -1 if not found
   QueueSize BEGIN \ task index+1
     1- 2DUP Tasks [] @ =
     IF  ( task index )
@@ -39,29 +38,29 @@ CREATE Timers bQueueSize ALLOT
   NIP 1-
 ;
 
-\ Функция установки задачи по таймеру. Передаваемые параметры - указатель на функцию,
-\ Время выдержки в тиках системного таймера.
+\ Set timer task
+\ time is in timer ticks
 : RTOS_SET_TIMER_TASK ( task time -- )
   SREG@ cli >R
-  OVER RTOS_TASK_IN_QUEUE DUP -1 = IF  \ нет такой задачи
-    DROP ( task time ) \ поставим в очередь
-    0 RTOS_TASK_IN_QUEUE DUP -1 = IF  \ ищем пустое место в очереди
-      DROP 2DROP \ нет места в очереди
-    ELSE ( task time index )
+  OVER RTOS_TASK_IN_QUEUE DUP -1 = IF  \ no this task in the queue
+    DROP ( task time ) \ add to queue
+    0 RTOS_TASK_IN_QUEUE DUP -1 = IF  \ find free space in the queue
+      DROP 2DROP \ no empty space
+    ELSE ( task time index ) \ add to the empty place in the queue
       TUCK ( task index time index )
       Timers [] ! Tasks [] !
     THEN
-  ELSE    ( task time index )     \ есть такая задача в очереди
-    Timers [] ! DROP            \ Перезаписываем ей выдержку
+  ELSE    ( task time index )     \ there is this task
+    Timers [] ! DROP            \ set its timer value
   THEN
   R> SREG!
 ;
 
-: RTOS_SET_TASK ( task -- )          \ Поставить задачу в очередь для немедленного выполнения
+: RTOS_SET_TASK ( task -- )          \ set a task to execute immediately
   0 RTOS_SET_TIMER_TASK
 ;
 
-: RTOS_REMOVE_TASK ( task -- )      \ Удалить задачу из очереди
+: RTOS_REMOVE_TASK ( task -- )      \ remove the task from the queue
   RTOS_TASK_IN_QUEUE DUP -1 = IF
     DROP
   ELSE
@@ -70,7 +69,7 @@ CREATE Timers bQueueSize ALLOT
 ;
 
 \ =================================================================================
-\ Диспетчер задач ОС. Выбирает из очереди задачи и отправляет на выполнение.
+\ Task manager. It finds a suitable task and executes it
 
 : RTOS_TASK_MANAGER ( -- )
   SREG@ cli
@@ -88,29 +87,27 @@ CREATE Timers bQueueSize ALLOT
   SREG!
 ;
 
-\ Служба таймеров ядра. Должна вызываться из прерывания раз в 1мс.
-\ Хотя время можно варьировать в зависимости от задачи
+\ System timer. It is called once in 1ms.
 
 : RTOS_TIMER_SERVICE ( -- )
   Timers
   [
     QueueSize tmp1l ldi
-    begin               \ по всем таймерам
+    begin               \ all the timers
       [x]+ zl ld
       [x]+  zh ld
-      01 zl sbiw
-      if_c            \ не меньше 0
+      01 zl sbiw      \ decrement
+      if_c            \ 0 is minimum
         zl clr
         zh clr
       then
-      zh -[x] st      \ записываем назад
+      zh -[x] st      \ write back
       zl -[x]  st
-      02 tosl adiw    \ продвигаемся дальше
+      02 tosl adiw    \ to the next timer
       tmp1l dec
     until_<>0
     popt
   ]
-
   RTOS_FIX_TIMER
 ;
 
@@ -120,6 +117,7 @@ CREATE Timers bQueueSize ALLOT
     RTOS_TIMER_SERVICE
   ;INT
 
+  \ set the timer interrupt to the timer service
   RTOS_INT RTOS_TIMER_INTERRUPT INT!
 
 [THEN]

@@ -1,4 +1,4 @@
-\ темброблок
+\ big digits on the LCD demo
 \ ATmega8
 \ +DEBUG3
 
@@ -6,10 +6,10 @@
 
 1000000 == F_CPU
 
-REQUIRE D3              lib/lcd/lcd_conf_std.spf \ стандартная конфигурация библиотеки LCD
-REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
-REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
-:: !BIG_LETTERS ;;
+REQUIRE D3              lib/lcd/lcd_conf_std.spf \ LCD library standard config
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf
+:: !BIG_LETTERS ;;  \ use big characters
 REQUIRE BIG_SETUP       lib/lcd/big.spf
 
 C" 0123" == "0123"
@@ -24,31 +24,31 @@ C" TUV"  == "l6"
 C" WX"   == "l7"
 C" Y Z"  == "l8"
 
-: PRINT ( cstr -- )
-    LCD_CLRSCR \ 0 0 LCD_GOTOXY
-    COUNTP TYPEP
-    1000 MS
+: PRINT ( cstr -- ) \ print a counter string and delay
+  LCD_CLRSCR \ 0 0 LCD_GOTOXY
+  COUNTP TYPEP
+  1000 MS
 ;
 
-: Print_Big
-    "0123" PRINT
-    "4567" PRINT
-    "89"   PRINT
-    "l1"   PRINT
-    "l2"   PRINT
-    "l3"   PRINT
-    "l4"   PRINT
-    "l5"   PRINT
-    "l6"   PRINT
-    "l7"   PRINT
-    "l8"   PRINT
+: Print_Big \ demo
+  "0123" PRINT
+  "4567" PRINT
+  "89"   PRINT
+  "l1"   PRINT
+  "l2"   PRINT
+  "l3"   PRINT
+  "l4"   PRINT
+  "l5"   PRINT
+  "l6"   PRINT
+  "l7"   PRINT
+  "l8"   PRINT
 ;
 
 : MAIN
-    LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
-    LCD_CLRSCR              \ очистка
-    BIG_SETUP BIG_LETTERS
-    BEGIN
-        Print_Big
-    AGAIN
+  LCD_DISP_ON  LCD_INIT
+  LCD_CLRSCR
+  BIG_SETUP BIG_LETTERS
+  BEGIN
+    Print_Big
+  AGAIN
 ;

@@ -1,12 +1,12 @@
-\ инициализация форт-системы
+\ initialization
 
-[VECT] {MAIN} \ главная процедура
+[VECT] {MAIN} \ main word
 
-THERE ->INT RESET \ прыжок сюда при сбросе
+THERE ->INT RESET \ jump here on reset
 
-RAM-TOP tosl  ldiw      \ указатель стека возврата установить на конец RAM
+RAM-TOP tosl  ldiw  \ set return stack pointer
 tosl SPL _out
 tosh SPH _out
-SPTR0 yl    ldiw    \ уст. указатель стека данных
-[T] ' {MAIN} [P]    (CALL)    \ вызов главной процедуры
-begin again
+SPTR0 yl    ldiw    \ set data stack pointer
+[T] ' {MAIN} [P]    (CALL)    \ call the main word
+begin again \ stop

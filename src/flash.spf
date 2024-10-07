@@ -1,60 +1,60 @@
 ( Flash-code Generation Words )
 
 0 VALUE ROM-SIZE          \ FLASH
-0 VALUE RAM-BOTTOM        \ начало RAM
-0 VALUE RAM-SIZE          \ размер RAM
+0 VALUE RAM-BOTTOM        \ RAM start
+0 VALUE RAM-SIZE          \ RAM size
 0 VALUE EEPROM-SIZE
-0 VALUE RAM-TOP                     \ конец  RAM, дно стека возвратов
-0 VALUE RSTACK-SIZE           \ размер стека возвратов
-0 VALUE SPTR0                     \ дно стека данных
-0 VALUE VECTOR-SIZE                 \ размер вектора прерываний в байтах
+0 VALUE RAM-TOP           \ RAM end, return stack bottom
+0 VALUE RSTACK-SIZE       \ return stack size
+0 VALUE SPTR0             \ data stack bottom
+0 VALUE VECTOR-SIZE       \ interrupt vector size in bytes
 
-0x20000 CONSTANT T-MEM-SIZE     \ 128k
-CREATE T-MEM T-MEM-SIZE ALLOT \ целевая память (ROM)
+0x20000 CONSTANT T-MEM-SIZE   \ 128k maximum
+CREATE T-MEM T-MEM-SIZE ALLOT \ target memory (ROM)
 T-MEM T-MEM-SIZE ERASE
 
-0 VALUE OPTIM?                  \ переменная для оптимизации
-0 VALUE #LITS                   \ переменная для оптимизации литералов
-VARIABLE (SLOWLIT)  (SLOWLIT) 0! \ slow literal
-8 VALUE LITSIZE
+0 VALUE OPTIM?             \ optimization value
+0 VALUE #LITS              \ number of literals (for optimization)
+VARIABLE (SLOWLIT)  (SLOWLIT) 0! \ slow literals
+8 VALUE LITSIZE            \ compiled literal size in bytes
 
-: NEW
+: NEW \ start a new word
     0 TO OPTIM?
     0 TO #LITS
 ;
 
-2 CONSTANT TCELL
-VARIABLE T-HERE     \ текущий адрес в целевой памяти
-: ORG     ( addr -- ) \ указать компиляцию по конкретному адресу
+2 CONSTANT TCELL    \ target CELL size
+VARIABLE T-HERE     \ current address in target memory
+: ORG     ( addr -- ) \ set ROM address
   DUP ROM-SIZE > ABORT" Program is too large to fit to the flash ROM"
   T-HERE ! ;
 
-: THERE  T-HERE @ ;     ( -- addr ) \ текущий адрес
-: T-ADDR T-MEM + ;    ( addr -- 'addr ) \ адрес в таблице T-MEM
-: T!    T-ADDR W! ;   ( w addr -- )   \ записать в целевую память слово
-: TC!   T-ADDR C! ;   ( c addr -- )   \ записать в целевую память байт
-: T@    T-ADDR W@ ;   ( addr -- w )     \ взять слово из целевой памяти
-: TC@    T-ADDR C@ ;  ( addr -- c )     \ взять слово из целевой памяти
-: TALLOT                ( n -- )          \ зарезервировать в целевой памяти n байт
+: THERE  T-HERE @ ;   ( -- addr ) \ current ROM address
+: T-ADDR T-MEM + ;    ( addr -- 'addr ) \ address in T-MEM array
+: T!    T-ADDR W! ;   ( w addr -- )   \ store the word in the target memory
+: TC!   T-ADDR C! ;   ( c addr -- )   \ store the byte in the target memory
+: T@    T-ADDR W@ ;   ( addr -- w )   \ fetch a word from the target memory
+: TC@   T-ADDR C@ ;   ( addr -- c )   \ fetch a byte from the target memory
+: TALLOT              ( n -- )        \ allocate n bytes in the target memory
     THERE + ORG ;
-: T,  THERE T!  TCELL TALLOT NEW ;  ( w -- )  \ скомпилировать слово в целевую память по тек.адресу
-: TC, THERE TC! 1 TALLOT NEW ;  ( c -- )  \ скомпилировать байт в целевую память по тек.адресу
-: TALIGNED              ( addr -- addr' ) \ выровнять addr по четному адресу
+: T,  THERE T!  TCELL TALLOT NEW ;  ( w -- )  \ compile a word to the target memory
+: TC, THERE TC! 1 TALLOT NEW ;  ( c -- )  \ compile a byte to the target memory
+: TALIGNED              ( addr -- addr' ) \ align addr to the even address
     1+ 1 INVERT AND ;
-: TALIGN                ( -- )            \ выровнять
+: TALIGN                ( -- )            \ align current ROM address
     THERE TALIGNED ORG ;
 
-: T.   THERE 4 H.N ;
+: T.   THERE 4 H.N ; \ print current target address
 ' T. TO (T.)
 
-: >COMPILE-TO ( addr token -- )
-  THERE >R        \ сохр. тек. адрес
-  SWAP ORG        \ установить addr как новый адрес в целевой памяти
-  EXECUTE     \ выполнить компилирующее слово token
-  R> ORG      \ восст. тек. адрес
+: >COMPILE-TO ( addr token -- ) \ execute a token word in address addr in target memory, then restore the current address
+  THERE >R        \ remember the current address
+  SWAP ORG        \ set the new address
+  EXECUTE         \ execute the token
+  R> ORG          \ restore the current address
 ;
 DECIMAL
-: COMPILE-TO ( addr -- ) \ Компилирует следующее слово по заданному адресу
+: COMPILE-TO ( addr -- ) \ compile the next word to the target address, state dependent word
   '
   STATE @ IF  \ компиляция
     [COMPILE] LITERAL POSTPONE >COMPILE-TO
@@ -63,18 +63,17 @@ DECIMAL
   THEN
 ; IMMEDIATE
 
-VARIABLE D-HERE         \ тек. адрес в области данных, RAM
-
-VARIABLE E-HERE         \ тек. адрес в области EEPROM
-0x2000 CONSTANT E-MEM-SIZE     \ 8k max EEPROM
-CREATE E-MEM E-MEM-SIZE ALLOT \ EEPROM
+VARIABLE D-HERE         \ current address in RAM
+VARIABLE E-HERE         \ current address in EEPROM
+0x2000 CONSTANT E-MEM-SIZE    \ 8k max EEPROM size
+CREATE E-MEM E-MEM-SIZE ALLOT \ EEPROM storage array
 E-MEM E-MEM-SIZE ERASE
 
-: EORG     ( addr -- )
+: EORG     ( addr -- ) \ set the current EEPROM size
   DUP EEPROM-SIZE > ABORT" Data is too large to fit to the EEPROM"
   E-HERE ! ;
 
-: EHERE  E-HERE @ ;     ( -- addr )
+: EHERE  E-HERE @ ;   ( -- addr )
 : E-ADDR E-MEM + ;    ( addr -- 'addr )
 : E!    E-ADDR W! ;   ( w addr -- )
 : EC!   E-ADDR C! ;   ( c addr -- )
@@ -85,22 +84,22 @@ E-MEM E-MEM-SIZE ERASE
 : E,  EHERE E!  TCELL EALLOT ;
 : EC, EHERE EC! 1 EALLOT ;
 
-: T-SAVE ( 2FILENAME ) \ в формате intel.hex
+: T-SAVE ( 2FILENAME -- ) \ save the ROM in HEX format
   T-MEM THERE 2SWAP
   SAVE
 ;
 
-: E-SAVE ( 2FILENAME )
+: E-SAVE ( 2FILENAME -- ) \ save the EEPROM in HEX format
   E-MEM EHERE 2SWAP
   SAVE
 ;
 
-: T-SAVE-BIN ( 2FILENAME ) \ в формате bin
+: T-SAVE-BIN ( 2FILENAME -- ) \ save the ROM in bin format
   T-MEM THERE 2SWAP
   BSAVE
 ;
 
-: E-SAVE-BIN ( 2FILENAME ) \ в формате bin
+: E-SAVE-BIN ( 2FILENAME ) \ save the EEPROM in bin format
   E-MEM EHERE 2SWAP
   BSAVE
 ;

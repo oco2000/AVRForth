@@ -1,7 +1,7 @@
-\ ---------------- отладка ----------------
-0 VALUE DEBUG-LEVEL \ уровень отладочных сообщений
+\ ---------------- debug messages ----------------
+0 VALUE DEBUG-LEVEL \ debug level: 0..3
 
-: ?DEBUG ( level -- f ) \ истина, если включена отладка для заданного уровня
+: ?DEBUG ( level -- f ) \ true is debug is on for the level
   DEBUG-LEVEL DUP IF > 0= ELSE NIP THEN
 ;
 
@@ -10,22 +10,22 @@
   DOES> @ TO DEBUG-LEVEL
 ;
 
-\ уровень 0 - не выводить сообщения
-0 LEVEL -DEBUG  \ выключить отладку
-\ уровень 1 - пользовательские сообщения
-1 LEVEL +DEBUG  \ включить отладку на уровне 1
-1 LEVEL +DEBUG1 \ включить отладку на уровне 1
-2 LEVEL +DEBUG2 \ включить отладку на уровне 2
-\ уровень 3 - сообщения оптимизатора
-3 LEVEL +DEBUG3 \ включить отладку на уровне 3
+\ level 0 - no debug messages
+0 LEVEL -DEBUG  \ turn off the messages
+\ level 1 - user messages
+1 LEVEL +DEBUG  \ turn on level 1
+1 LEVEL +DEBUG1 \ turn on level 1
+2 LEVEL +DEBUG2 \ turn on level 2
+\ level 2 - optimizer messages
+3 LEVEL +DEBUG3 \ turn on level 3
 
-: [THEN]   \ переопределим для использования в режиме компиляции
+: [THEN]   \ redefine to use in compilation state
   STATE @ IF \ компиляция
     POSTPONE THEN
   THEN
 ; IMMEDIATE
 
-: CONDITION ( level -- )
+: CONDITION ( level -- )  \ conditional operator for the debug level
   CREATE , IMMEDIATE
   DOES> @
     STATE @ IF
@@ -35,14 +35,14 @@
     THEN
 ;
 
-1 CONDITION [IFDEBUG]   \ если включена отладка на уровне 1
-1 CONDITION [IFDEBUG1]  \ если включена отладка на уровне 1
-2 CONDITION [IFDEBUG2]  \ если включена отладка на уровне 2
-3 CONDITION [IFDEBUG3]  \ если включена отладка на уровне 3
+1 CONDITION [IFDEBUG]   \ if debug level 1 is on
+1 CONDITION [IFDEBUG1]  \ if debug level 1 is on
+2 CONDITION [IFDEBUG2]  \ if debug level 2 is on
+3 CONDITION [IFDEBUG3]  \ if debug level 3 is on
 
 VECT (T.)
 
-: CONDITION_STRING ( level -- )
+: CONDITION_STRING ( level -- )  \ type a message if debug level is "level"
   CREATE , IMMEDIATE
   DOES>
     @ POSTPONE LITERAL
@@ -55,10 +55,10 @@ VECT (T.)
     POSTPONE THEN
 ;
 
-1 CONDITION_STRING DEBUG"   \ если включена отладка на уровне 1
-1 CONDITION_STRING DEBUG1"   \ если включена отладка на уровне 1
-2 CONDITION_STRING DEBUG2"   \ если включена отладка на уровне 2
-3 CONDITION_STRING DEBUG3"   \ если включена отладка на уровне 3
+1 CONDITION_STRING DEBUG"    \ type string if debug level 1 is on
+1 CONDITION_STRING DEBUG1"   \ type string if debug level 1 is on
+2 CONDITION_STRING DEBUG2"   \ type string if debug level 2 is on
+3 CONDITION_STRING DEBUG3"   \ type string if debug level 3 is on
 \ -------------------------------------------------------
 
 : 2CONSTANT ( x1 x2 "<spaces>name" -- )
@@ -76,7 +76,7 @@ VECT (T.)
 
 : TAB   0x9 EMIT ;
 
-\ устраняем баг в SP-FORTH, когда отдельно взятый знак "-" воспринимается как число 0
+\ fix SP-FORTH bug, separate "-" is interpreted as 0
 : ?SLITERAL3 ( c-addr u -- ... )
   2DUP 1 = SWAP C@ [CHAR] - = AND IF -2003 THROW THEN
   ?SLITERAL2
@@ -84,11 +84,11 @@ VECT (T.)
 
 ' ?SLITERAL3 TO ?SLITERAL
 
-\ выход при ошибке
+\ halt on errors
 : ?HALT
   ?DUP IF DUP ERROR2 HALT THEN ;
 
-' ?HALT TO ERROR
+' ?HALT TO ERROR \ set global error handler
 
 C" 2VARIABLE" FIND NIP 0=
 [IF]
@@ -101,37 +101,36 @@ C" 2VARIABLE" FIND NIP 0=
   DUP 0xFF AND
   SWAP 8 RSHIFT 0xFF AND ;
 
-: ?EMPTY ( -- ) \ контроль стека
+: ?EMPTY ( -- ) \ check the stack
     CR .S
     DEPTH 00 <> ABORT" Stack is not empty !!!"
 ;
 
-: .BASE
-    BASE @ DUP DECIMAL ." BASE = " . BASE !
+: .BASE \ type the current base value
+  BASE @ DUP DECIMAL ." BASE = " . BASE !
 ;
 
-: NDROP ( x1 ... xn n -- )
+: NDROP ( x1 ... xn n -- ) \ drop n values
   DEPTH 0= IF ABORT" Stack is empty" THEN
   DEPTH 1- OVER < IF ABORT" Stack underflow" THEN
   0 ?DO DROP LOOP
 ;
-\ ============================ битовые хитрости ================================
+\ ============================ bit operations ================================
 
 : EXP2  ( u -- 2^u )
     1 SWAP LSHIFT ;
 
-\ маска из n единиц начиная с позиции бита pos
-: SEQ_MASK ( pos n -- )
+: SEQ_MASK ( pos n -- ) \ mask of n ones starting from the position pos
     EXP2 1- SWAP LSHIFT
 ;
 
-: 1s        ( x -- n )      \ определить количество единичных битов в байте
+: 1s        ( x -- n )      \ how many 1s are in byte x
   DUP 0x55 AND   SWAP 2/        0x55 AND   +
   DUP 0x33 AND   SWAP 2/ 2/     0x33 AND   +
   DUP 0x0F AND   SWAP 04 RSHIFT 0x0F AND   +
 ;
 
-: LSB       ( x -- n )      \ получить позицию младшего единичного бита
+: LSB       ( x -- n )      \ position of the lowest significant bit
   0 ( x n )
   BEGIN
     OVER 1 AND 0=
@@ -141,12 +140,12 @@ C" 2VARIABLE" FIND NIP 0=
   NIP
 ;
 
-: RESET_LSB ( n -- n' )     \ сбросить младший единичный бит
-    DUP 1- AND
+: RESET_LSB ( n -- n' )     \ reset the LSB
+  DUP 1- AND
 ;
 
-: EXTRACT_LSB ( n -- n' )   \ сбросить все биты кроме младшего единичного
-    DUP 1- INVERT AND
+: EXTRACT_LSB ( n -- n' )   \ reset all bits except the LSB
+  DUP 1- INVERT AND
 ;
 
 \EOF

@@ -1,4 +1,4 @@
-: D<
+: D< ( d1 d2 -- f )
   zl popd
   tmp1l popd
   tmpl popd

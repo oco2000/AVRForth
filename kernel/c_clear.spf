@@ -10,16 +10,16 @@
 MACRO: CCLEAR    ( -- )
 [F]
   QLIT2? IF ( addr )
-    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+    QLIT1? IF   ( addr mask )  \ addr and mask are literals
       DEBUG3" CCLEAR addr+lit"
-      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
-      DUP 0xFF <> IF \ очистить все - чтение не нужно
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask = 0 - do nothing
+      DUP 0xFF <> IF \ if mask = 0xFF, do not fetch
         OVER ( a m a )
         zl lds
       THEN
       INVERT 0xFF AND zl andi
       zl SWAP sts
-    ELSE  \ известен адрес
+    ELSE  \ address is a literal
       DEBUG3" CCLEAR addr" ( addr )
       DUP tosh lds
       tosl com

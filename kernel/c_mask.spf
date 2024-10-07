@@ -9,16 +9,16 @@
 MACRO: CMASK    ( -- )
 [F]
   QLIT2? IF ( addr )
-    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+    QLIT1? IF   ( addr mask )  \ addr and mask are literals
       DEBUG3" CMASK addr+lit"
-      0xFF AND DUP 0xFF = IF 2DROP EXIT THEN \ маска = 0xFF - ничего не делать
-      DUP 0x0 <> IF \ очистить все - чтение не нужно
+      0xFF AND DUP 0xFF = IF 2DROP EXIT THEN \ mask = 0xFF - do nothing
+      DUP 0x0 <> IF \ don't fetch if mask is 0
         OVER ( a m a )
         zl lds
       THEN
       zl andi
       zl SWAP sts
-    ELSE  \ известен адрес
+    ELSE  \ addr is a literal
       DEBUG3" CMASK addr" ( addr )
       DUP tosh lds
       tosl tosh and

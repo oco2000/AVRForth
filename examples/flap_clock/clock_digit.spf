@@ -42,7 +42,7 @@ DROP
     OVER R@ DIGIT.SENSOR @P EXECUTE 0= = \ sensor has desired value
     SWAP 1- SWAP OVER 00 <> AND \ if full rotation was done
   WHILE
-    R@ DIGIT.ROTATION C@P C>S 0< IF -1 ELSE 1 THEN \ rotate 1 degree
+    R@ DIGIT.ROTATION CS@P 0< IF -1 ELSE 1 THEN \ rotate 1 degree
     R@ DIGIT.STEPPER@ STEPPER.ROTATE
   REPEAT
   2DROP RDROP
@@ -52,7 +52,7 @@ DROP
   >R
   TRUE  R@ DIGIT.ROTATE-UNTIL \ rotate until sensor is off
   FALSE R@ DIGIT.ROTATE-UNTIL \ rotate until sensor is on
-  R@ DIGIT.CORRECTION C@P C>S R@ DIGIT.STEPPER@ STEPPER.ROTATE \ correction after sensor detection
+  R@ DIGIT.CORRECTION CS@P R@ DIGIT.STEPPER@ STEPPER.ROTATE \ correction after sensor detection
   0 R@ DIGIT.STATE@ C! \ set the current digit to 0
   R> DIGIT.STEPPER@ STEPPER.RELEASE \ release the stepper
 ;
@@ -62,7 +62,7 @@ DROP
   R@ DIGIT.STATE@ C@ OVER = IF DROP RDROP EXIT THEN \ already displaying this digit
   R@ DIGIT.STATE@ C@ OVER < IF \ can rotate to the new digit directly
     R@ DIGIT.STATE@ C@ OVER R@ DIGIT.STATE@ C! \ store new digit
-    - R@ DIGIT.ROTATION C@P C>S * \ calculate rotation in degrees
+    - R@ DIGIT.ROTATION CS@P * \ calculate rotation in degrees
     R@ DIGIT.STEPPER@ STEPPER.ROTATE
   ELSE \ should rotate through zero
     R@ DIGIT.SET0 \ set to zero

@@ -10,7 +10,7 @@ LED BIT LED_PORT 2== {LED}
 REQUIRE MS lib/delay.spf
 
 : MAIN
-  LED BIT  LED_DDR SET    \ на выход
+  LED BIT  LED_DDR SET    \ output
   BEGIN
     {LED} SET
     250 MS

@@ -1,10 +1,9 @@
-\ из http://www.tinyboot.com/ff300.zip
+\ from http://www.tinyboot.com/ff300.zip, fixed and improved
 
-VARIABLE 'marker        \ переменная для организации листинга
+VARIABLE 'marker        \ everything before this address will not go to the listing
 
 [UNDEFINED] H. [IF]
-  : H.  BASE @ HEX SWAP U. BASE ! ;
-\ OP1
+  : H.  BASE @ HEX SWAP U. BASE ! ; \ pring hex value
 [THEN]
 
 [UNDEFINED] /STRING [IF]
@@ -15,13 +14,12 @@ BASE @ HEX
 
 MODULE: AVRDIS
 
-
-0 VALUE OPCODE
+0 VALUE OPCODE              \ Current opcode
 0 VALUE DPC
 0 VALUE OFFSET              \ ADD THIS TO DPC TO GET PHYSICAL ADDRESS
 
-\ массив с адресами строк комментариев
-\ ALLOT не получится из-за ограничения размера словаря 512к
+\ array of addresses of comment strings, array index is a ROM address
+\ cannot use ALLOT because of dictionary length limit of 512к
 
 EXPORT
 
@@ -32,24 +30,24 @@ DEFINITIONS
 
 COMMENTS T-MEM-SIZE CELLS ERASE
 
-: .COMMENT  ( caddr -- )
+: .COMMENT  ( caddr -- ) \ print the comment for the ROM address caddr if exists
     CELLS COMMENTS + @ ?DUP IF
         ." \ "
         COUNT TYPE CR
     THEN
 ;
 
-: .NAME ( caddr -- )
+: .NAME ( caddr -- ) \ print the name for the word at address caddr
   TAB ." ( " ID. ."  )"
 ;
 
-: .NAME.CR ( caddr -- )
+: .NAME.CR ( caddr -- ) \ print the name for the word at address caddr and CR
   ."  : " ID. CR
 ;
 
 VECT {.NAME}
 
-: IN_TARGET? ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+: IN_TARGET? ( A -> )    \ execute vector {.NAME} for the word if it is in TARGET vocabulary
   >R CONTEXT @ @ ( link )
   BEGIN
     DUP     ( link link )
@@ -68,22 +66,22 @@ VECT {.NAME}
   R> 2DROP
 ;
 
-: IN_TARGET ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+: IN_TARGET ( A -> )    \ print the word if it is in TARGET
   ['] .NAME TO {.NAME}
   IN_TARGET?
 ;
 
 
-: IN_TARGET_CR ( A -> )    \ если слово есть в словаре TARGET, напечатать его
+: IN_TARGET_CR ( A -> )    \ print the word (with CR) if it is in TARGET
   ['] .NAME.CR TO {.NAME}
   IN_TARGET?
 ;
 
 : NIBBLES       ( -- N0 N1 ) OPCODE 0FF AND 10 /MOD ;
-: .NUM      ." 0x" H. ;
-: .ADDR     5 H.N SPACE ;
+: .NUM          ( N -- ) ." 0x" H. ;
+: .ADDR         ( N -- ) 5 H.N SPACE ;
 : .DNUM         ( N -- )  BASE @ SWAP DECIMAL . BASE ! ;
-: .RN       ." r" .DNUM ;
+: .RN           ( N -- ) ." r" .DNUM ;
 : RD,K8         ( -- )   NIBBLES SWAP OPCODE 4 RSHIFT 0F0 AND  +  .NUM 10 + .RN  ;
 : RD,K6         ( STR - )  NIBBLES 4 /MOD SWAP 2* 18 +
                >R 4 LSHIFT + .NUM
@@ -101,7 +99,7 @@ VECT {.NAME}
 : RD,RR         ( -- )    RR RD ;
 : RD,RRW        ( -- )    OPCODE 0F AND 2*          .RN    \ RRW
                           OPCODE 4 RSHIFT 0F AND 2* .RN    \ RDW
-                                                    ;
+;
 : D=D?          ( -- F )  RD= RR= = ;
 
 : BRS           ( A N -- )      \ 10-BIT BRANCH
@@ -171,7 +169,6 @@ VECT {.NAME}
 ;
 
 : ??> CREATE LAST @ , DOES> @ COUNT TYPE SPACE ;
-
 
 ??> ???
 ??> RD,RR16
@@ -329,14 +326,14 @@ VECT {.NAME}
 
 EXPORT
 
-: \\ ( "ccc" -- ) \ определить комментарий, который появится в листинге в текущем месте
+: \\ ( "ccc" -- ) \ comment will appear in the listing
   HERE
   1 WORD
   ",
   THERE CELLS COMMENTS + !
 ; IMMEDIATE
 
-: TINST  ( ADR -- ADR' )
+: TINST  ( ADR -- ADR' ) \ disassemble the instruction for adr in ROM and go to the next one
   DUP .COMMENT
   DUP IN_TARGET_CR
   DUP .ADDR DUP T@ 4 H.N TAB

@@ -1,4 +1,4 @@
-\ тест-файл для AVRFORTH
+\ test file for AVRFORTH
 \ +DEBUG3 \ отладочные сообщения
 
 [F] DECIMAL
@@ -16,19 +16,19 @@ REQUIRE USART         lib/usart/usart.spf
 
 RCREATE SBUF1 0x80 ALLOT
 
-: ALIGNED              ( addr -- addr' ) \ выровнять addr по четному адресу
+: ALIGNED              ( addr -- addr' ) \ align addr
     1+ 0xFFFE AND ;
 
 : (S") ( -- a n )
-  R@ 2* COUNTP  R> 2* OVER + 1+ ALIGNED 2/ >R ( addr cnt ) \ пропустили символы
-  SWAP OVER SBUF1 SWAP CMOVEP ( cnt ) \ перенесли в ОЗУ
+  R@ 2* COUNTP  R> 2* OVER + 1+ ALIGNED 2/ >R ( addr cnt ) \ skip the chars
+  SWAP OVER SBUF1 SWAP CMOVEP ( cnt ) \ copy to RAM
   SBUF1 SWAP
 ;
 
 :: S"
-   (S")    \ компилировать вызов (S")
-   C"      \ " \ компилировать строку со счетчиком
-  [F] DROP [P] \ удалить адрес, оставленный предыдущим словом
+  (S")    \ compile (S")
+  C"      \ " \ compile the counted string
+  [F] DROP [P]
 ;;
 
 TREQUIRE TYPE
@@ -671,7 +671,7 @@ TESTING DIVIDE: FM/MOD SM/REM UM/MOD */ */MOD / /MOD MOD
     { -7 2 3 */ -> -7 2 3 T*/ }
     { -7 2 -3 */ -> -7 2 -3 T*/ }
 
-    ( А.Ч. Это просто ошибка разработчика теста, по ANS здесь overflow
+    ( A.C. should be overflow?
     { MAX-INT 2 1 */ -> MAX-INT 2 1 T*/ }
     { MIN-INT 2 1 */ -> MIN-INT 2 1 T*/ }
     )
@@ -697,7 +697,7 @@ TESTING DIVIDE: FM/MOD SM/REM UM/MOD */ */MOD / /MOD MOD
     { -7 2 3 */MOD -> -7 2 3 T*/MOD }
     { -7 2 -3 */MOD -> -7 2 -3 T*/MOD }
 
-    ( А.Ч. тоже ошибка, должно быть overflow
+    ( A.C. should be overflow?
     { MAX-INT 2 1 */MOD -> MAX-INT 2 1 T*/MOD }
     { MIN-INT 2 1 */MOD -> MIN-INT 2 1 T*/MOD }
     )
@@ -850,7 +850,7 @@ TESTING IF ELSE THEN BEGIN WHILE REPEAT UNTIL RECURSE
 : GI3 BEGIN DUP 5 < WHILE DUP 1+ REPEAT ;
 : GI4 BEGIN DUP 1+ DUP 5 > UNTIL ;
 \ : GI5 BEGIN DUP 2 > WHILE DUP 5 < WHILE DUP 1+ REPEAT 123 ELSE 345 THEN ;
-\ множественные WHILE не реализованы
+\ multiple whiles are not implemented
 : GI6 ( N -- 0,1,..N ) DUP IF DUP >R 1- ['] GI6 EXECUTE  R> THEN ;
 
 : IF_ELSE
@@ -871,7 +871,7 @@ TESTING IF ELSE THEN BEGIN WHILE REPEAT UNTIL RECURSE
     { 5 GI4 -> 5 6 }
     { 6 GI4 -> 6 7 }
 
-    \ ~ ( А.Ч. - исправить )
+    \ ~ ( A.C. - fix )
     \ ~ { 1 GI5 -> 1 345 }
     \ ~ { 2 GI5 -> 2 345 }
     \ ~ { 3 GI5 -> 3 4 5 123 }
@@ -969,7 +969,7 @@ VARIABLE V1
 
 \ ------------------------------------------------------------------------
 \ ~ TESTING EVALUATE
-\ ~ не реализовано
+\ ~ not implemented
 \ ~ : GE1 S" 123" ; IMMEDIATE
 \ ~ : GE2 S" 123 1+" ; IMMEDIATE
 \ ~ : GE3 S" : GE4 345 ;" ;
@@ -987,7 +987,7 @@ VARIABLE V1
 \ ~
 \ ------------------------------------------------------------------------
 \ ~ TESTING SOURCE >IN WORD
-\ ~ не реализовано
+\ ~ not implemented
 \ ~ : GS1 S" SOURCE" 2DUP EVALUATE
        \ ~ >R SWAP >R = R> R> = ;
 \ ~ { GS1 -> <TRUE> <TRUE> }
@@ -1084,7 +1084,7 @@ VARIABLE #BITS-UD         \ NUMBER OF BITS IN UD
     { GP7 -> <TRUE> }     \ BUG: FAILS ON JHFORTH: LOWERCASE A
 
     \ >NUMBER TESTS
-    \ не реализовано
+    \ ~ not implemented
     \ ~ CREATE GN-BUF 0 C,
     \ ~ : GN-STRING     GN-BUF 1 ;
     \ ~ : GN-CONSUMED   GN-BUF CHAR+ 0 ;
@@ -1153,14 +1153,13 @@ RCREATE SBUF 03 ALLOT
     { SBUF FBUF 3 CHARS CMOVE -> }
     { SEEBUF -> 12 34 56 }
 
-    \ работает только с MOVE
+    \ MOVE not implemented
     \ ~ { FBUF FBUF CHAR+ 2 CHARS MOVE -> }
     \ ~ { SEEBUF -> 12 12 34 }
     \ ~
     \ ~ { FBUF CHAR+ FBUF 2 CHARS MOVE -> }
     \ ~ { SEEBUF -> 12 34 34 }
     \ ~
-    \ CMOVE обязательно байтовое! Dmitry Yakimov
     { FBUF FBUF CHAR+ 2 CHARS CMOVE -> }
     { SEEBUF -> 12 12 12 }
 ;

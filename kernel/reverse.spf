@@ -1,18 +1,4 @@
-: REVERSE ( c -- rev_c )
-\ ~ ;                            ;tmp=  abcdefgh
-    \ ~ mov     tmp2, tmp        ;tmp2= abcdefgh
-    \ ~ asr     tmp              ;tmp=  aabcdefg C=h
-    \ ~ ror     tmp2             ;tmp2= habcdefg C=h
-    \ ~ rol     tmp              ;tmp=  abcdefgh C=a
-    \ ~ rol     tmp              ;tmp=  bcdefgha
-    \ ~ andi    tmp2, 0b10101010 ;tmp2= h0b0d0f0
-    \ ~ andi    tmp,  0b01010101 ;tmp=  0c0e0g0a
-    \ ~ add     tmp,  tmp2       ;tmp=  hcbedgfa
-    \ ~ mov     tmp2, tmp        ;tmp2= hcbedgfa
-    \ ~ andi    tmp2, 0b01100110 ;tmp2= 0cb00gf0
-    \ ~ swap    tmp2             ;tmp2= 0gf00cb0
-    \ ~ andi    tmp,  0b10011001 ;tmp=  h00ed00a
-    \ ~ add     tmp,  tmp2       ;tmp=  hgfedcba
+: REVERSE ( c -- rev_c ) \ reverse bits in c
   [
     tosl zl mov
     tosl asr

@@ -6,13 +6,13 @@
 [F] TimerDivider NEGATE [P] == -TimerDivider
 
 : RTOS_INIT_TIMER
-  WGM21 BIT  TCCR2A C!          \  Freq = CK/64 - Установить режим и предделитель
-                                \  Автосброс после достижения регистра сравнения
+  WGM21 BIT  TCCR2A C!          \  Freq = CK/64
+                                \  Autoreset
   CS22  BIT  TCCR2B C!
   0x0 TCNT2 C!
   [ TimerDivider 0xFF [F] AND [P] ] LITERAL OCR2A C!
-                                \  Установить значение в регистр сравнения
-  OCIE2A BIT  TIMSK2 C!         \  Разрешаем прерывание RTOS - запуск ОС
+                                \ set the compare value
+  OCIE2A BIT  TIMSK2 C!         \ enable timer interrupt - run the OS
 ;
 
 MACRO: RTOS_FIX_TIMER   ;MACRO

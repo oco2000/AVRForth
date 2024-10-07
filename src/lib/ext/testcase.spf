@@ -124,7 +124,7 @@ EXPORT
 
 ;MODULE
 
-\EOF \ Пример использования
+\EOF \ example
 
 TESTCASES testcase.f
 

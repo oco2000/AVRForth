@@ -1,4 +1,4 @@
-\ ================== порты ввода-вывода ====================
+\ ================== IO Ports ====================
 
 TREQUIRE C@
 TREQUIRE C!
@@ -6,32 +6,32 @@ TREQUIRE AND
 
 [F]
 
-\ структура порта
+\ port structure
 0x0
 CELL -- port
 CELL -- ddr
 CELL -- pin
 DROP
 
-\ определение порта ввода-вывода
+\ Port definition
 : PORT ( port ddr pin -- )
   CREATE ROT , SWAP , ,
   DOES>
 ;
-\ получить DDR порта
+\ get the DDR
 : {DDR} ( 'port -- ddr )
   ddr @
 ;
-\ получить PIN порта
+\ get the PIN
 : {PIN} ( 'port -- pin )
   pin @
 ;
-\ получить PORT порта
+\ get the PORT
 : {PORT} ( 'port -- port )
   port @
 ;
 
-\ определения битов портов
+\ define the bits
 : PORTx.x ( bit port -- bit+1 port )
   2DUP SWAP EXP2 SWAP 2CONSTANT
   SWAP 1+ SWAP
@@ -121,65 +121,66 @@ DROP
   2DROP
 [THEN]
 
-\ ================== группы линий порта ввода-вывода ====================
+\ ================== wire groups ====================
 
 : ?ONE_PORT ( port1 port2 -- )
-  <> ABORT" В группе должен быть только один порт"
+  <> ABORT" Only one port in a group is allowed"
 ;
 
-\ группа линий порта, заданная маской
+\ wire group start
 : GROUP{      ( -- -1 )
-  ?TEXEC -01 \ только для целевой интерпретации
+  ?TEXEC -01
 ;
 
+\ wire group end
 : }GROUP      ( -1 mask0 port0 mask1 port1 .. maskx portx -- )
   CREATE
     DUP >R ( R: port )
     00 BEGIN ( mask )
-      OVER -01 <>      \ пока не встретим -1
+      OVER -01 <>
     WHILE
       SWAP R@ ?ONE_PORT
       OR
     REPEAT
-      R> , ,
-      DROP
+    R> , ,
+    DROP
     \ n portn bitn  ...  port0 bit0
   DOES>   ( mask port )
     2@
 ;
 
-\ добавить группу к группе
+\ add a group to another group
 : +GROUP     ( mask1 port1 mask2 port2 -- mask port )
   ROT OVER ?ONE_PORT
   -ROT OR SWAP
 ;
 
-\ вычесть группу из группы
+\ subtract a group from another one
 : -GROUP     ( mask1 port1 mask2 port2 -- mask port )
   ROT OVER ?ONE_PORT
   -ROT INVERT AND SWAP
 ;
 
-\ одна линия порта
+\ a wire
 : WIRE
   2CONSTANT
 ;
 
-\ компилировать регистр PORT группы как литерал или оставить порт на стеке хоста
+\ compile PORT of a group as a literal
 : {GROUP.PORT} ( mask port -- )
   NIP T-STATE @ IF
     {PORT} [T] LITERAL [P]
   THEN
 ;
 
-\ компилировать маску группы как литерал или оставить на стеке хоста
+\ compile MASK of a group as a literal
 : {GROUP.MASK} ( mask port -- )
   DROP T-STATE @ IF
     [T] LITERAL [P]
   THEN
 ;
 
-\ компилировать маску группы как литерал и оставить порт на стеке
+\ compile MASK of a group as a literal and leave PORT on the stack
 : ,MASK     ( mask port -- port )
   ?TCOMP
   SWAP [T] LITERAL [P]
@@ -187,62 +188,62 @@ DROP
 
 [P]
 
-\ установить биты группы
+\ set group bits
 :: {SET} ( mask port -- )
   ?TCOMP ,MASK {PORT} LITERAL SET
 ;;
 
-\ переключить биты группы
+\ toggle group bits
 :: {TOGGLE} ( mask port -- )
   ?TCOMP ,MASK {PORT} LITERAL TOGGLE
 ;;
 
-\ очистить биты группы
+\ clear group bits
 :: {CLEAR} ( mask port -- )
   ?TCOMP ,MASK {PORT} LITERAL CLEAR
 ;;
 
-\ настроить биты группы на выход
+\ set wires for output
 :: {OUTPUT} ( mask port -- )
   ?TCOMP ,MASK {DDR} LITERAL SET
 ;;
 
-\ настроить биты группы на вход
+\ set wires for input
 :: {INPUT} ( mask port -- )
   ?TCOMP ,MASK {DDR} LITERAL CLEAR
 ;;
 
-\ включить подтягивающие резисторы
+\ set pull_up for wires
 :: {PULL_UP} ( mask port -- )
   {SET}
 ;;
 
-\ прочитать значение из порта группы
+\ read value from the PORT
 :: {READ} ( mask port -- )
           ( T: -- c )
   ?TCOMP {PIN} LITERAL C@ [F] DROP [P]
 ;;
 
-\ прочитать значение из порта группы и маскировать
+\ read value from the PORT and mask it
 :: {GET} ( mask port -- )
               ( T: -- c )
   ?TCOMP {PIN} LITERAL C@ LITERAL AND
 ;;
 
-\ записать байт в порт группы
+\ write a byte to the PORT
 :: {WRITE} ( mask port -- )
           ( T: c -- )
   ?TCOMP {PORT} LITERAL C! [F] DROP [P]
 ;;
 
-\ прочитать значение из порта
+\ read a byte from the PIN
 :: PORT.READ ( port -- )
               ( T: -- c )
   ?TCOMP {PIN} LITERAL C@
 ;;
 
-\ записать байт в порт группы
-:: PORT.WRITE ( mask port -- )
+\ write a byte to the PORT
+:: PORT.WRITE ( port -- )
               ( T: c -- )
   ?TCOMP {PORT} LITERAL C!
 ;;

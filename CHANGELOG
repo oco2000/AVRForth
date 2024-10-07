@@ -1,153 +1,154 @@
-! - исправлены ошибки
-+ - новые возможности
-- - убран лишний код
+Legend:
+! - bug fixes
++ - new features
+- - code cleanup
 
-Версия 0.1, январь 2012
-Начальная версия
+Version 0.1, Jan 2012
+The very beginning
 
-Версия 0.2, февраль 2012
-! исправлены ошибки
-+ используются команды, специфичные для конкретного контроллера (по возможности)
-   - movw - работает
-   - mul - работает
-+ в словах IN, OUT, |=, &=~, != по возможности используются команды in, out
-+ слова ['], '
-! в EERTOS исправлены неточные временные интервалы для mega8
+Version 0.2, Feb 2012
+! bugs fixed
++ use assembly instructions, specific for a device (if possible)
+   - movw - works
+   - mul - works
++ in words IN, OUT, |=, &=~, !=  in, out instructions are used
++ words ['], '
+! EERTOS: fixed wrong timings for mega8
 
-Версия 0.3, февраль 2012
-! исправлены ошибки
-+ теперь используется только словарь TARGET, поэтому стало проще вылавливать
-  трудноуловимые ошибки, если слово было в словаре FORTH, но не было в TARGET. Сейчас
-  просто выдается сообщение о ненайденном слове
+Version 0.3, Feb 2012
+! bugs fixed
++ only TARGET vocabulary is used while compiling
 
-Версия 0.4, март 2012
-! исправлены ошибки
-+ добавлены новые слова U<, WITHIN, CMOVE, CMOVEP, 2VARIABLE, 2EVARIABLE, 2CONSTANT
-! дополнено и исправлено руководство
+Version 0.4, Mar 2012
+! bugs fixed
++ new words U<, WITHIN, CMOVE, CMOVEP, 2VARIABLE, 2EVARIABLE, 2CONSTANT
+! manual fixed
 
-Версия 0.5, апрель 2012
-+ добавлена оптимизация хвостовой рекурсии
-+ новое слово CALL-ONLY:
+Version 0.5, Apr 2012
++ tail recursion optimization
++ new word CALL-ONLY:
 
-Версия 0.6, апрель 2012
-+ новые слова SET, CLEAR, MASK, TOGGLE, STORE - аналоги |= , &=~ , &= , ^= , !=
-+ новый пример tst_spi.spf, m168_SPI.dsn - управление регистрами 74HC595 по интерфейсу SPI
-+ слова для временных задержек вынесены в библиотеку lib/delay.spf
-+ слова ICREATE и IDOES> заменены на PCREATE и PDOES>
-! исправлена и дополнена документация
-+ compile.bat для Windows
+Version 0.6, Apr 2012
++ new words SET, CLEAR, MASK, TOGGLE, STORE - equivalents to  |= , &=~ , &= , ^= , !=
++ new example tst_spi.spf, m168_SPI.dsn - control 74HC595 over SPI
++ delay words are in lib/delay.spf now
++ ICREATE and IDOES> are renamed to PCREATE and PDOES>
+! manual fixed
++ compile.bat for Windows
 
-Версия 0.7, апрель 2012
-+ слова SET, CLEAR по возможности компилируют инструкции sbi, cbi
-+ все примеры перенесены в индивидуальные каталоги в каталоге examples вместе со
-  схемами proteus-a
-+ для каждого примера сделан свой Makefile и скомпилировать его можно просто командой make,
-  прошить - make flash, очистить от ненужных файлов - make clean
-+ некоторая оптимизация кода
-+ дополнена документация
+Version 0.7, Apr 2012
++ words SET, CLEAR compile sbi, cbi instructions where possible
++ all examples are moved to separate folders in examples folder
++ for every example there is a Makefile, so you can compile it with 'make', flash with 'make flash', clear with 'make clean'
++ code optimization
+! manual fixed
 
-Версия 0.7.1, май-июль 2012
-+ новый контроллер ATMega128
-! исправлен пример clock
-! исправлена библиотека eertos
+Version 0.7.1, May-Jul 2012
++ new device ATMega128
+! clock example fixed
+! fixes in eertos
 
-Версия 0.8, август 2012
-+ оптимизация литералов
-! исправлен buttons.spf
-! исправлен пример clock.spf
-! незначительные исправления
-! изменены слова для манипулирования битами и для работы с портами
-! исправлено слово UM+
+Version 0.8, Aug 2012
++ literals optimization
+! buttons.spf fixed
+! clock.spf fixed
+! minor fixes
+! UM+ fixed
 
-Версия 0.9, август 2012
-+ оптимизация DROP literal, popt pusht
-! исправлен цикл DO..LOOP
-+ добавлено слово +LOOP и исправлено, спасибо Ethereal!
-+ добавлено слово J
-+ доработан листинг
-+ доработан дизассемблер
-! исправлен clock.spf
+Version 0.9, Aug 2012
++ DROP literal, popt pusht optimized
+! DO..LOOP fixed
++ new word +LOOP, thanks to Ethereal!
++ new word J
++ listing improved
++ disassembly improved
+! clock.spf fixed
 
-Версия 1.0, август 2012
-! оптимизированы по литералам DO, ?DO и +LOOP
-! слова >> и << изменены на RSHIFT и LSHIFT
-! слова: . LEAVE приведены к стандарту
-+ добавлены слова: UNLOOP D< D0< FM/MOD SPACE SPACES U. */ <>
-- удалены слова: M/MOD
-! исправлены слова: MIN CMOVE UM/MOD 2SWAP
-! подправлен листинг
-! доработан дизассемблер
-! исправлен баг в SP-FORTH, когда отдельно взятый знак "-" воспринимается как число 0
-+ добавлен пример: examples/tester.spf, программа тестирования правильности выполнения слов
+Version 1.0, Aug 2012
+! DO, ?DO и +LOOP optimized for literals
+! words >> and << renamed to RSHIFT and LSHIFT
+! words . and LEAVE are according to the standard
++ new words: UNLOOP D< D0< FM/MOD SPACE SPACES U. */ <>
+- removed: M/MOD
+! fixed: MIN CMOVE UM/MOD 2SWAP
+! listing fixed
++ disassembly improved
+! SP-FORTH bug fixed, separate "-" was interpreted as 0
++ new example: examples/tester.spf, standard forth testing suite
 
-Версия 1.1, сентябрь 2012
-+ заготовка к библиотеке usart (реализован вывод без прерываний)
-+ пример tst_usart.spf
-! "причесан" tester.spf, добавлен вывод сообщений на терминал
-! оптимизировано по литералам слово CELLS
-+ новые слова SP" ." CR .SN .S [CHAR]
-+ расширены возможности вывода отладочных сообщений
-+ дополнена документация
+Version 1.1, Sep 2012
++ usart library
++ tst_usart.spf example
+! tester.spf cleanup, messages to the console
+! CELLS is optimized for literals
++ new words SP" ." CR .SN .S [CHAR]
++ debug messages improved
++ manual improved
 
-Версия 1.2, декабрь 2012 - январь 2013
-+ новое слово FCONST - обычная константа форта
-+ новое слово NIBBLE-SWAP
-+ простые порты
-+ группы линий
-+ шины
-+ комментарии в листинге с помощью слова \\
-+ оптимизация
-+ библиотека lcd переписана с помощью шин
-+ makefile в папке examples, который позволяет скомпилировать все примеры сразу
+Version 1.2, Dec 2012 - Jan 2013
++ new word FCONST - Forth constant
++ new word NIBBLE-SWAP
++ simple ports
++ wire groups
++ buses
++ listing comments with \\
++ optimization
++ lcd library is rewritten with buses
++ makefile for all examples
 
-Версия 1.3, январь 2013
-! исправлены ошибки
-! частота CPU теперь задается в герцах
-+ оптимизация
-+ добавлены слова VECT, IS, EXP2
-! слово EMIT переопределено через VECT
-! все слова дают ошибку при попытке использовать их не во время целевой компиляции
-+ добавлена функция вывода больших цифр и букв в библиотеку LCD (см. пример lcd_big)
-+ прерывание таймера переписано на ассемблере, добавлена функция удаления задачи из очереди (eertos)
-+ библиотека buttons переписана с помощью групп портов (ports.spf)
-+ дополнена документация
+Version 1.3, Jan 2013
+! bugs fixed
+! CPU frequency is now in Hz
++ optimization
++ new words VECT, IS, EXP2
+! EMIT is now VECT
+! all words throw error when not in target compilation mode
++ big characters for LCD library (lcd_big example)
++ eertos: timer interrupt handler is now in assembly, new function to remove a task from the queue
++ buttons library is rewritten with groups (ports.spf)
++ manual improved
 
-Версия 1.3, август 2019
-+ автовключение слов
+Version 1.3, Aug 2019
++ words autoinclusion
 
-Версия 1.4, сентябрь 2019
-+ рефакторинг
-+ быстрые/медленные литералы
+Version 1.4, Sep 2019
++ refactoring
++ fast/slow literals
 
-Version 1.5, November 2019
+Version 1.5, Nov 2019
 + RC5, LCD I2C libraries
 ! some critical bugfixes
 ! documentation was updated
 
-Version 1.5.1, November 2019
+Version 1.5.1, Nov 2019
 + libraries refactoring
 
-Version 1.5.2, November 2019
+Version 1.5.2, Nov 2019
 + memory bit operations
 
-Version 1.5.3, November 2019
+Version 1.5.3, Nov 2019
 + optimized lpm instruction
 + optimized I2C library
 + LCD menu optimization
 
-Version 1.5.4, November 2019
+Version 1.5.4, Nov 2019
 + new ~AND word
 
-Version 1.5.5, November 2019
-+ Preamp changes
+Version 1.5.5, Nov 2019
++ Preamp example changes
 + LCD Menu fixes
 
-Version 1.5.6, September 2024
+Version 1.5.6, Sep 2024
 + new device ATMega328p
 + new example - blinky for Arduino Nano 3.0 (atmega328p)
 + sp-forth is working for Ubuntu 24.04
 
 Version 1.5.7, September 2024
-+ new library for stepper motor + exapmles
++ new library for stepper motors + exapmles
 + new rtc+uart example
 + new hall sensor example
+
+Version 1.6.0, Oct 2024
++ English manual and code comments
+! SP-Forth error messages fixed
++ flap clock example

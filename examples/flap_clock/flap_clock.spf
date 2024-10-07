@@ -1,3 +1,5 @@
+\ Flap clock implementation for https://www.thingiverse.com/thing:5964202
+
 @DECIMAL
 
 16000000 == F_CPU

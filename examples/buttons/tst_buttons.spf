@@ -10,11 +10,11 @@ TREQUIRE !E
 REQUIRE {SET}           lib/ports.spf
 REQUIRE BUS.WRITE       lib/bus.spf
 
-\ определения портов
+\ wire definitions
 PD7 WIRE LED
 
-\ обязательно надо определить порт с кнопками для buttons.spf
-PB0 WIRE BTN_SET              \  сами кнопки
+\ buttons
+PB0 WIRE BTN_SET
 PB1 WIRE BTN_+
 PB2 WIRE BTN_-
 
@@ -31,12 +31,12 @@ MACRO: LED_ON
 
 EVARIABLE PERIOD   100 PERIOD !E
 
-: LED_OFF   \ нельзя сделать макросом, потому что это слово
-            \ ставится в очередь как задача
+: LED_OFF   \ can't be a macro
+            \ this word is a task
   LED {SET}
 ;
 
-: BLINK         \ мигнуть светодиодом на 100 мс
+: BLINK         \ blink for PERIOD msecs
   LED_ON
   ['] LED_OFF PERIOD @E RTOS_SET_TIMER_TASK
 ;
@@ -45,32 +45,32 @@ EVARIABLE PERIOD   100 PERIOD !E
   DUP @E ROT + SWAP !E
 ;
 
-: BTN0_TASK
+: BTN0_TASK \ increment the period
   100 PERIOD +!E   BLINK
 ;
 
-: BTN1_TASK
+: BTN1_TASK \ decrement the period
   PERIOD @E 100 - 100 MAX PERIOD !E   BLINK
 ;
 
-: BTN2_TASK
+: BTN2_TASK \ blink
   BLINK
 ;
 
-TCREATE BTN_TASKS           \ задачи для кнопок
+TCREATE BTN_TASKS           \ button tasks
 ' BTN0_TASK T,   ' BTN1_TASK T,   ' BTN2_TASK T,
 
 : INIT
   LED {OUTPUT}
   PERIOD @E 0= IF 200 PERIOD !E THEN
 
-  0x7 BUTTONS_ENABLED C!                      \ все кнопки вкл
+  0x7 BUTTONS_ENABLED C!                          \ all buttons enabled
   0x6 BUTTONS_REPEATABLE C!
-  BTN_TASKS BUTTONS_TASKS !                       \ задачи для кнопок
-  BUTTONS_INIT                                    \ инициализация порта
+  BTN_TASKS BUTTONS_TASKS !                       \ set tasks
+  BUTTONS_INIT
 
   RTOS_INIT
-  ['] BUTTONS_TASK RTOS_SET_TASK                  \ обработчик кнопок
+  ['] BUTTONS_TASK RTOS_SET_TASK                  \ buttons handler
   RTOS_RUN
   BLINK
 ;

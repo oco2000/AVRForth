@@ -1,4 +1,4 @@
-: (CTOGGLE)         ( mask addr -- )                   ( clear masked bits )
+: (CTOGGLE)         ( mask addr -- )                   ( toggle masked bits )
   poptmp
   [x] tmph ld
   tmpl tmph eor
@@ -9,19 +9,19 @@
 MACRO: CTOGGLE    ( -- )
 [F]
   QLIT2? IF ( addr )
-    QLIT1? IF   ( addr mask )  \ известен адрес и значение
+    QLIT1? IF   ( addr mask )  \ addr and mask are literals
       DEBUG3" CTOGGLE addr+lit"
-      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask = 0 - do nothing
       OVER ( a m a )
       zl lds
-      DUP 0xFF = IF
+      DUP 0xFF = IF \ mask = 0xff - invert the value
         DROP zl com
       ELSE
         zh ldi
         zh zl eor
       THEN
       zl SWAP sts
-    ELSE  \ известен адрес
+    ELSE  \ addr is a literal
       DEBUG3" CTOGGLE addr" ( addr )
       DUP tosh lds
       tosl tosh eor

@@ -1,21 +1,21 @@
-VARIABLE FLIST                  \ файл с листингом
+VARIABLE FLIST                  \ listing file
 
-: (type)                        \ печать в файл
+: (type)  ( a u -- )            \ type to the listing
   FLIST @ WRITE-FILE THROW
 ;
 
-: LIST                          \ печатать листинг
-    ['] TYPE BEHAVIOR  \ запомнить куда указывает вектор TYPE
-    ['] (type) TO TYPE
+: LIST                          \ print the listing
+    ['] TYPE BEHAVIOR  \ remember TYPE vector address
+    ['] (type) TO TYPE \ redirect typing to the file
       0
       BEGIN
-        TINST CR
-      DUP THERE = UNTIL
+        TINST CR \ print one instruction
+      DUP THERE = UNTIL \ until THERE
       DROP
-    TO TYPE \ восстановить вектор TYPE
+    TO TYPE \ restore TYPE vector
 ;
 
-: LIST-SAVE ( 2FILENAME )        \ создать листинг
+: LIST-SAVE ( 2FILENAME )        \ create the listing
   R/W CREATE-FILE THROW
   FLIST !
   LIST

@@ -6,9 +6,9 @@
 [F] TimerDivider NEGATE [P] == -TimerDivider
 
 : RTOS_INIT_TIMER
-  BITS{ CS01 CS00 }BITS TCCR0 C!         \  Freq = CK/64 - Установить режим и предделитель
+  BITS{ CS01 CS00 }BITS TCCR0 C!         \  Freq = CK/64
   -TimerDivider TCNT0 C!
-  TOIE0 BIT TIMSK C!            \  Разрешаем прерывание RTOS - запуск ОС
+  TOIE0 BIT TIMSK C!            \ enable timer interrupt - run the OS
 ;
 
 TREQUIRE C@
@@ -18,7 +18,7 @@ MACRO: RTOS_FIX_TIMER
   TCNT0 C@
   TimerDivider -
   TCNT0 C!
-  \ корректируем счетчик
+  \ fix the counter
 ;MACRO
 
 TIMER0_OVF == RTOS_TIMER_INTERRUPT

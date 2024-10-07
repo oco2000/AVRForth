@@ -1,4 +1,4 @@
-: CMOVEP ( c-addr-rom c-addr-ram u -- )  \ копировать из ROM в RAM u байт
+: CMOVEP ( c-addr-rom c-addr-ram u -- )  \ copy u bytes from ROM to RAM
 [
   tosl r16 movw
   popt

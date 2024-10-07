@@ -1,3 +1,5 @@
+\ hall sensor demo
+
 @DECIMAL
 
 16000000 == F_CPU

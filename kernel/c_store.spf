@@ -4,19 +4,19 @@
   popt
 ;
 
-MACRO: C!    ( -- )  
+MACRO: C!    ( -- )
 [F]
-  QLIT2? IF ( addr ) 
-    QLIT1? IF   ( addr lit )  \ известен адрес и значение
+  QLIT2? IF ( addr )
+    QLIT1? IF   ( addr lit )  \ addr and value are literals
       DEBUG3" C! addr+lit"
       zl ldi
       zl SWAP _out
-    ELSE  \ известен адрес
+    ELSE  \ addr is a literal
       DEBUG3" C! addr"
       tosl SWAP _out
       popt
-    THEN  
-  ELSE 
+    THEN
+  ELSE
     (C!)
   THEN
 [P]

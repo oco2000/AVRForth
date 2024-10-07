@@ -1,7 +1,7 @@
+( conv unsigned double to string)
 : (UD.)         ( ud -- a len )       <# #S #> ;
-                ( conv unsigned double to string)
+( convert unsigned to string)
 : (U.)          ( u -- a len )        0  (UD.) ;
-                ( convert unsigned to string)
 
 : UD.           ( ud -- )
   (UD.) TYPE SPACE ;

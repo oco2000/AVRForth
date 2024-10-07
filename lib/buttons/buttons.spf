@@ -1,8 +1,7 @@
 \ =====================================
-\           Обработка кнопок
+\           Buttons in EERTOS
 \
 \         (c) OCo, 2011 - 2019
-\            http://oco.org.ua
 \            oco2000@gmail.com
 \
 \ ======================================
@@ -11,28 +10,28 @@
 
 REQUIRE VECTOR    lib/vector.spf
 
-08 == BUTTONS_MAX                 \  количество кнопок
+08 == BUTTONS_MAX                 \ max no of buttons
 BUTTONS_PERIOD [F] NEGATE [P] == -BUTTONS_PERIOD
 
-VARIABLE BUTTONS_TASKS      \  задачи для кнопок - содержит адрес массива во flash
-CVARIABLE BUTTONS_ENABLED    \  маска рабочих кнопок
-CVARIABLE BUTTONS_REPEATABLE \  маска повторяемых кнопок
+VARIABLE BUTTONS_TASKS       \  tasks for buttons - addr in ROM
+CVARIABLE BUTTONS_ENABLED    \  mask for enabled buttons
+CVARIABLE BUTTONS_REPEATABLE \  mask for repeatable buttons
 
-\ внутренние переменные
+\ internal variables
 CVARIABLE clock_A
 CVARIABLE clock_B
 CVARIABLE debounced_state
-\ clock_A,clock_B - счетчики
-\ debounced_state - массив битов кнопок, нажата = 1 или отжата = 0
-\ changes (debounced) показывает, что произошел переход из одного состояния в другое
-\ небольшая таблица состояний (debounced_state в таблице просто d)
+\ clock_A,clock_B - counters
+\ debounced_state - buttons bitmask, pressed = 1, release = 0
+\ changes (debounced) shows that there was a switch from one state to another
+\ state table (debounced_state is d)
 \ d changes
-\ 0 0 кнопка не нажата
-\ 1 1 кнопку только нажали
-\ 1 0 кнопку удерживают
-\ 0 1 кнопку отпустили
+\ 0 0 released
+\ 1 1 just pressed
+\ 1 0 pressed
+\ 0 1 just released
 
-: DEBOUNCE ( new_sample -- changes ) \  устраняем дребезг
+: DEBOUNCE ( new_sample -- changes )
   debounced_state C@ XOR  ( delta ) \ changes
   \ Increment the counters
   clock_A C@ clock_B C@ XOR OVER AND DUP clock_A C! SWAP ( clock_A delta )
@@ -43,71 +42,71 @@ CVARIABLE debounced_state
   DUP debounced_state CTOGGLE
 ;
 
-BUTTONS_MAX VECTOR cnt      \  счетчики для каждой кнопки
+BUTTONS_MAX VECTOR cnt       \ counters for each button
 BUTTONS_MAX VECTOR cnt_rep
-CVARIABLE locked             \  флаг "залипания" кнопок
+CVARIABLE locked
 
-: set_Nth_task ( n -- )     \ поставить на выполнение задачу, которая соответствует N-й кнопке
+: set_Nth_task ( n -- )     \ set the task for nth button
   CELLS BUTTONS_TASKS @ + @P RTOS_SET_TASK
 ;
 
 : set_and_off ( n -- )
-  DUP set_Nth_task            \ срабатывание
-  cnt_rep OFF             \ опять сбрасываем счетчик повторов при удержании
+  DUP set_Nth_task        \ pressed
+  cnt_rep OFF             \ clear repeat counter
 ;
 
 : +cnt ( n value -- n )
   OVER cnt +!
 ;
 
-: HOLD_BTN ( btn_mask btn -- ) \ удерживается кнопка
-  BUTTONS_PERIOD +cnt          \ увелич. счетчик
-  DUP cnt @ BUTTONS_REP_DELAY >= IF   \ удерживают дольше rep_delay
+: HOLD_BTN ( btn_mask btn -- ) \ button is held pressed
+  BUTTONS_PERIOD +cnt          \ increment the counter
+  DUP cnt @ BUTTONS_REP_DELAY >= IF   \ pressed longer than rep_delay
     ( btn_mask btn )
     OVER locked C@ AND 0= IF
-      DUP set_Nth_task           \ срабатывание первый раз
+      DUP set_Nth_task           \ first time
     THEN
-    OVER locked CSET             \ кнопку удерживают
-    BUTTONS_PERIOD OVER cnt_rep +!  \ считаем время удерживания
-    DUP cnt_rep @ BUTTONS_REPEAT >= IF   \  время удерживания кратно repeat
-      DUP set_and_off            \ срабатывание
+    OVER locked CSET             \ still pressed
+    BUTTONS_PERIOD OVER cnt_rep +!  \ count pressed time
+    DUP cnt_rep @ BUTTONS_REPEAT >= IF   \ more than repeat time
+      DUP set_and_off            \ set the task
     THEN
-    -BUTTONS_PERIOD +cnt         \ уменьшаем главный счетчик, чтоб не переполнился
+    -BUTTONS_PERIOD +cnt         \ decrement the main counter not to overflow
   THEN
   2DROP
 ;
 
-: PROCESS_BTN ( changes btn -- ) \ обработать нажатие кнопки btn, changes - см таблицу к DEBOUNCE
-  DUP EXP2 >R ( changes btn )   \  запомним маску кнопки
-  OVER debounced_state C@ AND R@ AND IF    \  кнопка только что нажата
-    DUP set_and_off                     \  срабатывание
-    DUP cnt OFF                         \  сброс счетчика
+: PROCESS_BTN ( changes btn -- ) \ handle the state table
+  DUP EXP2 >R ( changes btn )   \ button mask
+  OVER debounced_state C@ AND R@ AND IF    \ just pressed
+    DUP set_and_off                     \ set the task
+    DUP cnt OFF                         \ reset the counter
   ELSE ( changes btn )
     OVER INVERT debounced_state C@ AND BUTTONS_REPEATABLE C@ AND R@ AND IF
-                                      \  кнопку удерживают
-      R@ OVER HOLD_BTN                \  обработаем удержание
-    ELSE                                \  кнопка отжата
-      R@ locked CCLEAR \  залипания нет
+                                      \ held
+      R@ OVER HOLD_BTN                \ handle the state
+    ELSE                                \ release
+      R@ locked CCLEAR \ no locked
     THEN
   THEN
   RDROP 2DROP
 ;
 
-: BUTTONS_TASK ( -- )
+: BUTTONS_TASK ( -- ) \ buttons task for EERTOS
   cli
-  BUTTONS BUS.READ INVERT DEBOUNCE   \  устраняем дребезг, подразумеваем, что кнопки замыкают вход на землю
+  BUTTONS BUS.READ INVERT DEBOUNCE   \  debounce, wire is 0 if a button is pressed
   BUTTONS_ENABLED C@ AND
   BUTTONS_MAX
-  BEGIN  ( changes button_no )                  \  пройдем каждую кнопку
+  BEGIN  ( changes button_no )                  \ for every button
     1-
-    2DUP PROCESS_BTN                        \  обработать
+    2DUP PROCESS_BTN
   [UNTIL<>0]
   2DROP sei
   ['] BUTTONS_TASK BUTTONS_PERIOD RTOS_SET_TIMER_TASK
-  \  повторяем эту задачу каждые BUTTONS_PERIOD мс
+  \ repeat the task every period
 ;
 
-: BUTTONS_INIT ( -- )             \  инициализация порта с кнопками
+: BUTTONS_INIT ( -- )             \ port initialization
   BUTTONS BUS.INPUT
   BUTTONS BUS.PULL_UP
 ;

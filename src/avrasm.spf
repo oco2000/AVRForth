@@ -11,7 +11,7 @@ HEX
 : ?EVEN ( u1 -- u2 )
     DUP ODD ABORT" Even address required" ;
 : ?FAR  ( addr -- ?far )
-    RELATIVE-ONLY? IF \ если память до 8кБ - только относительные адреса
+    RELATIVE-ONLY? IF \ if memory is less than 8kB - use only relative addressing
         DROP FALSE
     ELSE
         THERE - ABS 0xFFE >
@@ -21,7 +21,7 @@ HEX
     ?EVEN 2/ ;
 : >REL  ( addr -- relative )
     THERE 2+ - >JMP ;
-: >reg                                  \ из адреса в памяти получить регистр ввода\вывода
+: >reg  ( addr -- reg )  \ make register from memory address
         0x20 - ;
 
 \ --- REGISTERS ---
@@ -219,8 +219,7 @@ HEX
 9406 =OP &R   lsr
 9407 =OP &R   ror
 9408 =OP &B   bset
-\ 9409 =OP &.   ijmp
-: ijmp   9409 T,   3 TO OPTIM? ; \ чтобы не компилировать ret после ijmp
+: ijmp   9409 T,   3 TO OPTIM? ; \ do not compile ret after ijmp
 940A =OP &R   dec
 940C =OP &L   jmp
 940E =OP &L   call
@@ -298,12 +297,12 @@ FE00 =OP &BR  sbrs
 \ USEFUL MACROS
 
 VECT movw
-: [soft_movw] 2DUP mov 1+ SWAP 1+ SWAP mov ;   \ переслать пару регистрое двумя командами
+: [soft_movw] 2DUP mov 1+ SWAP 1+ SWAP mov ;   \ move reg pair in two instructions
 ' [soft_movw] TO movw
-: HAS_MOVW                  \ есть команда movw - использовать ее
+: HAS_MOVW              \ has movw instruction - use it
     ['] [movw] TO movw ;
 
-0 VALUE HAS_MUL?        \ есть команда умножения?
+0 VALUE HAS_MUL?        \ has mul instruction?
 : HAS_MUL
     TRUE TO HAS_MUL? ;
 
@@ -318,26 +317,26 @@ VECT lpmz+
 ' [soft_lpmz+] TO lpmz+
 
 0 VALUE HAS_LPMZ?
-: HAS_LPMZ
+: HAS_LPMZ            \ has lpmz instructions? use them
   TRUE TO HAS_LPMZ?
   ['] [lpmz] TO lpmz
   ['] [lpmz+] TO lpmz+
 ;
 
-: pushw DUP push 1+ push ;              \ на стек возвратов пару регистров
-: popw DUP 1+ pop pop ;                 \ со стека возвратов пару регистров
-: ldiw 2DUP SWAP 0xFF AND SWAP ldi      \ загрузить слово в пару регистров
+: pushw DUP push 1+ push ;              \ push a register pair to the return stack
+: popw DUP 1+ pop pop ;                 \ pop a register pair from the return stack
+: ldiw 2DUP SWAP 0xFF AND SWAP ldi      \ load a constant to the register pair
        1+ SWAP 8 RSHIFT 0xFF AND SWAP ldi ;
-: lpmw ( reg_pair -- )
+: lpmw ( reg_pair -- )                  \ lpm a register pair
   DUP lpmz+   1+ lpmz ;
 
-: ?port ( port -- f )
+: ?port ( port -- f )                   \ is a correct port
     0x0 0x3F BETWEEN ;
 
-: ?port0 ( port -- f )
+: ?port0 ( port -- f )                  \ is a lower port
     0x0 0x1F BETWEEN ;
 
-: _in ( port reg )  \ чтение из регистра, независимо от номера регистра
+: _in ( port reg )  \ read a port, does not depend on port number
   OVER >reg ?port IF
     in
   ELSE
@@ -345,7 +344,7 @@ VECT lpmz+
   THEN
 ;
 
-: _out ( reg port )  \ запись в регистр, независимо от номера регистра
+: _out ( reg port )  \ write a port, does not depend on port number
   DUP >reg ?port IF
     out
   ELSE

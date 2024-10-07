@@ -1,12 +1,12 @@
 
 : (C@E)   ( addr -- c ) \ EEPROM byte read
   [
-    EEWE EECR sbic      \ Ждем пока будет завершена прошлая запись.
-    ' (C@E) (JMP)       \ также крутимся в цикле.
-    tosl EEARL out      \ Загружаем адрес нужной ячейки
-    tosh EEARH out      \ Загружаем адрес нужной ячейки
-    EERE EECR sbi       \ Выставляем бит чтения
-    EEDR tosl in        \ Забираем из регистра данных результат
+    EEWE EECR sbic      \ Wait for the last write to finish
+    ' (C@E) (JMP)
+    tosl EEARL out      \ set the address
+    tosh EEARH out
+    EERE EECR sbi       \ set read bit
+    EEDR tosl in        \ get result
     tosh clr
   ]
 ;

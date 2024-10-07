@@ -1,17 +1,17 @@
-\ полуавтоматическая сборка нужных слов
+\ words autoinclusion
+\ require.cfg is the configuration file
 
-: IN_T? ( waddr wu -- ? ) \ есть ли слово в словаре TARGET ?
+: IN_T? ( waddr wu -- f ) \ is this word in the TARGET wordlist?
   ALSO TARGET CONTEXT @ SEARCH-WORDLIST PREVIOUS
   IF DROP TRUE
   ELSE FALSE THEN
 ;
 
-: DEFINED_T? ( "word" -- ? ) \ есть ли слово в словаре TARGET ?
-    PARSE-NAME IN_T?
+: DEFINED_T? ( "word" -- ? ) \ is the next word in the TARGET wordlist?
+  PARSE-NAME IN_T?
 ;
 
-: REQUIRED_T ( waddr wu laddr lu -- )   \ подключить файл ladd:lu, если слова waddr:wu
-                    \ нет в словаре TARGET
+: REQUIRED_T ( waddr wu laddr lu -- )   \ include the file ladd:lu, if the word waddr:wu is not in TARGET
   2SWAP IN_T?
   IF
     2DROP
@@ -20,58 +20,58 @@
   THEN
 ;
 
-: REQUIRE_T ( "word" "libpath" -- )   \ подключить файл libpath, если слова word
-                    \ нет в словаре TARGET
+: REQUIRE_T ( "word" "libpath" -- )   \ include the file "libpath", if there is no "word" in TARGET
   PARSE-NAME PARSE-NAME 2DUP + 0 SWAP C!
   REQUIRED_T
 ;
 
-: IS_DELIMETER? ( c -- f )    \ c - символ-разделитель?
+: IS_DELIMITER? ( c -- f )    \ c - is a delimiter? (space, tab or nul)
   DUP BL =
   OVER 0x9 = OR
   OVER 0 = OR
   NIP
 ;
 
-0 VALUE POS           \ текущая позиция в строке
-CREATE BUF 128 CHARS ALLOT    \ буфер для строки из файла
+0 VALUE POS                   \ position in the current line
+CREATE BUF 128 CHARS ALLOT    \ buffer for the line of a file
 
-: SKIP_BEGIN   ( -- )     \ пропустить начальные разделители
+: SKIP_BEGIN   ( -- )     \ skip starting delimiters
   BEGIN
-    POS C@ IS_DELIMETER?
+    POS C@ IS_DELIMITER?
   WHILE
     POS 1+ TO POS
   REPEAT
 ;
 
-: SKIP_END   ( -- )       \ пропустить до первого разделителя
+: SKIP_END   ( -- )       \ skip to the first delimiter
   BEGIN
-    POS C@ IS_DELIMETER? INVERT
+    POS C@ IS_DELIMITER? INVERT
   WHILE
     POS 1+ TO POS
   REPEAT
 ;
 
-: WRD  ( -- waddr wu )      \ получить токен waddr:wu
+: WRD  ( -- waddr wu )      \ get the token waddr:wu
   SKIP_BEGIN POS SKIP_END POS OVER -
 ;
 
 0 VALUE FOUND
 : SEARCH_FILENAME ( waddr wu -- faddr fu | 0 )
-\ получить имя файла faddr fu, содержащего определение слова waddr wu
-\ 0 - не найдено
+\ search require.cfg file:
+\ get the filename faddr fu, that contains the definition of the word waddr wu
+\ 0 - not found
   S" src/require.cfg" FIND-FULLNAME R/O OPEN-FILE THROW
   >R
   0 TO FOUND
   BEGIN                 ( WADDR WU )
-    BUF 64 R@ READ-LINE  THROW ( WADDR WU длина not-eof-flag )
+    BUF 64 R@ READ-LINE  THROW ( WADDR WU len not-eof-flag )
     0= >R
-    ?DUP IF       ( WADDR WU LEN )  \ получена непустая строка
+    ?DUP IF       ( WADDR WU LEN )  \ non empty line
       BUF TO POS
-      BUF + 0!              \ ограничим с конца
-      WRD       ( WADDR WU NADDR NU ) \ имя слова
-      2OVER COMPARE 0= IF       \ совпадает?
-      2DROP WRD TRUE TO FOUND ( FADDR FU ) \ имя файла
+      BUF + 0!              \ limit from the end
+      WRD       ( WADDR WU NADDR NU ) \ word name
+      2OVER COMPARE 0= IF       \ found?
+      2DROP WRD TRUE TO FOUND ( FADDR FU ) \ file name
       THEN
     THEN
   R> FOUND OR UNTIL
@@ -79,7 +79,7 @@ CREATE BUF 128 CHARS ALLOT    \ буфер для строки из файла
   FOUND INVERT IF 2DROP 0 THEN
 ;
 
-: (TREQUIRED) ( a u -- f )
+: (TREQUIRED) ( addr u -- f ) \ include file for the word addr:u, return TRUE if found in the configuration file
   SEARCH_FILENAME ?DUP IF
     INCLUDED TRUE
   ELSE
@@ -87,7 +87,7 @@ CREATE BUF 128 CHARS ALLOT    \ буфер для строки из файла
   THEN
 ;
 
-: TREQUIRED      ( waddr wu -- ) \ если не определено слово, подключить файл с его определением
+: TREQUIRED      ( waddr wu -- ) \ if the word is not in TARGET, include its file
   2DUP IN_T? IF
       2DROP
   ELSE
@@ -97,6 +97,6 @@ CREATE BUF 128 CHARS ALLOT    \ буфер для строки из файла
   THEN
 ;
 
-: TREQUIRE   ( "word" -- ) \ если не определено word, подключить файл с его определением
+: TREQUIRE   ( "word" -- ) \ if the "word" is not in TARGET, include its file
   PARSE-NAME TREQUIRED
 ;

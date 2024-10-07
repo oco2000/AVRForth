@@ -6,33 +6,29 @@
 
 8000000 == F_CPU
 
-REQUIRE D3              lib/lcd/lcd_conf_std.spf \ стандартная конфигурация библиотеки LCD
-REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
-REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+REQUIRE D3              lib/lcd/lcd_conf_std.spf \ standard LCD configuration
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ LCD library
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ user chars
 REQUIRE RTOS_INIT_TIMER lib/eertos/atmegax8-eertos-config.spf
 REQUIRE RTOS_RUN        lib/eertos/eertos.spf
-REQUIRE DS1307          lib/ds1307.spf           \ часы
+REQUIRE DS1307          lib/ds1307.spf           \ rtc
 
-\ 8000 TALLOT   \ проверим дальние адреса
-
-\ строки для вывода на индикатор
 C" LCD test" == "Test"
 C" DS1307 found" == "found"
 C" DS1307 not found!" == "not_found"
 
-PD7 WIRE LED    \ светодиод
+PD7 WIRE LED
 
-: Task2     \ мигаем светодиодом каждые 200 мс
+: Task2     \ blink the LED every 100 ms
     LED {TOGGLE}
     ['] Task2 100 RTOS_SET_TIMER_TASK
 ;
 
-: H.   0 <# # # #> TYPE ;   \ вывести число двумя цифрами
-: .TRIPLE ( 3 2 1 char -- ) \ вывести три числа, разделитель char
+: H.   0 <# # # #> TYPE ;   \ type 2 digit number
+: .TRIPLE ( 3 2 1 char -- ) \ type 3 numbers with the char separator between them
     SWAP H. DUP EMIT SWAP H. EMIT H.
 ;
 
-\ дни недели
 C" SunMonTueWedThuFriSat" == "Weekdays"
 
 TCREATE chars
@@ -43,60 +39,60 @@ CHAR - TC,
 TALIGN
 
 CVARIABLE pos
-\ вывод даты и времени
+\ print date and time
 : Task_Print
-    DS1307_GET_TIME             \ получим время
-    4 1 LCD_GOTOXY
-    [ CHAR : ] LITERAL .TRIPLE        \ печать времени
-    DS1307_GET_DATE SWAP ROT    \ получим дату
-    2 0 LCD_GOTOXY
-    [ CHAR . ] LITERAL .TRIPLE        \ печать даты
+  DS1307_GET_TIME
+  4 1 LCD_GOTOXY
+  [ CHAR : ] LITERAL .TRIPLE        \ print time
+  DS1307_GET_DATE SWAP ROT
+  2 0 LCD_GOTOXY
+  [ CHAR . ] LITERAL .TRIPLE        \ print date
 
-    12 0 LCD_GOTOXY
-    DS1307_Weekday DS1307_GET 1-
-    DUP 2* + ( 3 * ) \ получим день недели
-    "Weekdays" + 1+ 3 TYPEP     \ печать
+  12 0 LCD_GOTOXY
+  DS1307_Weekday DS1307_GET 1-
+  DUP 2* +                    \ get the weekday
+  "Weekdays" + 1+ 3 TYPEP     \ print the weekday
 
-    15 1 LCD_GOTOXY
-    pos C@ chars + C@P EMIT
-    pos C@ 1+ 0x3 AND pos C!
+  15 1 LCD_GOTOXY
+  pos C@ chars + C@P EMIT
+  pos C@ 1+ 0x3 AND pos C!
 
-    ['] Task_Print 250 RTOS_SET_TIMER_TASK     \ повторяем 4 раза в секунду
+  ['] Task_Print 250 RTOS_SET_TIMER_TASK     \ repeat 4 times per second
 ;
 
 : 1S_DELAY
-    1000 00 DO
-      1000 US
-    LOOP
+  1000 00 DO
+    1000 US
+  LOOP
 ;
 
 0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH
 
 : MAIN
-    HEX
-    LED {OUTPUT}            \ светодиод - на выход
-    LED {SET}               \ погасить
-    LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
-    LCD_CLRSCR              \ очистка
+  HEX
+  LED {OUTPUT}
+  LED {SET}               \ turn off the led
+  LCD_DISP_ON  LCD_INIT   \ init LCD
+  LCD_CLRSCR              \ clear screen
 
-    RTOS_INIT
-    RTOS_RUN
-    ['] Task2 RTOS_SET_TASK
-    DS1307_INIT IF          \ есть часы?
-        "not_found"
-    ELSE
-        "found"
-\        0x23 0x59 0x55 DS1307_SET_TIME     \ для теста задаем начальные время и дату
+  RTOS_INIT
+  RTOS_RUN
+  ['] Task2 RTOS_SET_TASK
+  DS1307_INIT IF          \ do we have rtc?
+    "not_found"
+  ELSE
+    "found"
+\        0x23 0x59 0x55 DS1307_SET_TIME     \ set date/time
 \        0x13 0x05 0x30 DS1307_SET_DATE
 \        5 DS1307_Weekday DS1307_SET
-        00 pos C!
-        ['] Task_Print 250 RTOS_SET_TIMER_TASK
-    THEN
-    COUNTP TYPEP
-    1S_DELAY
-    LCD_CLRSCR
-    1 BACKSLASH \ определить символ с кодом 1
-    BEGIN
-        RTOS_TASK_MANAGER
-    AGAIN
+    00 pos C!
+    ['] Task_Print 250 RTOS_SET_TIMER_TASK \ print date/time
+  THEN
+  COUNTP TYPEP
+  1S_DELAY
+  LCD_CLRSCR
+  1 BACKSLASH \ define the backslash
+  BEGIN
+      RTOS_TASK_MANAGER
+  AGAIN
 ;

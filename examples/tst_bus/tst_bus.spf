@@ -1,35 +1,34 @@
-\ тест-файл для групп линий и шин
-\ +DEBUG3 \ отладочные сообщения
+\ test for buses and wired
+\ +DEBUG3
 
 REQUIRE {SET} lib/ports.spf
 REQUIRE BUS.WRITE lib/bus.spf
 
-\ пример обращения к линиям и группам линий
-\ линии
+\ wires
 PB1 WIRE LED
 PB4 WIRE BTN
-\ группы
+\ groups
 GROUP{ PD0 PD1 PD2 PD3 }GROUP DATA
 
 : testport
-    DATA {OUTPUT}   \\ на выход
+  DATA {OUTPUT}
 
-    LED {OUTPUT}    \\ на выход
-    LED {TOGGLE}    \\ переключть
-    PB1 {TOGGLE}    \\ или так
-    BTN {INPUT}     \\ на вход
-    BTN {PULL_UP}   \\ включить подтяжку
-    BEGIN
-        {PORTB} PORT.READ  \\ прочитать порт
-        BTN {GROUP.MASK} AND IF
-            LED {SET}
-        ELSE
-            LED {CLEAR}
-        THEN
-    AGAIN
+  LED {OUTPUT}
+  LED {TOGGLE}    \\ toggle
+  PB1 {TOGGLE}    \\ equivalent
+  BTN {INPUT}
+  BTN {PULL_UP}
+  BEGIN
+    {PORTB} PORT.READ  \\ read the port
+    BTN {GROUP.MASK} AND IF
+      LED {SET}
+    ELSE
+      LED {CLEAR}
+    THEN
+  AGAIN
 ;
 
-\ пример обращения к шинам
+\ buses
 \     15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0
 BUS{                         PC3 PD7 PD6 PD5 PD4 PD3 PC4 PB3 PB1 PB0 }BUS DATA1
 BUS{                         PC3 PD7 PD6 PD5 PD4 PD3 PD2 PD1 PD0 PB2 }BUS CONTROL
@@ -45,67 +44,67 @@ BUS{                         PD2 PC1 PC0 PB6 PB7 PD1 PD0 PB5 PB4 PB2 }BUS BUTTON
 REQUIRE MS      lib/delay.spf
 
 : data1_read
-    DATA1 BUS.READ
+  DATA1 BUS.READ
 ;
 
 : data1_write ( w -- )
-    DATA1 BUS.WRITE
+  DATA1 BUS.WRITE
 ;
 
 : buttons_read
-    BUTTONS BUS.READ
+  BUTTONS BUS.READ
 ;
 
 : buttons_write
-    BUTTONS BUS.WRITE
+  BUTTONS BUS.WRITE
 ;
 
 : data2_read
-    DATA2 BUS.READ
+  DATA2 BUS.READ
 ;
 
 : data2_write
-    DATA2 BUS.WRITE
+  DATA2 BUS.WRITE
 ;
 
 : data3_read
-    DATA3 BUS.READ
+  DATA3 BUS.READ
 ;
 
 : data3_write
-    DATA3 BUS.WRITE
+  DATA3 BUS.WRITE
 ;
 
 : data4_read
-    DATA4 BUS.READ
+  DATA4 BUS.READ
 ;
 
 : data4_write
-    DATA4 BUS.WRITE
+  DATA4 BUS.WRITE
 ;
 
 : data5_read
-    DATA5 BUS.READ
+  DATA5 BUS.READ
 ;
 
 : data5_write
-    DATA5 BUS.WRITE
+  DATA5 BUS.WRITE
 ;
 
 : data6_read
-    DATA6 BUS.READ
+  DATA6 BUS.READ
 ;
 
 : data6_write
-    DATA6 BUS.WRITE
+  DATA6 BUS.WRITE
 ;
 
 : control_read
-    CONTROL BUS.READ
+  CONTROL BUS.READ
 ;
 
 : control_write
-    CONTROL BUS.WRITE
+  CONTROL BUS.WRITE
 ;
 
 100 == delay
@@ -186,8 +185,8 @@ REQUIRE MS      lib/delay.spf
  delay MS
  0x00 DATA1 BUS.WRITE
 
-    BEGIN
-        buttons_read
-        data1_write
-    AGAIN
+  BEGIN
+    buttons_read
+    data1_write
+  AGAIN
 ;

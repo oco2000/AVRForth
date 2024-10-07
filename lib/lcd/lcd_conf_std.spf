@@ -1,5 +1,5 @@
-\ К каким портам подключаем дисплей
-\ Стандартная конфигурация
+\ How the display is connected
+\ Standard configuration
 
 REQUIRE BUS.WRITE lib/bus.spf
 

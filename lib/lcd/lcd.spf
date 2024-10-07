@@ -75,7 +75,7 @@ REQUIRE MS lib/delay.spf
 
 MACRO: LCD_E_DELAY
 \   T-HERE [F] @ 2+ [P] (JMP)
-\   без задержки, времени на вызов подготовительных процедур достаточно для задержки
+\   no delays here, it seems we don't need it
 ;MACRO
 
 [F] [DEFINED] LCD_I2C [P] [IF]

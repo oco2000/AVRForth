@@ -1,7 +1,7 @@
 \ USART library
 TREQUIRE EMIT
 
-:: BAUD ( baudrate -- UBRR ) \ преобразовать скорость в константу, только для компиляции
+:: BAUD ( baudrate -- UBRR ) \ convert speed to a constant, for compilation only
 [F]
   QLIT1? IF
     [[ F_CPU 0x10 / ]] LITERAL SWAP / 1-
@@ -14,14 +14,12 @@ TREQUIRE EMIT
 
 : USART_SEND ( c -- )
 [
-\ wait for empty transmit buffer
+  \ wait for empty transmit buffer
   begin
     UCSR0A zl _in
     UDRE BIT zl andi
   until_=0
-  \ ~UDRE UCSR0A sbis
-  \ ~' USART_SEND rjmp
-\ Put data into buffer, sends the data
+  \ Put data into buffer, sends the data
   tosl UDR0 _out
   popt
 ]

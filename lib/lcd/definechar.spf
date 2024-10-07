@@ -18,9 +18,9 @@ REQUIRE LCD_INIT lib/lcd/lcd.spf
   ;
 ;;
 \EOF
-Использование:
+Usage:
 0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH
 
-после LCD_INIT
-0x1 BACKSLASH \ определить символ с кодом 1
-0x1 EMIT      \ вывод
+after LCD_INIT
+0x1 BACKSLASH \ define a symbol with code 1
+0x1 EMIT      \ print

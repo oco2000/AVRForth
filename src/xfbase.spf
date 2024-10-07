@@ -1,17 +1,17 @@
-\ BASIS CROSS FORTH DEFINITIONS
+\ BASIC CROSS FORTH DEFINITIONS
 
-VARIABLE T-STATE        \ состояние целевого компилятора, 1 - компиляция
-T-STATE 0!              \ исполнение
+VARIABLE T-STATE        \ target compiler state, 1 - compilation
+T-STATE 0!              \ execution
 
 : ?TEXEC
-    T-STATE @ ABORT" For execution only" ;
+  T-STATE @ ABORT" For execution only" ;
 
 : ?TCOMP
-    T-STATE @ 0= ABORT" For compilation only" ;
+  T-STATE @ 0= ABORT" For compilation only" ;
 
-: HAS ( Перестраиваемые слова )
-  \ если не в режиме целевой компиляции, исполнить перекрытое слово и выйти
-  \ касается только макросов
+: HAS ( redefined words )
+  \ if not in target compilation mode, execute the redefined (old) word
+  \ for macros only
   POSTPONE T-STATE
   POSTPONE @
   POSTPONE 0=
@@ -21,24 +21,24 @@ T-STATE 0!              \ исполнение
   POSTPONE THEN
 ; IMMEDIATE
 
-: [T] ALSO TARGET ; IMMEDIATE   \ поиск сначала в TARGET
-: [P] PREVIOUS  ;  IMMEDIATE    \ вернуть предыдущий активный словарь
-: [F] ALSO FORTH  ; IMMEDIATE   \ поиск сначала в FORTH
+: [T] ALSO TARGET ; IMMEDIATE   \ add TARGET to the search order
+: [P] PREVIOUS  ;  IMMEDIATE    \ go back
+: [F] ALSO FORTH  ; IMMEDIATE   \ add FORTH to the search order
 
 S" src/inline.spf" INCLUDED
 
 ALSO FORTH
-\ поиск: FORTH затем TARGET
-\ новые слова в TARGET
+\ search: FORTH, TARGET
+\ new words in TARGET
 
-: T[ 0 T-STATE ! ;
-: ]T 1 T-STATE ! ;  \ вкл. режим целевой компиляции
+: T[ 0 T-STATE ! ;  \ target compilation off
+: ]T 1 T-STATE ! ;  \ target compilation on
 
 
-: MACRO: : ;                        \ Макроопределение
+: MACRO: : ;                        \ Macro - simple forth definition
 : ;MACRO POSTPONE ; ; IMMEDIATE
 
-\ Делаем доступными некоторые слова из словаря FORTH в словаре TARGET
+\ Copy some words from FORTH wordlist to TARGET
 : [[ POSTPONE [ ; IMMEDIATE
 : ]] ] ;
 : :: : ;
@@ -57,13 +57,11 @@ ALSO FORTH
 : BASE!   BASE ! ;
 : WORDS   WORDS ;
 : ORDER   ORDER ;
-\ ~ : ''   ' ;
 : \   POSTPONE \ ; IMMEDIATE
 : (   POSTPONE ( ; IMMEDIATE    \ )
 : TO  POSTPONE TO ; IMMEDIATE
 : S"  POSTPONE S" ;    \ "
 : [IF]     POSTPONE [IF] ; IMMEDIATE
-\ : [IFNOT]  POSTPONE [IFNOT] ; IMMEDIATE
 : [ELSE]   POSTPONE [ELSE] ; IMMEDIATE
 : [THEN]   POSTPONE [THEN] ; IMMEDIATE
 : [IFDEBUG] POSTPONE [IFDEBUG] ; IMMEDIATE
@@ -81,23 +79,23 @@ ALSO FORTH
 : DEBUG2"   POSTPONE DEBUG2" ; IMMEDIATE
 : DEBUG3"   POSTPONE DEBUG3" ; IMMEDIATE
 
-: [ 0 T-STATE ! ; IMMEDIATE
-: ] 1 T-STATE ! ; IMMEDIATE     \ вкл. режим целевой компиляции
+: [ 0 T-STATE ! ; IMMEDIATE \ target compilation off
+: ] 1 T-STATE ! ; IMMEDIATE \ target compilation on
 
-: TCOMPILE, ( CFA -- )  \ компилировать
-  (CALL)          \ скомпилировать вызов по CALL
+: TCOMPILE, ( CFA -- )  \ compile a word
+  (CALL)          \ compile it as a call
 ;
 
-: DORG     ( addr -- )
+: DORG     ( addr -- )  \ set current address in RAM
   DUP RAM-TOP RSTACK-SIZE - > ABORT" Data is too large to fit in RAM"
   D-HERE ! ;
 
-: DHERE D-HERE @ ;
-: ALLOT DHERE + DORG ;
+: DHERE D-HERE @ ; \ get current RAM address
+: ALLOT DHERE + DORG ; \ allocate space in RAM
 
-200 NewStack VALUE AIStack
+200 NewStack VALUE AIStack \ autoinclusion stack for saving the input
 
-: SAVE-INPUT ( -- )
+: SAVE-INPUT ( -- ) \ save current input to the autoinclusion stack
   DEPTH SAVE-INPUT >R
   T-STATE @ THERE DHERE EHERE
   R> 4 +
@@ -105,61 +103,49 @@ ALSO FORTH
   AIStack >Stack
 ;
 
-: RESTORE-INPUT ( -- depth )
+: RESTORE-INPUT ( -- depth ) \ restore current input from the autoinclusion stack
   AIStack Stack> >R
   AIStack ArrayStack>
   >R
   EORG DORG ORG T-STATE !
   R> 4 - RESTORE-INPUT
-  0 >IN ! \ на начало строки
+  0 >IN ! \ go to the start of the line
   R>
 ;
 
-: DROP-SAVED-INPUT ( -- )
+: DROP-SAVED-INPUT ( -- ) \ drop the last saved input
   AIStack StackDrop AIStack ArrayStackDrop
 ;
 
-: COLON-WORD ( -- )
-  CREATE THERE , INLISTING , ]T (PROLOG) \ запомним адрес начала тела слова в целевой памяти
+: COLON-WORD ( -- ) \ create a colon definition
+  CREATE THERE , INLISTING , ]T (PROLOG) \ store the address
 ;
 
-\ Если компилируемое слово встречается в режиме
-\ TARGET-компиляции, то компилируется вызов слова
+\ TARGET colon definition
+\ if in TARGET-compilation, compile the definition
 : :
   [T] SAVE-INPUT [P]
   COLON-WORD
-  DOES> ?TCOMP @ TCOMPILE,  \ компилируем
+  DOES> ?TCOMP @ TCOMPILE,  \ compile
 ;
-\ двоеточечное определение при выполнении компилирует свой вызов в целевую память
 
-: CALL-ONLY:                        \ не оптимизировать хвостовую рекурсию
+: CALL-ONLY:   \ same as colon, but doesn't optimize tail recursion
   [T] SAVE-INPUT [P]
   COLON-WORD
-  DOES> ?TCOMP @ TCOMPILE, NEW  \ компилируем
+  DOES> ?TCOMP @ TCOMPILE, NEW  \ compile and reset
 ;
 
 : ;
   DROP-SAVED-INPUT
   (EPILOG) T[
-;   \ компилирует ret, режим целевой интерпретации
+;   \ end the colon definition
 
-\ ~: T:
-  \ ~[T] SAVE-INPUT [P]
-  \ ~COLON-WORD
-  \ ~DOES> ?TCOMP @ TCOMPILE,
-\ ~; \ !!!
-
-\ ~: ;T
-  \ ~DROP-SAVED-INPUT
-  \ ~(EPILOG) T[
-\ ~;
-
-: LCONST ( n -- | -- n )    \ константа просто как литерал (для оптимизаций)
+: LCONST ( n -- | -- n )    \ constant as a literal, only for compilation mode
   CREATE , DOES> ?TCOMP @ (LIT)
 ;
-\ ============= константа, расширенная версия
-\ при компиляции - литерал
-\ при исполнении - дать значение
+\ ============= constant, extended version
+\ compilation - compile as a literal
+\ execution - get the value
 : == ( n -- | -- n ) \ CONSTANT
   CREATE , DOES> @
   T-STATE @ IF
@@ -183,101 +169,94 @@ ALSO FORTH
 0x20        == BL
 TCELL       == CELL
 
-\ =========================
-: TCREATE    THERE [T] == [P] ; \ адрес в области flash как литерал
+\ ========================= some defining words
+: TCREATE    THERE [T] == [P] ; \ ROM address as a constant
 : RCREATE    DHERE [T] LCONST [P] ; \ RAM address as a constant (only for compilation time)
-: ECREATE    EHERE [T] == [P] ;  \ ложим на стек тек. адрес в EEPROM как литерал
-: VARIABLE   [T] RCREATE CELL ALLOT [P] ;    \ резервируем 2 байта в области данных
-                                          \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
-: EVARIABLE  [T] ECREATE CELL EALLOT [P] ;   \ резервируем 2 байта в EEPROM
-                                          \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
-: CVARIABLE  [T] RCREATE 1 ALLOT [P] ;    \ резервируем 1 байт в области данных
-                                          \ при выполнении ложим на стек адрес в обл. данных как литерал для оптимизации
-: CEVARIABLE [T] ECREATE 1 EALLOT [P] ;   \ резервируем 1 байт в EEPROM
-                                          \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
-: 2VARIABLE   [T] RCREATE 2 CELLS ALLOT [P] ;   \ резервируем 4 байта в области данных
-                                          \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
-: 2EVARIABLE [T] ECREATE 2 CELLS EALLOT [P] ;   \ резервируем 4 байта в EEPROM
-                                          \ при выполнении ложим на стек адрес в обл. данных (создать новое определение)
+: ECREATE    EHERE [T] == [P] ;  \ EEPROM address as a constant
+: VARIABLE   [T] RCREATE CELL ALLOT [P] ;    \ variable in RAM
+: EVARIABLE  [T] ECREATE CELL EALLOT [P] ;   \ variable in EEPROM
+: CVARIABLE  [T] RCREATE 1 ALLOT [P] ;    \ 1 byte variable in RAM
+: CEVARIABLE [T] ECREATE 1 EALLOT [P] ;   \ 1 byte variable in EEPROM
+: 2VARIABLE   [T] RCREATE 2 CELLS ALLOT [P] ; \ double variable in RAM
+: 2EVARIABLE [T] ECREATE 2 CELLS EALLOT [P] ; \ souble variable in EEPROM
 
 VARIABLE @DOVAR
 VARIABLE @DOVECT
 
-: EXTENDABLE
+: EXTENDABLE \ include DOES> part for variables
   ?TEXEC
   S" (DOVAR)" TREQUIRED
 ;
 
-: ?DOVAR
+: ?DOVAR \ if DOVAR is not included yet, include it
   @DOVAR @ 0= IF
     DEBUG3" Include DOVAR"
     EXTENDABLE
   THEN
 ;
 
-: PCREATE                               \ определяющее слово с параметрами во flash
-    ?DOVAR
-    CREATE
-      THERE ,                      \ запомним текущий адрес
-      ]T (PROLOG) @DOVAR @ (CALL) T[  \ компилируем вызов DOVAR
-    DOES> @
-      T-STATE @ IF
-        TCOMPILE,                     \ компилируем
-      ELSE TCELL + THEN
+: PCREATE \ defining word with parameters in ROM
+  ?DOVAR
+  CREATE
+    THERE ,                      \ store ROM address
+    ]T (PROLOG) @DOVAR @ (CALL) T[  \ compile DOVAR
+  DOES> @
+    T-STATE @ IF
+      TCOMPILE,                     \ compile
+    ELSE TCELL + THEN
 ;
 
 : (PDOES>)
-    R> DUP CELL+ >R @       \ куда компилировать вызов DOES> (идет в коде сразу за этим словом)
-    LATEST NAME> >BODY @    \ получаем адрес последнего слова в целевой памяти
-    ['] (CALL) >COMPILE-TO  \ вызов
+  R> DUP CELL+ >R @       \ where to compile DOES> part
+  LATEST NAME> >BODY @    \ addr of the latest word in TARGET
+  ['] (CALL) >COMPILE-TO  \ compile
 ;
 
 : PDOES>
-    [T] SAVE-INPUT [P]
-    POSTPONE (PDOES>)   \ компилируем (PDOES>)
-    THERE ,          \ и за ним текущий адрес
-    POSTPONE [[         \ режим исполнения
-    ]T (PROLOG)         \ целевая компиляция
-      pusht
-      tosl popw \ pfa
-      tosl lsl    \ адрес возврата измеряется словами, поэтому умножаем на 2
-      tosh rol
-
+  [T] SAVE-INPUT [P]
+  POSTPONE (PDOES>)   \ compile (PDOES>)
+  THERE ,             \ and the current address
+  POSTPONE [[         \ execution mode
+  ]T (PROLOG)         \ target compilation
+    pusht
+    tosl popw   \ pfa
+    tosl lsl    \ return address is in words, do multiply by 2
+    tosh rol
 ; IMMEDIATE
 
-: CREATE                \ определяющее слово с параметрами в RAM
-    CREATE
-        THERE ,                      \ запомним текущий адрес
-        DHERE [T] (LIT) ret [P]
-    DOES> ?TCOMP @ TCOMPILE, ;          \ компилируем
+: CREATE \ defining word with parameters in RAM
+  CREATE
+    THERE ,                      \ current address
+    DHERE [T] (LIT) ret [P]
+  DOES> ?TCOMP @ TCOMPILE,       \ compile
+;
 
 : (DOES>)
-    R> DUP CELL+ >R @       \ куда компилировать вызов DOES> (идет в коде сразу за этим словом)
-    LATEST NAME> >BODY @    \ получаем адрес последнего слова в целевой памяти
-    LITSIZE +               \ пропускаем вызов (LIT)
-    ['] (JMP) >COMPILE-TO   \ переход на DOES>
+    R> DUP CELL+ >R @       \ where to compile DOES> part
+    LATEST NAME> >BODY @    \ addr of the latest word in TARGET
+    LITSIZE +               \ skip the literal
+    ['] (JMP) >COMPILE-TO   \ go to DOES> part
 ;
 
 : DOES>
     [T] SAVE-INPUT [P]
-    POSTPONE (DOES>)    \ компилируем (DOES>)
-    THERE ,          \ и за ним текущий адрес
-    POSTPONE [[         \ режим исполнения
-    ]T (PROLOG)         \ целевая компиляция
-
+    POSTPONE (DOES>)    \ compile (DOES>)
+    THERE ,             \ and the current address
+    POSTPONE [[         \ execution mode
+    ]T (PROLOG)         \ target compilation
 ; IMMEDIATE
 
 \ ---------------------------------------------------------------
-\ Числа
+\ Numbers
 
-: BALANCE ( olddepth -- )
+: BALANCE ( olddepth -- ) \ truncate the stack to the olddepth
   DEPTH 1- - DUP 0< IF NEGATE NDROP ELSE DROP THEN
 ;
 
-: NOTFOUND ( a u -- )
-  T-STATE @ 0= IF \ интерпретация
+: NOTFOUND ( a u -- ) \ called by SP-Forth if the word is not found
+  T-STATE @ 0= IF \ execution
     ?SLITERAL
-  ELSE \ компиляция
+  ELSE \ compilation
     2DUP SEARCH_FILENAME ?DUP IF \ can be auto-included
       2DROP
       [IFDEBUG3]  2DUP ." Autoinclude: " TYPE CR [THEN]
@@ -288,11 +267,11 @@ VARIABLE @DOVECT
     ELSE \ number?
       DEPTH 2 - >R
       ?SLITERAL
-      DEPTH R> - DUP 1 = IF
+      DEPTH R> - DUP 1 = IF \ literal
         DROP
         (LIT)
       ELSE
-        2 = IF
+        2 = IF \ double literal
           D>S  DUP
           0xFFFF AND (LIT)
           0x10 RSHIFT 0xFFFF AND (LIT)
@@ -302,77 +281,75 @@ VARIABLE @DOVECT
   THEN
 ; IMMEDIATE
 
-\ =============== векторы
+\ =============== vectors
 
 : [VECT] ( a -- ) \ вектор
   CREATE
     THERE , INLISTING ,
     (UJMP)
     ROM-SIZE 8192 > IF
-      nop      \ зарезервируем еще 2 байта, вдруг будет длинный jmp
+      nop      \ reserve 2 bytes, we may need a long jump
     THEN
   DOES> ?TCOMP @ (CALL)
 ;
 
-: [->] ( a "vect" ) \ задать значение вектора
+: [->] ( a "vect" ) \ set a vector (example: ' word [->] vect
   ' >BODY
   @ COMPILE-TO (JMP)
 ;
 
-\ ================== биты
-: BITS{             \ установить биты (начало)
-  T-STATE @ -1 T[
+\ ================== bits
+: BITS{  ( -- t-state -1 )  \ start a mask
+  T-STATE @ -1 T[  \ store t-state and go turn off the compilation
 ;
 
-: }BITS             \ установить биты (окончание)
+: }BITS  ( t-state -1 a b c ... -- mask | )   \ end a mask
   0 BEGIN
     OVER -1 <>
   WHILE
     SWAP EXP2 OR
   REPEAT
   NIP SWAP DUP T-STATE !
-  IF (LIT) THEN     \ если компиляция - скомпилировать литерал
+  IF (LIT) THEN     \ compile a literal if in the compilation mode
 ;
 
-: BIT               \ отдельный бит
-  T-STATE @ IF \ компиляция
+: BIT               \ separate bit
+  T-STATE @ IF \ compilation
     QLIT1? IF   ( n )
       DEBUG3" BIT"
       EXP2
-      (LIT)
+      (LIT) \ compile the mask as a literal
     ELSE
       E_LITERAL
     THEN
-  ELSE \ исполнение - просто дать маску
+  ELSE \ put the mask onto the data stack
     EXP2
   THEN
 ;
 
+\ =================== strings
 
-\ =================== строки
-
-: [CHAR]
+: [CHAR]  ( "c" -- ) \ compile next char as a literal
   CHAR (LIT)
 ;
 
-: C"    ( "string" -- c-addr )  \ скомпилировать строку со счетчиком и дать ее адрес
-\    ?TEXEC
-    [CHAR] " WORD           ( t )
-    COUNT SWAP OVER         ( u a u )
-    THERE DUP >R T-ADDR     ( u a u here )
-    2DUP C!                 \ счетчик
-    1+ SWAP CMOVE           ( u )   \ строка
-    1+ TALLOT TALIGN        \ зарезервировали
-    R>
+: C"    ( "string" -- c-addr )  \ compile a counted string to ROM
+  [CHAR] " WORD           ( t )
+  COUNT SWAP OVER         ( u a u )
+  THERE DUP >R T-ADDR     ( u a u here )
+  2DUP C!                 \ счетчик
+  1+ SWAP CMOVE           ( u )   \ строка
+  1+ TALLOT TALIGN        \ зарезервировали
+  R>
 ;
 
-\
-: [']   \ положить на стек адрес следующего слова
-    ?TCOMP ' >BODY @ (LIT) \ компиляция - скомпилировать литерал
+\ other
+: [']  ( "word" -- ) \ compile the address of the next word as a literal
+  ?TCOMP ' >BODY @ (LIT)
 ;
 
-: '
-    ?TEXEC ' >BODY @
+: '  ( "word" -- addr ) \ get the address of the next word
+  ?TEXEC ' >BODY @
 ;
 
 PREVIOUS

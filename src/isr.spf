@@ -1,37 +1,37 @@
 \ Interrupt service routines
 
-\ прерывания с минимальным сохранением регистров
+\ interrupts with the minimal registers saved in the return stack
 : (ASMINTPROLOG)
-  tosl    pushw \ сохранить вершину стека
+  tosl    pushw \ push TOS
   [ SREG ] LITERAL tosl lds
-  tosl    push  \ и регистр состояния
+  tosl    push  \ and SREG
 ;
 
-: (ASMINTEPILOG)  \ восстановить все
+: (ASMINTEPILOG)  \ restore SREG and TOS
   tosl    pop
   tosl [ SREG ] LITERAL sts
   tosl    popw
           reti
 ;
 
-: ASMINT: CREATE THERE , INLISTING , ]T (ASMINTPROLOG)   \ создать обработчик прерываний
+: ASMINT: CREATE THERE , INLISTING , ]T (ASMINTPROLOG)   \ create an interrupt handler in assembly
      DOES> @ T-STATE @ IF (CALL) THEN  ;
-: ;ASMINT (ASMINTEPILOG) T[ ;           \ завершить
+: ;ASMINT (ASMINTEPILOG) T[ ;           \ end of the handler
 
-\ прерывание на форте - сохраняем больше регистров
+\ Forth interrupt - save more registers
 : (INTPROLOG)
-  tosl  pushw \ сохранить вершину стека
-  wl    pushw   \ временные регистры
+  tosl  pushw   \ TOS
+  wl    pushw   \ temporary registers
   zl    pushw
   tmpl  pushw
   cbl   pushw
   tmp1l pushw
   tmp2l pushw
   [ SREG ] LITERAL tosl lds
-  tosl    push  \ и регистр состояния
+  tosl    push  \ SREG
 ;
 
-: (INTEPILOG) \ восстановить все
+: (INTEPILOG) \ restore all
   tosl  pop
   tosl [ SREG ] LITERAL sts
   tmp2l popw
@@ -44,32 +44,34 @@
         reti
 ;
 
-: INT:
+: INT: \ Forth interrupt handler
   [T] SAVE-INPUT [P]
-  CREATE THERE , INLISTING , ]T (INTPROLOG)   \ создать обработчик прерываний
+  CREATE THERE , INLISTING , ]T (INTPROLOG)
   DOES> @ T-STATE @ IF (CALL) THEN  ;
 
 : ;INT
   DROP-SAVED-INPUT
-  (INTEPILOG) T[ ;           \ завершить
+  (INTEPILOG) T[ ;           \ end of the handler
 
-: INTERRUPT         \ вектор прерывания по тек. адресу
+: INTERRUPT         \ describe an interrupt vector at the currend address
   CREATE
     THERE , INLISTING ,
-    reti          \ неинициализированный - возврат из прерывания
-    VECTOR-SIZE 4 = IF      \ вектор 4-байтовый
-        0x0 T,              \ добавим 2 байта
+    reti            \ uninitialized - return from interrupt
+    VECTOR-SIZE 4 = IF      \ 4-byte vectors?
+        0x0 T,              \ reserve 2 bytes
     THEN
   DOES>
     T-STATE @ IF
-      (CALL)          \ скомпилировать вызов
-    ELSE @ THEN
+      (CALL)          \ compile call to the vector
+    ELSE
+      @               \ just get the address
+    THEN
 ;
 
-: INT! ( addr vector -- )  \ задать обработчик
+: INT! ( addr vector -- )  \ set a vector to address addr
   COMPILE-TO (JMP)
 ;
 
-: ->INT   \ задать обработчик
+: ->INT   \ set a handler ( example: ' Handler ->INT Vector )
   ?TEXEC   ' >BODY @   INT!
 ;

@@ -1,7 +1,7 @@
 : (DOVAR)
   pusht
-  tosl popw \ pfa
-  tosl lsl    \ адрес возврата измеряется словами, поэтому умножаем на 2
+  tosl popw   \ pfa
+  tosl lsl    \ return address is a word, so multiply by 2
   tosh rol
 ;
 

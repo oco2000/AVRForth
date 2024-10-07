@@ -1,4 +1,4 @@
-\ темброблок
+\ Connect LCD wia i2c
 \ ATmega8
 \ +DEBUG3
 
@@ -7,9 +7,9 @@
 8000000 == F_CPU
 
 :: LCD_I2C ;;
-0x4E == LCD_Addr
-REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
-REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+0x4E == LCD_Addr \ set the LCD address
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf
 REQUIRE BIG_SETUP       lib/lcd/big.spf
 
 C" 0123" == "0123"
@@ -30,7 +30,7 @@ C" 89"   == "89"
 
 : MAIN
   I2C_INIT
-  LCD_DISP_ON  LCD_INIT   \ инициализация индикатора
+  LCD_DISP_ON  LCD_INIT
 
   PAGE
   5 1 AT ." Wait..."

@@ -1,241 +1,237 @@
-\ Часы на семисегментных индикаторах
-\ с динамической индикацией
-\ для ATMega8
+\ 7 segment clock with dynamic indication for ATMega8
 \ +DEBUG3
 [F] DECIMAL [P]
 
 8000000 == F_CPU
-\ определения портов
+
 REQUIRE {SET}           lib/ports.spf
 REQUIRE BUS.WRITE       lib/bus.spf
 
-{PORTD} FCONST SEGMENTS_PORT  \ сегменты
-{PORTC} FCONST DIGITS_PORT    \ порт, к которому подключены общие аноды\катоды
-04      == #DIGITS        \ количество разрядов
-GROUP{ PC0 PC1 PC2 PC3 }GROUP {DIGITS}    \ разряды подключены к младшим битам порта
+{PORTD} FCONST SEGMENTS_PORT  \ segments port
+{PORTC} FCONST DIGITS_PORT    \ common anodes/cathodes port
+04      == #DIGITS            \ number of digits
+GROUP{ PC0 PC1 PC2 PC3 }GROUP {DIGITS}    \ digits wires
 
-
-\ обязательно надо определить порт с кнопками для buttons.spf
-PB5 WIRE BTN_SET              \  сами кнопки
+PB5 WIRE BTN_SET              \ buttons
 PB6 WIRE BTN_+
 PB7 WIRE BTN_-
 
-BUS{ BTN_- BTN_+ BTN_SET }BUS BUTTONS
+BUS{ BTN_- BTN_+ BTN_SET }BUS BUTTONS \ buttons bus
 0x3 == #BUTTONS
 
-REQUIRE DS1307            lib/ds1307.spf    \ библиотека для DS1307
+REQUIRE DS1307            lib/ds1307.spf    \ DS1307 library
 REQUIRE RTOS_INIT_TIMER   lib/eertos/atmega8-eertos-config.spf
-REQUIRE RTOS_INIT         lib/eertos/eertos.spf    \ ОС
+REQUIRE RTOS_INIT         lib/eertos/eertos.spf    \ EERTOS
 REQUIRE BUTTONS_PERIOD    lib/buttons/buttons-std-config.spf
 REQUIRE DEBOUNCE          lib/buttons/buttons.spf
-REQUIRE СVECTOR           lib/cvector.spf   \ массив
-REQUIRE WDR               lib/wdt.spf       \ сторожевой таймер
-REQUIRE MS                lib/delay.spf     \ задержка
+REQUIRE СVECTOR           lib/cvector.spf   \ array
+REQUIRE WDR               lib/wdt.spf       \ watchdog timer
+REQUIRE MS                lib/delay.spf     \ delay
 
-00 BIT  == a  \ Эти константы содержат числа, соответствующие двойке,
-01 BIT  == b  \ возведенной в степень, равной номеру "ножки" того
-02 BIT  == c  \ порта, к которому подключен сегмент индикатора с
-03 BIT  == d  \ одноименным макросу названием. Для того, чтобы вывести
-04 BIT  == e  \ какую-либо цифру на индикатор, нужно отправить в порт
-05 BIT  == f  \ сумму соответствующих сегментам констант.
-06 BIT  == g  \ Эти числа позволяют сделать программу независимой от подключения.
-07 BIT  == dp \ Измените эти числа, если индикатор выводит букву "зю"
+\ segments
+00 BIT  == a
+01 BIT  == b
+02 BIT  == c
+03 BIT  == d
+04 BIT  == e
+05 BIT  == f
+06 BIT  == g
+07 BIT  == dp \ decimal point
 
-TCREATE SEGMENTS
+TCREATE SEGMENTS \ segments table in ROM
 [F]
- a b c d e f   + + + + +   ( INVERT ) TC,  \ 0 \ Если индикатор с общим анодом,
- b c           +           ( INVERT ) TC,  \ 1 \ нужно сумму констант инвертировать.
- a b g e d     + + + +     ( INVERT ) TC,  \ 2 \ Если с общим катодом, то
- a b g c d     + + + +     ( INVERT ) TC,  \ 3 \ не нужно.
- f g b c       + + +       ( INVERT ) TC,  \ 4 \ Имена констант соответствуют
- a f g c d     + + + +     ( INVERT ) TC,  \ 5 \ именам сегментов индикатора
+ a b c d e f   + + + + +   ( INVERT ) TC,  \ 0 \ invert the sum if the indicators are with the common anode
+ b c           +           ( INVERT ) TC,  \ 1
+ a b g e d     + + + +     ( INVERT ) TC,  \ 2
+ a b g c d     + + + +     ( INVERT ) TC,  \ 3
+ f g b c       + + +       ( INVERT ) TC,  \ 4
+ a f g c d     + + + +     ( INVERT ) TC,  \ 5
  a f g c d e   + + + + +   ( INVERT ) TC,  \ 6
  a b c         + +         ( INVERT ) TC,  \ 7
  a b c d e f g + + + + + + ( INVERT ) TC,  \ 8
  a b c d f g   + + + + +   ( INVERT ) TC,  \ 9
 
- a b c d e f g + + + + + + == SEGMENTS_MASK
+ a b c d e f g + + + + + + == SEGMENTS_MASK \ all segments
  SEGMENTS_MASK INVERT      == ~SEGMENTS_MASK
- SEGMENTS_MASK dp +        == SEGMENTS_MASK_WITH_DOT
+ SEGMENTS_MASK dp +        == SEGMENTS_MASK_WITH_DOT \ all segments with the dot
 [P]
 
-#DIGITS CVECTOR DIGITS       \ 4 цифры для вывода
-CVARIABLE DIGIT         \ текущая цифра
-CVARIABLE Get_Time      \ надо ли считывать время из часов?
+#DIGITS CVECTOR DIGITS  \ 4 digits for output
+CVARIABLE DIGIT         \ current digit
+CVARIABLE Get_Time      \ do we need to read the time from the RTC?
 
-: PARSE_TIME    ( -- )  \ разбор времени и запись цифр в массив DIGITS
-  DS1307_GET_TIME ( s m h )               \ получаем время
-  NIBBLE-SPLIT 0 DIGITS C! 1 DIGITS C!    \ делим часы на 2 цифры
-  NIBBLE-SPLIT 2 DIGITS C! 3 DIGITS C!    \ минуты
+: PARSE_TIME    ( -- )  \ parse the time to the DIGITS array
+  DS1307_GET_TIME ( s m h )
+  NIBBLE-SPLIT 0 DIGITS C! 1 DIGITS C!    \ split hours by 2 digits
+  NIBBLE-SPLIT 2 DIGITS C! 3 DIGITS C!    \ minutes
   DROP
 ;
 
-: GET_TIME                                  \ 4 раза в секунду
+: GET_TIME                              \ 4 times per second
   Get_Time C@ IF
-    PARSE_TIME                          \ получим время
+    PARSE_TIME                          \ parse the time
   THEN
-  ['] GET_TIME 250 RTOS_SET_TIMER_TASK
+  ['] GET_TIME 250 RTOS_SET_TIMER_TASK  \ repeat
 ;
 
-: GET_TIME_ON       \ периодически получаем время
+: GET_TIME_ON       \ get the time
   01 Get_Time C!
 ;
 
-: GET_TIME_OFF      \ выключить получение времени
+: GET_TIME_OFF      \ don't get the time
   00 Get_Time C!
 ;
 
-: BCD@  ( addr -- value )   \ взять значение в BCD-формате (2 байта) и преобразовать в число
+: BCD@  ( addr -- value )   \ fetch a BCD value and convert it to a number
   @ BYTE-SPLIT SWAP
   0x0A * +
 ;
 
-: >BCD  ( value - bcd )     \ преобразовать число в BCD-формат
+: >BCD  ( value - bcd )     \ convert a number to a BCD value
   0x0A /MOD ( hi lo )
   NIBBLE-JOIN
 ;
 
-: BCD+1 ( addr max -- bcd ) \ число в BCD-формате увеличить на 1, цикл до max
+: BCD+1 ( addr max -- bcd ) \ increment a BCD number, loop 0..max-1
   SWAP BCD@ 1+ ( max num+1 )
   SWAP MOD
   >BCD
 ;
 
-: BCD-1 ( addr max -- bcd ) \ число в BCD-формате уменьшить на 1, цикл до max
+: BCD-1 ( addr max -- bcd ) \ decrement a BCD number, loop 0..max-1
   SWAP BCD@ 1- OVER + ( max num-1+max )
   SWAP MOD
   >BCD
 ;
 
-[VECT] [MODE_TASKS] \ задачи кнопок для текущего режима
+[VECT] [MODE_TASKS] \ button tasks for the current mode
 
-CVARIABLE MODE
-0x3 == #MODES     \ количество режимов
+CVARIABLE MODE    \ current mode
+0x3 == #MODES     \ 3 modes total
 
-\ режим:
-\ 0 - нормальный
-\ 1 - установка часов
-\ 2 - установка минут
+\ mode:
+\ 0 - normal
+\ 1 - set hours
+\ 2 - set minutes
 
-CVARIABLE TIMER2         \ для мигания точкой и цифрами
-#DIGITS CVECTOR RAW_SEGMENT  \ подготовленные значения для записи в порт сегментов для каждой цифры
-#DIGITS CVECTOR RAW_DIGIT    \ подготовленные значения для управления разрядами
+CVARIABLE TIMER2             \ for the dp and the digits blinking
+#DIGITS CVECTOR RAW_SEGMENT  \ prepared values to write to the segments port
+#DIGITS CVECTOR RAW_DIGIT    \ prepared values to write to the digits port
 
 : ?BLINK      ( flag mode -- flag' )
   MODE C@ = AND TIMER2 C@ 01 AND AND
 ;
 
-: FORMAT_DIGIT ( n -- )             \ текущая цифра
-  DUP 02 AND 0= 1 ?BLINK IF        \ выключить часы
+: FORMAT_DIGIT ( n -- )            \ current digit
+  DUP 02 AND 0= 1 ?BLINK IF        \ turn off hours
     0
-  ELSE DUP 02 AND 2 = 2 ?BLINK IF  \ выключить минуты
+  ELSE DUP 02 AND 2 = 2 ?BLINK IF  \ turn off minutes
     0
   ELSE
-    DUP EXP2                       \ дешифруем номер выводимой цифры
+    DUP EXP2
   THEN THEN
   SWAP RAW_DIGIT C!
 ;
 
 : FORMAT_SEGMENT ( n -- )
-  DUP DIGITS C@                   \ выводимая цифра
-  SEGMENTS + C@P                  \ значение для вывода на индикатор
-  TIMER2 C@ 01 AND IF               \ мигаем точкой
+  DUP DIGITS C@                   \ current digit
+  SEGMENTS + C@P
+  TIMER2 C@ 01 AND IF             \ blink the dp
     dp OR
   THEN
   SWAP RAW_SEGMENT C!
 ;
 
-: RAW_FORMAT                        \ сформировать данные для записи в порты
-  #DIGITS BEGIN                   \ по всем разрядам
+: RAW_FORMAT                      \ prepare data
+  #DIGITS BEGIN                   \ for all digits
     1-
-    DUP FORMAT_SEGMENT          \ данные для сегментов
-    DUP FORMAT_DIGIT            \ данные для разрядов
+    DUP FORMAT_SEGMENT          \ data for segments
+    DUP FORMAT_DIGIT            \ data for digits
   [UNTIL<>0]
   DROP
 ;
 
-: TIMER2_TASK            \ тикает 2 раза в секунду
-  ['] TIMER2_TASK 500 RTOS_SET_TIMER_TASK   \ 2 раза в секунду
-  TIMER2 C@ 1+ TIMER2 C!          \ увеличиваем счетчик
-  RAW_FORMAT           \ подготовим данные для записи в порты
+: TIMER2_TASK          \ 2 times per second
+  ['] TIMER2_TASK 500 RTOS_SET_TIMER_TASK
+  TIMER2 C@ 1+ TIMER2 C!          \ count
+  RAW_FORMAT           \ prepare the data
 ;
 
-: SHOW_DIGIT            \ динамическая индикация текущей цифры
+: SHOW_DIGIT            \ show the current digit
   DIGIT C@
-  {DIGITS} {CLEAR}      \ откл. сегменты
-  DUP RAW_SEGMENT C@  SEGMENTS_PORT PORT.WRITE        \ выводим значения сегментов
-  DUP RAW_DIGIT C@    DIGITS_PORT   PORT.WRITE        \ включить нужный индикатор
-  1+ 3 AND            \ увеличиваем на 1 текущую цифру и сворачиваем
+  {DIGITS} {CLEAR}      \ turn off the segments
+  DUP RAW_SEGMENT C@  SEGMENTS_PORT PORT.WRITE        \ write segments
+  DUP RAW_DIGIT C@    DIGITS_PORT   PORT.WRITE        \ turn on the digit
+  1+ 3 AND            \ next digit
   DIGIT C!
 ;
 
 : SET_MODE  ( mode -- )
   DUP MODE C!
-  DUP #BUTTONS * CELLS [MODE_TASKS] + BUTTONS_TASKS ! \ установить задачи для кнопок соответственно режиму
-  0= Get_Time C!      \ обычный режим - обновляем время
+  DUP #BUTTONS * CELLS [MODE_TASKS] + BUTTONS_TASKS ! \ set button tasks according to the current mode
+  0= Get_Time C!      \ normal mode - update the time
 ;
 
-: NORMAL                \ вернуться в нормальный режим
+: NORMAL                \ go to normal mode
   0 SET_MODE
 ;
 
-: RETURN_TO_NORMAL      \ вернуться в нормальный режим через 10 секунд
+: RETURN_TO_NORMAL      \ go to normal mode after 10 seconds
   ['] NORMAL 10000 RTOS_SET_TIMER_TASK
 ;
 
-: NEXT_MODE ( -- )
-  MODE C@ 1+ #MODES MOD SET_MODE \ следующий режим
+: NEXT_MODE ( -- ) \ go to the next mode and then back to normal
+  MODE C@ 1+ #MODES MOD SET_MODE
   RETURN_TO_NORMAL
 ;
 
-: (SET) ( reg value -- ) \ установить регистр часов, отформатировать время,
-                          \ вернуться к нормальному режиму через 10 секунд
+: (SET) ( reg value -- ) \ set clock register, format time and back to normal after 10 sec
   SWAP DS1307_SET
   PARSE_TIME
   RAW_FORMAT
   RETURN_TO_NORMAL
 ;
 
-: NEXT_HOUR ( -- )  \ увеличить час на 1
+: NEXT_HOUR ( -- )  \ hour + 1
   DS1307_Hours
   0 DIGITS 24 BCD+1
   (SET)
 ;
 
-: PREV_HOUR ( -- ) \ уменьшить час на 1
+: PREV_HOUR ( -- ) \ hour - 1
   DS1307_Hours
   0 DIGITS 24 BCD-1
   (SET)
 ;
 
-: NEXT_MINUTE ( -- ) \ увеличить минуты на 1
+: NEXT_MINUTE ( -- ) \ minute + 1
   DS1307_Minutes
   2 DIGITS 60 BCD+1
   (SET)
 ;
 
-: PREV_MINUTE ( -- ) \ уменьшить минуты на 1
+: PREV_MINUTE ( -- ) \ minute - 1
   DS1307_Minutes
   2 DIGITS 60 BCD-1
   (SET)
 ;
 
 TCREATE MODE_BTN_TASKS
-\ задачи для кнопок в режиме 0
+\ button tasks for normal mode
 ' NEXT_MODE T,   ' IDLE T,       ' IDLE T,
-\ задачи для кнопок в режиме 1
+\ button tasks for set hours mode
 ' NEXT_MODE T,   ' PREV_HOUR T,  ' NEXT_HOUR T,
-\ задачи для кнопок в режиме 2
+\ button tasks for set minutes mode
 ' NEXT_MODE T,   ' PREV_MINUTE T, ' NEXT_MINUTE T,
 
 : @MODE_BTN_TASKS   MODE_BTN_TASKS ;
 ' @MODE_BTN_TASKS [->] [MODE_TASKS]
 
-: ALL_DIGITS ( n -- )   \ установить все разряды в n
+: ALL_DIGITS ( n -- )   \ set all digits to n
   0 DIGITS #DIGITS ROT FILL
 ;
 
-: 9_TO_0  ( -- )      \ пройти от 9 до 0
+: 9_TO_0  ( -- )      \ display from 9 to 0
   10 BEGIN
     1-
     DUP ALL_DIGITS RAW_FORMAT
@@ -245,44 +241,44 @@ TCREATE MODE_BTN_TASKS
 ;
 
 : INIT
-  [ SEGMENTS_MASK_WITH_DOT SEGMENTS_PORT ] {OUTPUT}  \ порт для подключения сегментов - выход
-  {DIGITS} {OUTPUT}                                  \ порт для подключения разрядов - выход
-  [ BITS{ WDP0 WDP1 WDP2 }BITS ] WDT_PRESCALER    \ сторожевой таймер на 2 секунды
+  [ SEGMENTS_MASK_WITH_DOT SEGMENTS_PORT ] {OUTPUT}  \ segments for output
+  {DIGITS} {OUTPUT}                                  \ digits for output
+  [ BITS{ WDP0 WDP1 WDP2 }BITS ] WDT_PRESCALER       \ wdt for 2 seconds
 
   RTOS_INIT
-  NORMAL      \ обычный режим часов
-  RTOS_RUN    \ запустить диспетчер
+  NORMAL      \ set normal mode
+  RTOS_RUN    \ run the os
 
-  9_TO_0      \ задержка для надежного определения наличия часов
+  9_TO_0      \ display test
 
-  DS1307_INIT INVERT DUP Get_Time C!                  \ проверим наличие DS1307
+  DS1307_INIT INVERT DUP Get_Time C!                  \ do we have RTC?
 
-  IF  \ есть DS1307?
-    0x7 BUTTONS_ENABLED C!         \ все кнопки вкл
-    0x6 BUTTONS_REPEATABLE C!      \ кнопка BTN_SET не повторяет нажатия
-    0 SET_MODE                     \ задачи для кнопок
-    BUTTONS_INIT                                    \ инициализация порта
+  IF  \ yes
+    0x7 BUTTONS_ENABLED C!         \ all buttons enabled
+    0x6 BUTTONS_REPEATABLE C!      \ BTN_SET does not repeat
+    NORMAL                         \ set buttons tasks
+    BUTTONS_INIT
 
-    ['] BUTTONS_TASK RTOS_SET_TASK                  \ обработчик кнопок
-    ['] GET_TIME     RTOS_SET_TASK                  \ чтение времени
-    ['] TIMER2_TASK  RTOS_SET_TASK                  \ мигание цифрами
-  ELSE \ нет - показываем прочерки
+    ['] BUTTONS_TASK RTOS_SET_TASK                  \ buttons handler task
+    ['] GET_TIME     RTOS_SET_TASK                  \ time task
+    ['] TIMER2_TASK  RTOS_SET_TASK                  \ blinker task
+  ELSE \ no rtc - show dashes
     RAW_FORMAT
-    0 RAW_SEGMENT #DIGITS g FILL    \ сформируем 4 прочерка
+    0 RAW_SEGMENT #DIGITS g FILL    \ 4 dashes
   THEN
 ;
 
 : MAIN
   INIT
   BEGIN
-    RTOS_TASK_MANAGER   \ выполняем задачи из очереди
-    WDR                 \ сброс сторожевого таймера
+    RTOS_TASK_MANAGER
+    WDR
   AGAIN
 ;
 
-INT: TIMER                  \ по таймеру 1000 раз в секунду
-  SHOW_DIGIT              \ выводим текущую цифру
-  RTOS_TIMER_SERVICE      \ запускаем службу таймеров ОС
+INT: TIMER                \ timer interrupt
+  SHOW_DIGIT              \ show current digit
+  RTOS_TIMER_SERVICE      \ run os timer service
 ;INT
 
-' TIMER RTOS_TIMER_INTERRUPT INT! \ задать обработчик прерывания по таймеру
+' TIMER RTOS_TIMER_INTERRUPT INT! \ set timer interrupt handrel

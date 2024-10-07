@@ -1,5 +1,5 @@
 : .SN ( n --)
-\ Распечатать n верхних элементов стека
+\ pring n top stack elements
   >R
   BEGIN
     R@

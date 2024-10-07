@@ -1,16 +1,17 @@
-\ управляющие структуры и макроопределения
+\ defining words and macros
 
-\ используемые регистры:
-\ yh:yl - указатель на вершину стека данных
-\ xh:xl - число на вершине стека данных
-\ wh:wl - временный регистр, счетчик цикла DO
-\ zh:zl - временный регистр
-\ r20:r21 - верхний предел в цикле DO
-\ r22:r23 - временный регистр
-\ r16:r17 - временный, используется редко
-\ r18:r19 - временный, используется редко
-\ r0    - временный, используется командой lpm
+\ registers map:
+\ yh:yl - data stack pointer
+\ xh:xl - top value of the data stack
+\ wh:wl - temp registers, DO loop counter
+\ zh:zl - temp registers
+\ r20:r21 - upper limit in DO loop
+\ r22:r23 - temp registers
+\ r16:r17 - temp registers, rarely used
+\ r18:r19 - temp registers, rarely used
+\ r0    - temp register, used by lpm instruction
 
+\ register aliases
 wl CONSTANT cntl    \ r24
 wh CONSTANT cnth    \ r25
 r20 CONSTANT cbl
@@ -24,69 +25,69 @@ r19 CONSTANT tmp2h
 xl CONSTANT tosl    \ r26
 xh CONSTANT tosh    \ r27
 
-: (PROLOG)  ( -- )  \ в начале определения
+: (PROLOG)  ( -- )  \ word prolog
 
 ;
 
-: (EPILOG)  ( -- )  \ в конце определения
-    OPTIM? CASE     \ пытаться оптимизировать хвостовую рекурсию
-      1 OF
+: (EPILOG)  ( -- )  \ word epilog
+    OPTIM? CASE     \ optimize tail recursion
+      1 OF \ convert the last call to jmo
           DEBUG3" call>jmp"
           THERE 4 - DUP TC@  2 - SWAP TC! ENDOF \ call -> jmp
-      2 OF
+      2 OF \ convert the last rcall to rjmo
           DEBUG3" rcall>rjmp"
           THERE  1- DUP TC@ 10 - SWAP TC! ENDOF \ rcall -> rjmp
-      3 OF
+      3 OF \ don't compile ret after jmp,rjmp,ijmp
           DEBUG3" jmp,rjmp,ijmp>"
-          ENDOF  \ не вставлять ret после jmp, rjmp
+          ENDOF \ do nothing
       ret
     ENDCASE
     NEW
 ;
 
-: (CALL)    ( addr -- )
+: (CALL)    ( addr -- ) \ compile a call to addr
     DUP ?FAR IF
         call
-        1 TO OPTIM? \ пытаться оптимизировать хвостовую рекурсию
+        1 TO OPTIM? \ tail recursion optimization
     ELSE
         rcall
-        2 TO OPTIM? \ пытаться оптимизировать хвостовую рекурсию
+        2 TO OPTIM? \ tail recursion optimization
     THEN ;
 
-: (JMP)     ( addr -- )
+: (JMP)     ( addr -- ) \ compile a jump to addr
     DUP ?FAR IF jmp  ELSE rjmp  THEN
-    3 TO OPTIM?      \ пытаться оптимизировать хвостовую рекурсию
+    3 TO OPTIM?      \ tail recursion optimization
 ;
 
-: (UJMP)    ( -- )
+: (UJMP)    ( -- ) \ ret
     ret ;
 
-: pushd     \ на стек данных r+1:r
+: pushd     ( reg -- ) \ push r+1:r register pair to the data stack
   DUP -[y] st
   1+  -[y] st
 ;
 
-: popd    \ со стека данных r+1:r
+: popd      ( reg -- ) \ pop r+1:r register pair from the data stack
   [y]+ OVER 1+ ld
   [y]+ SWAP    ld
 ;
 
-: pushtmp \ на стек данных tmph:tmpl
+: pushtmp   ( -- ) \ push tmp register pair to the data stack
   tmpl pushd
 ;
 
-: poptmp  \ со стека данных tmph:tmpl
+: poptmp    ( -- ) \ pop tmp register pair from the data stack
   tmpl popd
 ;
 
-: pusht   \ DUP
+: pusht     ( -- ) \ DUP, push TOS
   tosl pushd
   4 TO OPTIM?
 ;
 
-: popt    \ DROP
-  OPTIM? 4 = IF   \ убрать DUP DROP
-     DEBUG3" dup drop"
+: popt      ( -- ) \ DROP, pop TOS
+  OPTIM? 4 = IF   \ remove DUP DROP
+    DEBUG3" dup drop"
     -4 TALLOT NEW
   ELSE
     tosl popd
@@ -94,34 +95,34 @@ xh CONSTANT tosh    \ r27
   THEN
 ;
 
-\ ------------------------ литералы
+\ ------------------------ literals
 
-: SLOWLITS
+: SLOWLITS ( -- ) \ use slower literals, but less memory
   ?TEXEC
   S" lit" TREQUIRED
   4 TO LITSIZE
 ;
 
-2VARIABLE LASTLITS      \ стек из двух последних литералов
+2VARIABLE LASTLITS    \ stack of two last literals
+\ the first cell is the last literal
 0. LASTLITS 2!
-\ первая ячейка - последний литерал
 
-2VARIABLE L_MARK     \ адреса компиляции двух последних литералов
+2VARIABLE L_MARK     \ addresses of the two latest literals
 
-: LITS_MARK     ( -- )  L_MARK @ THERE L_MARK 2! ; \ запомнить адрес последнего литерала
+: LITS_MARK     ( -- )  L_MARK @ THERE L_MARK 2! ; \ push the address of the last literal
 
-: PUSHLIT       ( n -- )  \ протолкнуть литерал в стек из двух литералов
+: PUSHLIT       ( n -- )  \ push the literal to the literals stack
    LASTLITS 2@ NIP SWAP LASTLITS 2!
    #LITS 1+ 02 MIN TO #LITS
 ;
 
 : QLIT1?         ( -- F | lit T )
-\ если последний код - литерал, удалить его и вернуть этот литерал
-\ сбросить стек литералов
+\ if the latest compiled code is the literal, return it and remove the code
+\ reset the literals stack
 [F]
     #LITS IF
-      L_MARK @ ORG         \ удалить код литерала
-      LASTLITS @ TRUE      \ взять его значение
+      L_MARK @ ORG         \ remove the code
+      LASTLITS @ TRUE      \ get the literal value
     ELSE
       FALSE
     THEN
@@ -130,13 +131,13 @@ xh CONSTANT tosh    \ r27
 ;
 
 : QLIT2?        ( -- F | lit T )
-\ если последний код - литерал, удалить его и вернуть этот литерал
-\ снять литерал с вершины стека литералов
+\ if the latest compiled code is the literal, return it and remove the code
+\ pop the literal from the literals stack
 [F]
     #LITS
     IF
-      L_MARK 2@ ORG L_MARK !      \ удалить код литерала
-      LASTLITS 2@ SWAP LASTLITS ! \ взять его значение
+      L_MARK 2@ ORG L_MARK !      \ remove the code
+      LASTLITS 2@ SWAP LASTLITS ! \ pop the value
       #LITS 1- TO #LITS
       TRUE
     ELSE
@@ -145,51 +146,51 @@ xh CONSTANT tosh    \ r27
 [P]
 ;
 
-: (LIT)   ( n -- )  \ положить на стек литерал
+: (LIT)   ( n -- )  \ compile a literal
 [F]
-    OPTIM? 5 = IF
+    OPTIM? 5 = IF \ optimize DROP literal, don't need to do pop and push, just replace the TOS
       DEBUG3" drop lit; "
-      -4 TALLOT
+      -4 TALLOT \ remove the drop code
       tosl ldiw
     ELSE
-      LITS_MARK \ отметить адрес литерала
+      LITS_MARK \ store the literal address
       #LITS >R
 
       DUP
-      (SLOWLIT) @ ?DUP IF
+      (SLOWLIT) @ ?DUP IF \ compile a slow literal
         (CALL)
         T,
-      ELSE
+      ELSE \ compile a fast literal
         pusht
         tosl ldiw
       THEN
 
       R>
-      TO #LITS  \ восстановить тек. количество литералов
-      PUSHLIT   \ запоминаем последний литерал
+      TO #LITS  \ restore the number of literals
+      PUSHLIT   \ remember the latest literal
     THEN
 [P]
 ;
 
-: LITERAL
+: LITERAL ( n -- )
     (LIT) ;
 
-: (2LIT)
+: (2LIT)  ( d -- )
   SWAP (LIT) (LIT)
 ;
 
-: 2LITERAL
+: 2LITERAL ( d -- )
     (2LIT) ;
 
 : E_2LITERAL
-  -1 ABORT" Требуется два литерала"
+  -1 ABORT" Need two literals"
 ;
 
 : E_LITERAL
-  -1 ABORT" Требуется литерал"
+  -1 ABORT" Need a literal"
 ;
 
-\ Разрешение ссылок
+\ Control flow
 
 : T>MARK ( TOKEN -- ADDR TOKEN )
   THERE  SWAP ( ADDR TOKEN )
@@ -211,7 +212,7 @@ xh CONSTANT tosh    \ r27
   EXECUTE
 ;
 
-\ ============== управляющие структуры для ассемблера
+\ ============== assembly control flow
 
 : if_z
   ['] brne T>MARK
@@ -257,7 +258,7 @@ xh CONSTANT tosh    \ r27
 
 : begin
    T<MARK
-   NEW \ исключить оптимизацию
+   NEW \ exclude optimization
 ;
 
 : again
@@ -295,7 +296,7 @@ xh CONSTANT tosh    \ r27
   until_<>0
 ;
 
-\ ================= высокоуровневые
+\ ================= hi-level flow control
 
 : IF HAS IF
   tosl tosh or
@@ -318,11 +319,11 @@ xh CONSTANT tosh    \ r27
 ;
 
 : BEGIN HAS BEGIN
-   begin
+  begin
 ;
 
 : AGAIN HAS AGAIN
-   again
+  again
 ;
 
 : UNTIL HAS UNTIL
@@ -331,7 +332,7 @@ xh CONSTANT tosh    \ r27
   until_=0
 ;
 
-: [UNTIL<>0] \ не разрушает вершину стека
+: [UNTIL<>0] \ does not destroy TOS
   tosl tmpl mov
   tosh tmpl or
   until_<>0
@@ -350,27 +351,27 @@ xh CONSTANT tosh    \ r27
 ;
 
 : REPEAT HAS REPEAT
-   repeat
+  repeat
 ;
 
-: (DO) ( -- ) \ скомпилировать начальную часть цикла
+: (DO) ( -- ) \ compile DO
 [F]
   QLIT2? IF
-    QLIT1? IF   ( известны нач.значение и предел )
+    QLIT1? IF   ( from and to values are literals )
       DEBUG3" DO from to"
-      cbl pushw
+      cbl pushw \ push the counter and the limit of the outer loop
       cntl pushw
-      cbl  ldiw ( предел )
-      cntl ldiw ( нач.знач )
-    ELSE ( известно нач.значение )
+      cbl  ldiw ( limit )
+      cntl ldiw ( from value )
+    ELSE ( only from value is a literal )
       DEBUG3" DO from"
-      cbl pushw
+      cbl pushw \ push the counter and the limit of the outer loop
       cntl pushw
-      cntl ldiw ( нач.знач )
-      tosl cbl movw ( предел )
+      cntl ldiw ( from value )
+      tosl cbl movw ( limit )
       popt
     THEN
-  ELSE ( не известно ничего )
+  ELSE ( no literals )
     cbl pushw
     cntl pushw
     tosl cntl movw
@@ -383,10 +384,10 @@ xh CONSTANT tosh    \ r27
 
 : DO HAS DO ( -- 0 t>mark -1 t<mark )
   (DO)
-  NEW \ исключить оптимизацию
+  NEW \ exclude optimization
   0
   ['] DROP T>MARK
-  NEW \ исключить оптимизацию
+  NEW \ exclude optimization
   -1
   T<MARK
 ;
@@ -401,9 +402,9 @@ xh CONSTANT tosh    \ r27
   T<MARK
 ;
 
-: T>RESOLVE_ALL ( 0 x1 y1 x2 y2 .. xn yn -1 -- ) \ разрешить ссылки вперед
+: T>RESOLVE_ALL ( 0 x1 y1 x2 y2 .. xn yn -1 -- ) \ resolve all marks
 [F]
-  -1 <> ABORT" Нарушение структуры DO..LOOP"
+  -1 <> ABORT" DO..LOOP structure mismatch"
   BEGIN
     ?DUP
   WHILE
@@ -412,42 +413,42 @@ xh CONSTANT tosh    \ r27
 [P]
 ;
 
-: LOOP HAS LOOP
+: LOOP HAS LOOP \ compile loop
 [F]
-  1 cntl adiw           \ увеличим счетчик на 1
+  1 cntl adiw           \ increment the counter
   cbl cntl cp
-  cbh cnth cpc          \ пересекли границу?
-  ['] brne T<RESOLVE    \ разрешить ссылку назад
-  T>RESOLVE_ALL         \ разрешить все ссылки вперед
-  cntl popw             \ восстанавливаем счетчик и границу внешнего цикла
+  cbh cnth cpc          \ over the limit?
+  ['] brne T<RESOLVE
+  T>RESOLVE_ALL
+  cntl popw             \ pop the counter and the limit
   cbl popw
 [P]
 ;
 
 : +LOOP HAS +LOOP
 [F]
-  QLIT1? IF ( приращение - литерал )
+  QLIT1? IF ( the increment is a literal? )
     DEBUG3" +LOOP"
-    tmp1l ldiw
-    tmp1l cntl add         \ складываем счетчик и приращение
+    tmp1l ldiw            \ TODO: can we omit this and add to cnt directly?
+    tmp1l cntl add        \ add the increment and the counter
     tmp1h cnth adc
   ELSE
-    tosl cntl add         \ складываем счетчик и приращение
+    tosl cntl add         \ add the TOS to the counter
     tosh cnth adc
-    tosl tmp1l movw        \ сохраним приращение
-    popt                  \ удаляем приращение со стека
+    tosl tmp1l movw       \ save the increment in tmp1
+    popt                  \ drop the increment from the data stack
   THEN
 [P]
   cntl zl movw
-  cbl zl sub            \ счетчик-предел
+  cbl zl sub            \ counter - limit
   cbh zh sbc
-  0x80 zh subi          \ счетчик-предел-0х8000
-  tmp1l zl cp            \ сравниваем с приращением
+  0x80 zh subi          \ counter - limit - 0х8000
+  tmp1l zl cp           \ compare with the increment
   tmp1h zh cpc
 
-  ['] brvc T<RESOLVE    \ разрешим ссылку назад для DO..+LOOP
-  T>RESOLVE_ALL         \ разрешим ссылки всперед для DO..+LOOP
-  cntl popw             \ восстанавливаем счетчик и приращение для внешнего цикла
+  ['] brvc T<RESOLVE
+  T>RESOLVE_ALL
+  cntl popw             \ restore the counter and the limit for the outer loop
   cbl popw
 ;
 
@@ -456,7 +457,7 @@ xh CONSTANT tosh    \ r27
   cntl tosl movw
 ;
 
-: ALL>R ( -1 n1 n2 ... nx -- ) \ положить на стек возвратов все числа до -1
+: ALL>R ( -1 n1 n2 ... nx -- ) \ push all numbers until -1 to the return stack
          ( R: -- nx .. n1 -1 )
 [F]
   R>
@@ -470,7 +471,7 @@ xh CONSTANT tosh    \ r27
 [P]
 ;
 
-: ALLR> ( -- -1 n1 n2 ... nx ) \ снять со стека возвратов все числа до -1
+: ALLR> ( -- -1 n1 n2 ... nx ) \ pull all numbers until -1 from the return stack
          ( R: nx .. n1 -1 )
 [F]
   -1
@@ -485,7 +486,7 @@ xh CONSTANT tosh    \ r27
 
 : LEAVE HAS LEAVE
   ALL>R
-  ['] (JMP) T>MARK \ добавить еще одну ссылку вперед для разрешения в LOOP, +LOOP
+  ['] (JMP) T>MARK \ one more mark for resolving in LOOP, +LOOP
   ALLR>
 ;
 
@@ -494,22 +495,21 @@ xh CONSTANT tosh    \ r27
   cbl  popw
 ;
 
-\ ------------------------------
-\ макроопределения примитивов
+\ ------------------------------ macros
 
-: SET ( bits port -- )   \ port |= bits    установить биты
+: SET ( bits port -- )   \ port |= bits    set bits in port
  [F]
   QLIT2? IF ( port )
     QLIT1? IF   ( port bits )
       DEBUG3" SET bits port"
-      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask is 0 - do nothing
       2DUP 1s 0x1 =
       SWAP >reg  ?port0
-      AND IF \ установить один бит и порт меньше 32  - используем sbi
+      AND IF \ one bit only and low port - use sbi
         LSB SWAP sbi
       ELSE
         DEBUG3" SET port"
-        DUP 0xFF <> IF \ установить все - чтение не нужно
+        DUP 0xFF <> IF \ if mask is 0xFF, we don't need to read the port
             OVER ( p b p )
             zl _in
         THEN
@@ -530,7 +530,7 @@ xh CONSTANT tosh    \ r27
   QLIT2? IF ( port )
     QLIT1? IF   ( port bits )
         DEBUG3" TOGGLE bits port"
-        0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+        0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask is 0 - do nothing
         OVER ( p b p )
         zl _in
         zh ldi
@@ -550,7 +550,7 @@ xh CONSTANT tosh    \ r27
   QLIT2? IF ( port )
     QLIT1? IF   ( port bits )
         DEBUG3" MASK bits port"
-        0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+        0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask is 0 - do nothing
         OVER ( p b p )
         zl _in
         zl andi
@@ -564,15 +564,15 @@ xh CONSTANT tosh    \ r27
  [P]
 ;
 
-: CLEAR ( bits port -- )  \ port &= ~bits     очистить биты
+: CLEAR ( bits port -- )  \ port &= ~bits
  [F]
   QLIT2? IF ( port )
     QLIT1? IF   ( port bits )
       DEBUG3" CLEAR bits port"
-      0xFF AND DUP 0= IF 2DROP EXIT THEN \ маска = 0 - ничего не делать
+      0xFF AND DUP 0= IF 2DROP EXIT THEN \ mask is 0 - do nothing
       2DUP 1s 0x1 =
       SWAP >reg  ?port0
-      AND IF \ очистить один бит и порт меньше 32  - используем сbi
+      AND IF \ one bit only and low port - use сbi
         LSB SWAP cbi
       ELSE
         DEBUG3" CLEAR port"
@@ -624,11 +624,11 @@ xh CONSTANT tosh    \ r27
   popt
 ;
 
-: NIP HAS NIP       ( x1 x2 -- x1 )                 ( discard 2nd item on stack)
+: NIP HAS NIP      ( x1 x2 -- x1 )                 ( discard the 2nd item on stack)
   0x2 yl adiw
 ;
 
-: U2/ HAS U2/        ( x1 -- x2 )                 \   ( logical right shift one bit)
+: U2/ HAS U2/      ( x1 -- x2 )                 \   ( logical right shift one bit)
   tosh lsr
   tosl ror
 ;
@@ -644,13 +644,13 @@ xh CONSTANT tosh    \ r27
 ;
 
 : NIBBLE-SWAP      ( x1 -- x2 )
-    tosl swap
+  tosl swap
 ;
 
 : CELLS  ( x1 -- x2 )                 \   ( multiply by cell size)
 [F]
-  T-STATE @ IF \ компиляция
-      QLIT1? IF
+  T-STATE @ IF \ compilation
+      QLIT1? IF \ literal
         DEBUG3" CELLS"
         TCELL * (LIT)
       ELSE
@@ -691,7 +691,7 @@ xh CONSTANT tosh    \ r27
   tosh clr
 ;
 
-: REBOOT     ( -- )       ( reset the processor)
+: REBOOT     ( -- )       ( reset the device )
   0x0 jmp
 ;
 

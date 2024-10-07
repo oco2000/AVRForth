@@ -2,15 +2,15 @@
   [
     poptmp
     THERE
-      EEWE EECR sbic      \ Ждем готовности памяти к записи. Крутимся в цикле
-    (JMP)                   \ до тех пор пока не очистится флаг EEWE
-    cli                     \ Затем запрещаем прерывания.
-    tosl EEARL out      \ Загружаем адрес нужной ячейки
-    tosh EEARH out      \ Загружаем адрес нужной ячейки
-    tmpl EEDR out       \ и сами данные, которые нам нужно загрузить
-    EEMWE EECR sbi      \ взводим предохранитель
-    EEWE  EECR sbi      \ записываем байт
-    sei                     \ разрешаем прерывания
+      EEWE EECR sbic      \ wait until EEWE is not clear
+    (JMP)
+    cli
+    tosl EEARL out      \ set the address
+    tosh EEARH out
+    tmpl EEDR out       \ and the byte
+    EEMWE EECR sbi      \ set the write flag
+    EEWE  EECR sbi      \ write the byte
+    sei
     popt
   ]
 ;

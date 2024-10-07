@@ -1,10 +1,10 @@
-\ Преобразование число -> строка
+\ number > string conversion
 
-VARIABLE BASE       ( -- a )    ( система счисления )
-VARIABLE HLD        ( -- a )    ( текущее место в буфере для преобразования )
-0x24 == PAD-SIZE        ( размер буфера )
-RCREATE PAD   PAD-SIZE ALLOT    ( буфер для преобразования )
-D-HERE [F] @ 1- [P] == NUMPAD   ( конец буфера - с конца начинается заполнение буфера )
+VARIABLE BASE       ( -- a )    ( base )
+VARIABLE HLD        ( -- a )    ( addr in PAD )
+0x24 == PAD-SIZE        ( PAD size )
+RCREATE PAD   PAD-SIZE ALLOT    ( PAD )
+D-HERE [F] @ 1- [P] == NUMPAD   ( PAD end )
 
 : DECIMAL       ( -- )
   0xA BASE !
@@ -14,15 +14,15 @@ D-HERE [F] @ 1- [P] == NUMPAD   ( конец буфера - с конца нач
   0x10 BASE !
 ;
 
-: <#     ( -- )               ( начать преобразование )
+: <#     ( -- )             ( start the converstion )
   NUMPAD HLD ! ;
-: HOLD   ( char -- )        ( занести символ в буфер )
+: HOLD   ( char -- )        ( put into PAD )
   HLD @ 1- DUP HLD ! C! ;
-: #      ( ud1 -- ud2 )     ( преобразовать одну цифру )
+: #      ( ud1 -- ud2 )     ( convert one digit )
   BASE @ MU/MOD ROT >DIGIT HOLD ;
-: #S     ( ud -- 0 0 )      ( преобразовать оставшиеся цифры )
+: #S     ( ud -- 0 0 )      ( convert all digits )
   BEGIN # 2DUP D0<> INVERT UNTIL ;
-: SIGN   ( x -- )         ( вставить знак "-", если число отрицательное )
+: SIGN   ( x -- )           ( put "-", if x < 0 )
   0< IF [ CHAR - ] LITERAL HOLD THEN ;
-: #>     ( ud -- addr len )   ( закончить преобразование )
+: #>     ( ud -- addr len ) ( end the conversion )
   2DROP HLD @ NUMPAD OVER - ;

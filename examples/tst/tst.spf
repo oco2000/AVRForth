@@ -1,8 +1,8 @@
-\ тест-файл для AVRFORTH
-+DEBUG3 \ отладочные сообщения
+\ misc tests for AVRFORTH
++DEBUG3
 
 \
-\ 0x1000 TALLOT \ проверка дальних адресов
+\ 0x1000 TALLOT \ check far addresses
 \
 [F] DECIMAL
 1000000 == F_CPU
@@ -12,27 +12,27 @@ HEX [P]
   REQUIRE _USART_INIT   lib/usart/atmega128-usart-config.spf
   REQUIRE USART         lib/usart/usart.spf
 [THEN]
-\ =============== константы
+\ =============== constants
 06 CONSTANT c6
 05 CONSTANT c5
-\ или так
+\ equivalents
 0x6 == 6
 0x5 == 5
-\ =============== переменные в RAM
+\ =============== RAM variables
 RCREATE RAM5 0x5 ALLOT
 VARIABLE VAR
 RCREATE RAM8 0x8 ALLOT
-\ =============== массив в ROM
+\ =============== ROM array
 TCREATE ROM
 0x1 T, 0x2 T, 0x3 T, 0x4 T,
-\ =============== переменные в EEPROM
+\ =============== EEPROM variables
 ECREATE eeVAR
 10 EALLOT
 EVARIABLE eeVAR2
-\ =============== определяющие слова
-\ 111 дает адрес в ROM
+\ =============== defining words
+\ 111 gives the current ROM address
 PCREATE 111
-\ константа
+\ constant
 
 TREQUIRE @P
 :: ===
@@ -48,9 +48,9 @@ TREQUIRE @P
   TWO
   THREE
 ;
-\ в RAM
+\ in RAM
 CREATE X1 0x2 ALLOT
-:: VECTOR  CREATE [F] 2* [P] ALLOT DOES> SWAP 2* + ; ;;  \ обязательно в конце ; ;;
+:: VECTOR  CREATE [F] 2* [P] ALLOT DOES> SWAP 2* + ; ;;  \ don't forget ;
 10 VECTOR X
 5 VECTOR Y
 
@@ -59,13 +59,13 @@ CREATE X1 0x2 ALLOT
   0 2 Y !
 ;
 
-\ ========================== тест макросов
+\ ========================== macro test
 : z
   DUP
   [ 0x1 tosl sbiw ]
   DUP ;
 
-MACRO: M1 \ HAS M1 - если перекрываем существующее слово форта
+MACRO: M1
   z
   0x1 tosl adiw
 ;MACRO
@@ -74,7 +74,7 @@ MACRO: M1 \ HAS M1 - если перекрываем существующее с
   M1 M1
 ;
 
-\ =============== управляющие структуры
+\ =============== control flow
 :  XX  ( n -- )
  BEGIN 1- DUP
  UNTIL DROP ;
@@ -93,7 +93,7 @@ MACRO: M1 \ HAS M1 - если перекрываем существующее с
  LOOP
  ;
 
-\ =============== управляющие структуры ассемблера
+\ =============== assembly control flow
 
 : TEST3
   [ tmpl clr
@@ -115,16 +115,16 @@ MACRO: M1 \ HAS M1 - если перекрываем существующее с
   ]
 ;
 
-\ =============== обработка прерываний
+\ =============== interrupts
 VARIABLE TICKS
 
-INT: TIMER0_TICK    \ обработчик
+INT: TIMER0_TICK    \ handler
   TICKS INCR
 ;INT
 
-TIMER0_TICK ->INT TIMER0_OVF    \ задаем обработчик
+TIMER0_TICK ->INT TIMER0_OVF    \ set handler
 
-\ ===============
+\ =============== i/o
 
 PORTB == BTN_PORT
 DDRB  == BTN_DDR
@@ -136,9 +136,9 @@ DDRD  == LED_DDR
 00 == LED
 
 : MAIN
-  BITS{ LED }BITS LED_DDR C!    \ на выход
-  0x0 BTN_DDR C!          \ на вход
-  BITS{ LED }BITS BTN_PORT C!   \ подтяжка
+  BITS{ LED }BITS LED_DDR C!    \ output
+  0x0 BTN_DDR C!                \ input
+  BITS{ LED }BITS BTN_PORT C!   \ pull-up
   BEGIN
    BTN_PIN C@
    LED_PORT C!
@@ -242,21 +242,20 @@ PD3 WIRE LED
   20 CTOGGLE
   CTOGGLE
 
-
-
   BEGIN AGAIN
 ;
 
-:: 1234   \ отладка в макросе
+:: 1234   \ debug in macro
 [F]
   [IFDEBUG]
    123
-  ELSE \ тут использовать обычное ELSE
+  ELSE \ usual ELSE
    234
   [THEN]
 [P]
 ;;
 
+\ structures
 TREQUIRE --
 
 00

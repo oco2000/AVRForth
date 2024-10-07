@@ -1,4 +1,4 @@
 # AVRForth
-Forth for AVR microcontrollers
+Forth language compiler for AVR microcontrollers
 
-The documentation is in [here](manual/manual.ru.md), russian only, sorry!
+The documentation is in [here](manual/manual.en.md)!

@@ -1,4 +1,4 @@
-
+\ minimal example
 PORTB == BTN_PORT
 DDRB  == BTN_DDR
 PINB  == BTN_PIN
@@ -10,9 +10,9 @@ DDRD  == LED_DDR
 LED BIT LED_PORT 2== {LED}
 
 : MAIN
-  LED BIT  LED_DDR SET    \ на выход
-  BUTTON BIT BTN_DDR CLEAR        \ на вход
-  BITS{ BUTTON }BITS BTN_PORT SET   \ подтяжка
+  LED BIT  LED_DDR SET    \ output
+  BUTTON BIT BTN_DDR CLEAR        \ input
+  BITS{ BUTTON }BITS BTN_PORT SET   \ pull-up
     BEGIN
     BTN_PIN C@  BUTTON BIT AND
       IF

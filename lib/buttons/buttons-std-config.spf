@@ -1,7 +1,7 @@
 @DECIMAL
 
-  10 == BUTTONS_PERIOD              \  период опроса кнопок, ms
- 500 == BUTTONS_REP_DELAY           \  задержка перед повтором, ms
- 150 == BUTTONS_REPEAT              \  период между повторами, ms
+  10 == BUTTONS_PERIOD              \  request perion, ms
+ 500 == BUTTONS_REP_DELAY           \  delay before repeat, ms
+ 150 == BUTTONS_REPEAT              \  between repeats, ms
 
 BASE!

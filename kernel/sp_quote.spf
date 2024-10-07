@@ -1,28 +1,28 @@
+\ compile a string to ROM
 
 CALL-ONLY: (SP") ( -- a n )
-\  R@ 2* COUNTP  R> 2* OVER + 1+ ALIGNED 2/ >R ( addr cnt ) \ пропустили символы
 [
   pusht
   tosl popw  \ R>
-  tosl lsl   \ адрес возврата измеряется словами, поэтому умножаем на 2
+  tosl lsl   \ double it
   tosh rol
   tosl zl movw
-  0x1 tosl adiw
-  pusht     \ на стек адрес
+  0x1 tosl adiw \ skip the counter
+  pusht     \ push address
   tosl lpmz
-  tosh clr  \ на стек длину
+  tosh clr  \ count
   tosl zl add
-  tosh zh adc \ пропустили символы
-  0x2 zl adiw \ следующий адрес
-  zh lsr
+  tosh zh adc \ skip the string
+  0x2 zl adiw \ next address
+  zh lsr \ divide by 2
   zl ror
-  ijmp
+  ijmp \ skip
 ]
 ;
 
 :: SP"
-  (SP")    \ компилировать вызов (S")
-  C"      \ " \ компилировать строку со счетчиком
-  [F] DROP [P] \ удалить адрес, оставленный предыдущим словом
+  (SP")    \ compile (S")
+  C"      \ " \ compile the counted string
+  [F] DROP [P]
 ;;
 

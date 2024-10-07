@@ -1,4 +1,4 @@
-\ одномерный массив ячеек
+\ cell array
 
 TREQUIRE SWAP
 TREQUIRE CELLS

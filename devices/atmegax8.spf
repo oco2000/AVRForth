@@ -1,7 +1,7 @@
 ( ATMEGAX8 )
 
-HAS_MOVW \ поддерживается инструкция movw
-HAS_MUL  \ есть команда умножения
+HAS_MOVW \ has movw instruction
+HAS_MUL  \ has mul instruction
 HAS_LPMZ
 
 0x23 == PINB
@@ -372,5 +372,3 @@ INTERRUPT EEPROM_READY
 INTERRUPT ANALOG_COMP
 INTERRUPT TWI
 INTERRUPT SPM_READY
-\ INTERRUPT START
-

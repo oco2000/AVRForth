@@ -1,3 +1,4 @@
+\ Progress indication on the LCD
 REQUIRE LCD_CHAR lib/lcd/definechar.spf
 
 @BINARY
@@ -76,7 +77,7 @@ BASE!
   R> R> SWAP- [CHAR] - .CHARS
 ;
 
-: PROGRESS-INIT
+: PROGRESS-INIT \ define custom chars
   0 PRG1
   1 PRG2
   2 PRG3

@@ -1,4 +1,4 @@
-: COUNTP     ( a -- a' c )                   ( get length of a counted string in flash)
+: COUNTP     ( a -- a' c )                   ( get length of a counted string in ROM)
   [
   tosl zl movw
   0x1 tosl adiw

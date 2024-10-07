@@ -3,13 +3,13 @@
 mega88 CONSTANT DEVICE
 
 0x2000 TO ROM-SIZE          \ FLASH
-0x0100 TO RAM-BOTTOM        \ начало RAM
-0x0400 TO RAM-SIZE          \ размер RAM
-0x0200 TO EEPROM-SIZE          \ размер EEPROM
-RAM-BOTTOM RAM-SIZE + 1- TO RAM-TOP \ конец  RAM, дно стека возвратов
+0x0100 TO RAM-BOTTOM        \ RAM start
+0x0400 TO RAM-SIZE
+0x0200 TO EEPROM-SIZE
+RAM-BOTTOM RAM-SIZE + 1- TO RAM-TOP \ RAM end, return stack bottom
 
-0x0080 TO RSTACK-SIZE       \ размер стека возвратов
-RAM-TOP RSTACK-SIZE - 1+ TO SPTR0 \ дно стека данных
-0x2    TO VECTOR-SIZE               \ размер вектора прерываний в байтах
+0x0080 TO RSTACK-SIZE       \ return stack size
+RAM-TOP RSTACK-SIZE - 1+ TO SPTR0 \ data stack bottom
+0x2    TO VECTOR-SIZE       \ interrupt vector size in bytes
 
 S" devices/atmegax8.spf" INCLUDED
