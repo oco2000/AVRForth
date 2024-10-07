@@ -911,7 +911,7 @@ Before inclusion set the CPU frequency:
 REQUIRE MS lib/delay.spf
 ```
 
-Usage:
+**Usage:**
 
 | Word | Comment | Description |
 | --- | --- | --- |
@@ -920,139 +920,141 @@ Usage:
 
 ### lib/i2c.spf
 
-Реализация аппаратного интерфейса I2C/TWI
+Hardware I2C
 
-Подключение:
+**Include:**
 
 ```forth
 REQUIRE I2C_START lib/i2c.spf
 ```
 
-Использование:
+**Usage:**
 
-| Слово | Стековый комментарий | Описание|
+| Word | Stack comment | Description |
 | --- | --- | --- |
-| I2C_INIT | ( -- ) | Инициализация интерфейса |
-| I2C_START | ( address -- err ) | Послать стартовую посылку устройству с выбранным адресом. Возвращает 0 — все ок, -1 — ошибка |
-| I2C_STOP | ( -- ) | Послать стоповую посылку |
-| I2C_WRITE | ( data -- err ) | Послать байт. Возвращает 0 — все ок, 1 — ошибка |
-| I2C\_READ_ACK | ( -- byte ) | Прочитать байт, запросить следующую порцию данных. |
-| I2C\_READ_NAK | ( -- byte ) | Прочитать байт, окончить передачу. |
+| I2C_INIT | ( -- ) | Initialize I2C |
+| I2C_START | ( address -- err ) | Send START to the device with address. Returns 0 - ok, -1 - error |
+| I2C_STOP | ( -- ) | Send STOP |
+| I2C_WRITE | ( byte -- err ) | Send the byte. Returns 0 - ok, -1 - error |
+| I2C\_READ_ACK | ( -- byte ) | Read a byte, ask for the next byte. |
+| I2C\_READ_NAK | ( -- byte ) | Read a byte, stop the transmission. |
 
 ### ds1307.spf
 
-Общение с контроллером ds1307 по аппаратному I2C
+DS1307 RTC via I2C
 
-Подключение:
+**Include:**
 
 ```forth
 REQUIRE DS1307      lib/ds1307.spf
 ```
 
-Использование:
+Usage:
 
-| Слово | Стековый комментарий | Описание|
+| Word | Stack comment | Description |
 | --- | --- | --- |
-| DS1307_INIT | ( -- 0 / -1 ) | Проверка наличия подключенной микросхемы, инициализация. Возвращает 0 — есть, -1 - нет |
-| DS1307_GET | ( reg -- value ) | Получить значение регистра, например `DS1307_Weekday DS1307_GET` |
-| DS1307_SET | ( value reg -- ) | Установить значение регистра |
-| DS1307\_GET_TIME | ( -- s m h ) | Прочитать время |
-| DS1307\_SET_TIME | ( h m s -- ) | Записать время |
-| DS1307\_GET_DATE | ( -- d m y ) | Прочитать дату |
-| DS1307\_SET_DATE | ( y m d -- ) | Записать дату |
+| DS1307_INIT | ( -- 0 / -1 ) | Initialize the RTC. Returns 0 - ok, -1 - error |
+| DS1307_GET | ( reg -- value ) | Get a register value, e.g. `DS1307_Weekday DS1307_GET` |
+| DS1307_SET | ( value reg -- ) | Set a register value |
+| DS1307\_GET_TIME | ( -- s m h ) | Get time |
+| DS1307\_SET_TIME | ( h m s -- ) | Set time |
+| DS1307\_GET_DATE | ( -- d m y ) | Get date |
+| DS1307\_SET_DATE | ( y m d -- ) | Set date |
 
 ### eertos.spf
 
-Простой диспетчер задач. Основан на диспетчере DiHALTa (easyelectronics.ru)
+Simple task manager. Based on the DiHALT's manager (easyelectronics.ru)
 
-Суть в том, чтобы иметь возможность запускать задания по таймеру через некоторое количество тиков. В качестве задания может выступать любое двоеточечное определение форта. По умолчанию один тик равен 1 мс. В прерывании таймера уменьшаются счетчики каждой задачи. В основном цикле менеджер задач проверяет, есть ли задачи, у которых счетчик достиг 0 и запускает их.
+We have a possibility to run tasks on timer. Task is just a Forth word. Every millisecond in the timer interrupt handler the manager decrements the counter for each task. In the main loop the manager checks if tasks have their counter equals to 0 and runs them. Maximum 8 tasks can be managed.
 
-Подключение (обязательно задайте частоту контроллера):
+**Include (setting F_CPU is mandatory):**
 
 ```forth
 8000000 ( Hz ) == F_CPU
 
-REQUIRE RTOS_INIT   lib/eertos.spf
+REQUIRE RTOS_INIT_TIMER   lib/eertos/atmega8-eertos-config.spf \ the configuration, it is different for each microcontroller
+REQUIRE RTOS_INIT   lib/eertos.spf \ the main file
 ```
 
-Использование:
+**Usage:**
 
-| Слово | Стековый комментарий | Описание|
+| Word | Stack comment | Description |
 | --- | --- | --- |
-| RTOS_INIT | ( -- ) | Инициализация диспетчера |
-| RTOS_RUN | ( -- ) | Запуск диспетчера |
-| RTOS\_SET\_TIMER_TASK | ( task time -- ) | Поставить задачу в очередь на выполнение через time тиков. Пример: `['] GET_TIME 250 RTOS_SET_TIMER_TASK \ через 250 мс` |
-| RTOS\_SET_TASK | ( task -- ) | Поставить задачу в очередь на выполнение немедленно |
-| RTOS\_REMOVE_TASK | ( task -- ) | Удалить задачу из очереди |
-| RTOS\_TASK_MANAGER | ( -- ) | Менеджер задач. Необходимо вызывать в цикле главной процедуры. Именно из него задачи вызываются на выполнение. |
-| RTOS\_TIMER_SERVICE | ( -- ) | Служба таймеров диспетчера. Вызывается из прерывания по таймеру. |
-| RTOS_INT | ( -- ) | Обработчик прерывания по таймеру. |
+| RTOS_INIT | ( -- ) | Initialize |
+| RTOS_RUN | ( -- ) | Run the manager |
+| RTOS\_SET\_TIMER_TASK | ( task time -- ) | Put the task to the queue and execute after time ticks. E.g.: `['] GET_TIME 250 RTOS_SET_TIMER_TASK \ after 250 ms` |
+| RTOS\_SET_TASK | ( task -- ) | Put the task to the queue and execute immediately |
+| RTOS\_REMOVE_TASK | ( task -- ) | Remove the task from the queue |
+| RTOS\_TASK_MANAGER | ( -- ) | The task manager. Call it in the main loop |
+| RTOS\_TIMER_SERVICE | ( -- ) | The timer service. It is called in the timer interrupt handler. |
+| RTOS_INT | ( -- ) | The timer interrupt handler. |
 
-Пример использования:
+**Example:**
 
 ```forth
 8000000 ( Hz ) == F_CPU
 
-\ определения портов
+\ ports definitions
 
 PORTD == LEDS_PORT
   07  == LED
 DDRD  == LEDS_DDR
 
+REQUIRE RTOS_INIT_TIMER   lib/eertos/atmega8-eertos-config.spf
 REQUIRE RTOS_INIT   lib/eertos.spf
 
 : LED_ON
-LED BIT  LEDS_PORT CLEAR
+  LED BIT  LEDS_PORT CLEAR
 ;
 
 : LED_OFF
   LED BIT  LEDS_PORT SET
 ;
 
-: BLINK         \ мигнуть светодиодом на 100 мс
-  LED_ON
-  ['] LED_OFF 100 RTOS_SET_TIMER_TASK \ выключить светодиод через 100 мс
-  ['] BLINK   200 RTOS_SET_TIMER_TASK \ включить через 200 мс и повторить
+: BLINK
+  LED_ON \ turn on the LED
+  ['] LED_OFF 100 RTOS_SET_TIMER_TASK \ turn it off after 100 ms
+  ['] BLINK   200 RTOS_SET_TIMER_TASK \ repeat after 200 ms (put itself to the queue)
 ;
 
 : INIT
   LED BIT  LEDS_DDR SET
   RTOS_INIT
-  ['] BLINK RTOS_SET_TASK \ поставить задачу в очередь на выполнение
-  RTOS_RUN \ поехали!
+  ['] BLINK RTOS_SET_TASK \ put to the queue and execute
+  RTOS_RUN \ go!
 ;
 
 : MAIN
   INIT
   BEGIN
-    RTOS_TASK_MANAGER \ здесь и будут выполнятся задания
+    RTOS_TASK_MANAGER \ the tasks will be executed here
   AGAIN
 ;
 ```
 
 ### buttons.spf
 
-Опрос кнопок, подключенных к одному порту, с подавлением дребезга и автоповтором
+Handle the buttons, which are connected to one port, with debouncing and autorepeat.
 
-Подключение:
+**Include:**
 
 ```forth
 REQUIRE DEBOUNCE    lib/buttons.spf
 ```
 
-Использование:
+**Usage:**
 
-1. Перед подключением нужно определить группу BUTTONS:
+1. Define BUTTONS group before including it:
 
 ```forth
-PB0 WIRE BTN_SET              \  кнопки
+PB0 WIRE BTN_SET              \  buttons
 PB1 WIRE BTN_+
 PB2 WIRE BTN_-
 
 GROUP{ BTN_SET BTN_+ BTN_- }GROUP BUTTONS
 ```
 
-2. Затем определить слова, которые будут выполняться при нажатии каждой кнопки:
+2. Define tasks for each of the button:
 
 ```forth
 : BTN0_TASK … ;
@@ -1060,54 +1062,54 @@ GROUP{ BTN_SET BTN_+ BTN_- }GROUP BUTTONS
 : BTN2_TASK … ;
 ```
 
-3. Выделить область в памяти для адресов этих задач. Первая задача — для кнопки, подключенной к 0-й линии порта, вторая — к 1-й и т.д.
+3. Compile a table with buttons tasks in ROM. The first one is for the button on the 0th wire, the second - on the 1st wire, etc... The buttons must be active low, they should pull the input to the ground.
 
 ```forth
-TCREATE BTN_TASKS           \ задачи для кнопок
+TCREATE BTN_TASKS
 
 ' BTN0_TASK T,   ' BTN1_TASK T,   ' BTN2_TASK T,
 ```
 
-4. В инициализирующем коде нужно включить нужные кнопки:
+4. In the code anywhere you can set which buttons are enabled:
 
 ```forth
-BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!                      \ все кнопки вкл
+BUTTONS {GROUP.MASK} BUTTONS_ENABLED C!                      \ all are enabled
 ```
 
-5. задать кнопки с автоповтором:
+5. Set which buttons are repeatable:
 
 ```forth
-[BUTTONS BTN_SET -GROUP {GROUP.MASK}] LITERAL \ эта кнопка не повторяет нажатия
+[ BUTTONS BTN_SET -GROUP {GROUP.MASK} ] LITERAL \ this button is not repeatable
   BUTTONS_REPEATABLE C!
 ```
 
-6. установить задачи, выполняющиеся при нажатии кнопок:
+6. Set the buttons tasks:
 
 ```forth
-BTN_TASKS BUTTONS_TASKS !                       \ задачи для кнопок
+BTN_TASKS BUTTONS_TASKS !
 ```
 
-7. инициализировать порт, к которому подключены кнопки
+7. Initialize
 
 ```forth
-BUTTONS_INIT                                    \ инициализация порта
+BUTTONS_INIT
 ```
 
-8. и поставить на выполнение задачу-обработчик нажатий:
+8. Put the buttons handler to the tasks queue (see eertos.spf):
 
 ```forth
-['] BUTTONS_TASK RTOS_SET_TASK                  \ обработчик кнопок
+['] BUTTONS_TASK RTOS_SET_TASK
 ```
 
-См.код примера tst_buttons.spf
+See the tst_buttons.spf for the code.
 
 ### lcd.spf
 
-Подключение LCD-дисплея с контроллером HD44780 по 4-битному интерфейсу.
+LCD with HD44780 controller via 4-bit or I2C interface.
 
-Подключение:
+**Include for 4-bit interface:**
 
-Перед подключением библиотеки нужно указать заранее, как подключается дисплей физически:
+Before including the library configure the LCD connection:
 
 ```forth
 PD3 WIRE D3
@@ -1120,65 +1122,83 @@ PD5 WIRE RW           \ RW WIRE
 PD6 WIRE E            \ E WIRE
 ```
 
-```forth
-REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf          \ библиотеки LCD
-REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ определение пользовательских символов
+Also you can include the standard configuration file:
 
-:: !BIG_LETTERS ;;
-REQUIRE BIG_SETUP       lib/lcd/big.spf          \ большие символы
+```forth
+REQUIRE D3              lib/lcd/lcd_conf_std.spf \ standard LCD configuration
+```
+**Include for I2C interface:**
+
+```forth
+:: LCD_I2C ;; \ use I2C interface
+0x4E == LCD_Addr \ set the LCD address
 ```
 
-Использование:
+**Common part for both of the interfaces**
+Then you can include the library:
+```forth
+REQUIRE LCD_CLRSCR      lib/lcd/lcd.spf
+```
 
-После подключения библиотеки дисплей нужно инициализировать словом LCD_INIT, после чего весь вывод через EMIT и TYPE, AT, PAGE будет идти на дисплей.
+If you need to define your own chars
+```forth
+REQUIRE LCD_CHAR        lib/lcd/definechar.spf   \ user defined chars
+```
 
-Если вы хотите использовать большие символы, подключите lib/lcd/big.spf, если перед этим было определено слово !BIG_LETTERS, то в код кроме цифр включаются еще и большие английские литеры.
+If you need big digits and/or characters
+```forth
+:: !BIG_LETTERS ;; \ this will include bit English characters
+REQUIRE BIG_SETUP       lib/lcd/big.spf          \ big chars
+```
 
-Необходимые слова вынесены в таблицу.
+**Usage:**
 
-| Слово | Стековый комментарий | Описание|
+After you initialize the library with `LCD_INIT`, all the output with EMIT, TYPE, AT, PAGE will go to the display.
+
+| Word | Stack comment | Description |
 | --- | --- | --- |
-| LCD_INIT | ( dispAttr -- ) | Инициализация дисплея dispAttr може быть таким:<br>- LCD\_DISP\_OFF — дисплей выключен<br>- LCD\_DISP\_ON — дисплей включен, курсор выключен<br>- LCD\_DISP\_ON\_CURSOR — дисплей включен, курсор включен<br>- LCD\_DISP\_CURSOR\_BLINK — дисплей включен, курсор включен и мигает |
-| LCD_COMMAND | ( с -- ) | Послать команду |
-| LCD_DATA | ( с -- ) | Послать данные (вывести символ с кодом с) |
-| LCD_GOTOXY | ( х у -- ) | Установить позицию курсора |
-| LCD_GETXY | ( -- addr ) | Получить текущий адрес |
-| LCD_CHAR name | ( b0 .. b7 -- )<br>исполнение:( с -- ) | Определить символ с кодом с<br>Пример использования:<br>`0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH`<br>после `LCD_INIT`<br>`0x1 BACKSLASH \ определить символ с кодом 1`<br>`0x1 EMIT      \ вывод символа` |
-| BIG_SETUP | ( -- ) | Инициализировать символы для больших цифр/букв |
-| BIG_LETTERS | ( -- ) | Переключиться на вывод больших символов |
-| NORMAL_LETTERS | ( -- ) | Переключиться на вывод обычных символов |
+| LCD_INIT | ( dispAttr -- ) | Initialize the display, dispAttr can be:<br>- LCD\_DISP\_OFF - the display is off<br>- LCD\_DISP\_ON  - the display is on, the cursor is off<br>- LCD\_DISP\_ON\_CURSOR - the display is on, the cursor is on<br>- LCD\_DISP\_CURSOR\_BLINK - the display is on, the cursor is on and blinking |
+| LCD_COMMAND | ( с -- ) | Send a command |
+| LCD_DATA | ( с -- ) | Send a data byte, the same as EMIT |
+| LCD_GOTOXY | ( х у -- ) | Set the cursor position |
+| LCD_GETXY | ( -- addr ) | Get the current cursor address |
+| LCD_CHAR name | ( b0 .. b7 -- )<br>execution:( с -- ) | Define a character with the code `c`<br>Example:<br>`0x00 0x10 0x08 0x04 0x02 0x01 0x00 0x00  LCD_CHAR  BACKSLASH`<br>after `LCD_INIT`<br>`0x1 BACKSLASH \ set the character with the code 1`<br>`0x1 EMIT      \ put the character to the display` |
+| BIG_SETUP | ( -- ) | Initialize the big characters |
+| BIG_LETTERS | ( -- ) | Switch to big characters |
+| NORMAL_LETTERS | ( -- ) | Switch to notmal characters |
 
-Также см. код примеров tst_lcd.spf и big_test.spf
+See the examples lcd, lcd_big and lcd_i2c
 
-### wdt.spf, не закончена
+### wdt.spf
 
 TODO:
 
-полное описание
-
 ### usart.spf
 
-Простой вывод данных в USART без использования прерываний.
+Simple USART without interrupts.
 
-Подключение:
+**Include (setting F_CPU is mandatory):**
 
 ```forth
-S" lib/usart.spf" INCLUDED
+8000000 == F_CPU
+
+REQUIRE _USART_INIT   lib/usart/atmegax8-usart-config.spf \ the configuration file for your device
+REQUIRE USART         lib/usart/usart.spf
 ```
 
-Использование:
+**Usage:**
 
-| Слово | Стековый комментарий | Описание|
+| Word | Stack comment | Description |
 | --- | --- | --- |
-| USART_INIT | ( ubrr -- ) | Инициализировать передатчик, установить `EMIT` на вывод в USART. Скорость задается при помощи слова `BAUD` |
-| BAUD | ( speed -- ubrr ) | Преобразовать скорость в константу, только для компиляции. См. пример |
-| USART_SEND | ( с -- ) | Передает символ |
-| USART1_INIT | ( ubrr -- ) | Инициализирует второй USART (если есть), установить `EMIT` на вывод в USART |
-| USART1_SEND | ( с -- ) | Передает символ во второй USART (если есть) |
+| USART_INIT | ( ubrr -- ) | Initialize, set `EMIT` to the output to USART. UBRR is set with `BAUD` |
+| BAUD | ( speed -- ubrr ) | Convert the speen to UBRR, the speed should be a literal. See the example |
+| USART_SEND | ( с -- ) | Send a byte |
+| USART1_INIT | ( ubrr -- ) | Initialize the second  USART (if present), set `EMIT` to it |
+| USART1_SEND | ( с -- ) | Send a byte to the second USART |
+| ?USART_RECEIVED | ( -- f ) | A byte is received and you can read it |
+| USART_RECEIVE ( -- b ) | Read a byte from the receive buffer, need to check with ?USART_RECEIVED first |
 
-Перед подключением обязательно задайте частоту контроллера `F_CPU`. По умолчанию при подключении библиотеки вектор `EMIT` настраивается на `USART_SEND`.
-
-Пример:
+Example:
 
 ```forth
 1000000 ( Hz ) == F_CPU
@@ -1193,37 +1213,44 @@ S" lib/usart.spf" INCLUDED
 
 ### encoder.spf
 
-Не закончена TODO
+TODO:
 
 ### lcd_menu
 
-Не закончена TODO
+TODO:
 
+### rc5
 
-## 5. Описание каталогов и файлов
+TODO:
 
-| Файл | Описание |
+### stepper
+
+TODO:
+
+## 5. Files and folders
+
+| File | Description |
 | --- | --- |
-| devices/devices.spf | Файл с константами типов микроконтроллеров |
-| devices/\*.spf | Файлы с определениями микроконтроллеров |
-| kernel/\*.spf | Ядро |
-| lib/\*.spf | Библиотеки для AVR |
-| avrforth.spf | Собственно форт |
-| src/lib/\*.spf | Библиотеки форта |
-| src/avrasm.spf | Ассемблер |
-| src/avrdisasm.spf | Дизассемблер |
-| src/avrlist.spf | Генерация листинга |
-| src/flash.spf | Целевая компиляция |
-| src/hex.spf | Запись образа в hex-формате |
-| src/init.spf | Инициализация контроллера |
-| src/inline.spf | Управляющие структуры и макросы |
-| src/isr.spf | Прерывания |
-| src/require.cfg | Файл конфигурации для подключения нужных слов |
-| src/require.spf | Подключение нужных слов |
-| src/xfbase.f | Определяющие слова |
-| src/util.spf | Разные слова |
+| devices/devices.spf | Device constants |
+| devices/\*.spf | Device definitions |
+| kernel/\*.spf | The kernel, one file per word |
+| lib/\*.spf | Libraries |
+| avrforth.spf | The main file |
+| src/lib/\*.spf | Forth libraries that are used in the compiler |
+| src/avrasm.spf | Assembly |
+| src/avrdisasm.spf | Disassembly |
+| src/avrlist.spf | Listing generation |
+| src/flash.spf | Target compilation |
+| src/hex.spf | Saving the image files |
+| src/init.spf | Device initialization |
+| src/inline.spf | Control flow and macros |
+| src/isr.spf | Interrupts |
+| src/require.cfg | The configuration for autoinclusion |
+| src/require.spf | Autoinclusion |
+| src/xfbase.f | Defining words |
+| src/util.spf | Miscellaneous |
 | examples/* | Program examples that use different libraries and more |
 
-## 6. Файлы определений микроконтроллеров
+## 6. Device files
 
-См. любой из файлов device/\*.spf - там есть комментарии.
+See any of the files device/\*.spf - there are comments.
