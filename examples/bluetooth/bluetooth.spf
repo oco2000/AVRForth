@@ -1,0 +1,35 @@
+\ HC-06 Bluetooth example
+
+@DECIMAL
+
+16000000 == F_CPU
+
+REQUIRE _USART_INIT   lib/usart/atmegax8-usart-config.spf
+REQUIRE USART         lib/usart/usart.spf
+
+PORTB == LED_PORT
+DDRB  == LED_DDR
+0x5 == LED
+LED BIT LED_PORT 2== {LED}
+
+REQUIRE MS lib/delay.spf
+
+: MAIN
+  LED BIT  LED_DDR SET    \ output
+  {LED} CLEAR
+  9600 BAUD USART_INIT
+
+  BEGIN
+    100 MS
+    ?USART_RECEIVED IF \ handle instructions from UART/Bluetooth
+      USART_RECEIVE
+      DUP [CHAR] h = IF \ 'h' command - turn the LED on
+        {LED} SET
+      ELSE [CHAR] l = IF \ 'l' command - turn the LED off
+        {LED} CLEAR
+      THEN THEN
+    THEN
+  AGAIN
+;
+
+BASE!
