@@ -91,17 +91,66 @@ PC2 WIRE HOURS.SENSOR
   NIBBLE-JOIN
 ;
 
-: BCD+1 ( bcd max -- bcd+1 ) \ increment BCD value
-  SWAP BCD> 1+ SWAP MOD >BCD
+: BCD+ ( bcd max increment -- bcd ) \ change BCD value by increment (+ or -)
+  ROT BCD> + OVER + ( max num+incr+max )
+  SWAP MOD >BCD
 ;
 
-: DS1307_REG++ ( max reg -- ) \ increment DS1307 register value (0..max-1)
+: DS1307_REG+ ( max increment reg -- ) \ increment DS1307 register value (0..max-1)
   DUP>R DS1307_GET
-  SWAP BCD+1
+  -ROT BCD+
   R> DS1307_SET
 ;
 
-: .COLON  ( -- )   [ CHAR : ] LITERAL EMIT ;
+\\ UART commands
+: DO-COMMAND ( addr -- )
+  COUNTP \ addr+1 max
+  SWAP @P BYTE-SPLIT C>S SWAP
+  DS1307_REG+
+;
+
+:: COMMAND ( max increment reg -- )
+  PCREATE
+    [F] ROT [P] TC,  TC,  TC, TALIGN ( max reg increment )
+  PDOES>
+    DO-COMMAND
+  ;
+;;
+
+\\ Available commands
+24   1 DS1307_Hours   COMMAND H+ \ increment hours
+24  -1 DS1307_Hours   COMMAND H- \ decrement hours
+60  10 DS1307_Minutes COMMAND T+ \ increment mintens
+60 -10 DS1307_Minutes COMMAND T- \ decrement mintens
+60   1 DS1307_Minutes COMMAND M+ \ increment minutes
+60  -1 DS1307_Minutes COMMAND M- \ decrement minutes
+
+\\ Commands table
+TCREATE COMMANDS
+  CHAR H TC,    ' H+ T,
+  CHAR h TC,    ' H- T,
+  CHAR T TC,    ' T+ T,
+  CHAR t TC,    ' T- T,
+  CHAR M TC,    ' M+ T,
+  CHAR m TC,    ' M- T,
+  00 TC,
+TALIGN
+
+: HANDLE-UART-COMMANDS ( -- )
+  ?USART_RECEIVED IF
+    USART_RECEIVE COMMANDS BEGIN ( char commands )
+      DUP C@P DUP
+    WHILE ( char commands char' )
+      >R OVER R> = IF
+        DUP 1+ @P EXECUTE
+      THEN
+      3 +
+    REPEAT
+    DROP 2DROP
+  THEN
+;
+
+: .COLON  ( -- )   [CHAR] : EMIT ;
 
 : ## ( n -- a 2 ) \ convert number to 2 digit string
   0 <# # # #>
@@ -127,15 +176,7 @@ PC2 WIRE HOURS.SENSOR
 
   BEGIN
     1000 MS
-    ?USART_RECEIVED IF \ handle UART instructions
-      USART_RECEIVE
-      DUP [CHAR] h = IF \ 'h' pressed - increment hours
-        DROP 24 DS1307_Hours DS1307_REG++
-      ELSE [CHAR] m = IF \ 'm' pressed - increment minutes and reset seconds
-        60 DS1307_Minutes DS1307_REG++
-        0 DS1307_Seconds DS1307_SET
-      THEN THEN
-    THEN
+    HANDLE-UART-COMMANDS
     PRINT-TIME \ to UART
     PARSE-TIME
     MINUTES DIGIT.DISPLAY

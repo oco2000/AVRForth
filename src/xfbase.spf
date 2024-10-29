@@ -338,8 +338,8 @@ VARIABLE @DOVECT
   COUNT SWAP OVER         ( u a u )
   THERE DUP >R T-ADDR     ( u a u here )
   2DUP C!                 \ счетчик
-  1+ SWAP CMOVE           ( u )   \ строка
-  1+ TALLOT TALIGN        \ зарезервировали
+  1+ SWAP CMOVE           ( u )   \ string
+  1+ TALLOT TALIGN        \ reserve
   R>
 ;
 

@@ -10,7 +10,7 @@ DROP
 \\ DIGIT - create a digit
 :: DIGIT ( sensor stepper correction rotation max -- )
   PCREATE
-  DHERE 01 ALLOT T, \ state
+  DHERE 01 ALLOT T, \ reserve space in RAM for the state
   TC, \ rotation
   TC, \ correction
   T,  \ stepper
