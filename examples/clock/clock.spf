@@ -240,6 +240,13 @@ TCREATE MODE_BTN_TASKS
   DROP
 ;
 
+: 10S_DELAY
+  10000 00 DO
+    1000 US WDR
+  LOOP
+;
+
+
 : INIT
   [ SEGMENTS_MASK_WITH_DOT SEGMENTS_PORT ] {OUTPUT}  \ segments for output
   {DIGITS} {OUTPUT}                                  \ digits for output
@@ -265,6 +272,8 @@ TCREATE MODE_BTN_TASKS
   ELSE \ no rtc - show dashes
     RAW_FORMAT
     0 RAW_SEGMENT #DIGITS g FILL    \ 4 dashes
+    10 0 DO 10S_DELAY LOOP \ RTC cannot be detected when the voltage is too low, so we wait for some time and reboot
+    REBOOT
   THEN
 ;
 
